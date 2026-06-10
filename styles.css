@@ -128,19 +128,6 @@ a:hover { text-decoration: underline; }
 #cv-bio p:last-child { margin-bottom: 0; }
 #cv-bio em { font-style: italic; }
 
-/* ── CONTACT (below tables) ── */
-#cv-contact {
-  padding: 0 var(--pad-x) var(--space-sm);
-  font-size: clamp(9px, .75vw, 11px);
-  letter-spacing: .07em;
-  color: var(--mid);
-}
-#cv-contact a {
-  text-underline-offset: 3px;
-  text-decoration-thickness: .5px;
-}
-#cv-contact a:hover { color: var(--ink); text-decoration: underline; }
-
 /* ── SECTIONS ── */
 #cv-sections {
   padding: var(--space-xl) var(--pad-x);
@@ -301,9 +288,17 @@ a:hover { text-decoration: underline; }
 /* ── FOOTER ── */
 #cv-footer {
   padding: var(--space-md) var(--pad-x);
-  font-size: 11px; letter-spacing: .03em; color: var(--mid);
+  font-size: clamp(9px, .75vw, 11px);
+  letter-spacing: .07em;
+  color: var(--mid);
   border-top: .5px solid var(--border);
 }
+#cv-footer a {
+  text-underline-offset: 3px;
+  text-decoration-thickness: .5px;
+}
+#cv-footer a:hover { color: var(--ink); text-decoration: underline; }
+.footer-sep { opacity: .45; user-select: none; }
 
 /* ── MOBILE ── */
 @media (max-width: 768px) {

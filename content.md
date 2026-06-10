@@ -4,6 +4,7 @@ photo: photo.jpg
 subtitle: Film & Immersive Producer
 location: Amsterdam, The Netherlands
 email: estebanjcuenca@gmail.com
+privacy: privacy.html
 ---
 
 # Esteban Cuenca

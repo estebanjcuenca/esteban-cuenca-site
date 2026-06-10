@@ -9,10 +9,11 @@ Portfolio site for film & immersive producer Esteban Cuenca. No build step.
 - `styles.css` — all other CSS (tokens, layout, dark mode, print, etc.)
 - `content.md` — all site content (markdown + frontmatter). **Edit this to change content.**
 - `photo.jpg` — hero photo, referenced via `photo:` in the frontmatter
+- `privacy.html` — standalone privacy policy page, linked from footer via `privacy:` in frontmatter
 
 ## How it works
 
-On load, the JS fetches `content.md`, parses the frontmatter (`photo`, `subtitle`, `location`, `email`) and markdown body, and renders the DOM.
+On load, the JS fetches `content.md`, parses the frontmatter (`photo`, `subtitle`, `location`, `email`, `privacy`) and markdown body, and renders the DOM.
 
 ## Local preview
 

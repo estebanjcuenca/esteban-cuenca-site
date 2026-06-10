@@ -110,7 +110,6 @@
 </section>
 
 <main id="cv-sections"></main>
-<div id="cv-contact"></div>
 <footer id="cv-footer"></footer>
 
 <!-- ═══════════════════════════════════════════════════════════════════
@@ -457,11 +456,14 @@ async function render() {
   // ── Meta fields ──
   if (meta.photo) document.getElementById('cv-photo').src = meta.photo;
   if (meta.subtitle) document.getElementById('cv-subtitle').textContent = meta.subtitle;
-  if (meta.location) document.getElementById('cv-footer').textContent   = meta.location;
 
-  if (meta.email) {
-    document.getElementById('cv-contact').innerHTML =
-      `<a href="mailto:${meta.email}">${meta.email}</a>`;
+  const footerParts = [];
+  if (meta.location) footerParts.push(meta.location);
+  if (meta.email) footerParts.push(`<a href="mailto:${meta.email}">${meta.email}</a>`);
+  if (meta.privacy) footerParts.push(`<a href="${meta.privacy}">Privacy Policy</a>`);
+  if (footerParts.length) {
+    document.getElementById('cv-footer').innerHTML =
+      footerParts.join('<span class="footer-sep"> · </span>');
   }
 
   // ── Parse body lines ──
