@@ -4,7 +4,9 @@ Portfolio site for film & immersive producer Esteban Cuenca. No build step.
 
 ## Structure
 
-- `index.html` — all markup, CSS (fonts base64-embedded), and JS
+- `index.html` — markup and JS
+- `fonts.css` — PP Radio Grotesk `@font-face` rules (base64-embedded)
+- `styles.css` — all other CSS (tokens, layout, dark mode, print, etc.)
 - `content.md` — all site content (markdown + frontmatter). **Edit this to change content.**
 - `photo.jpg` — hero photo, referenced via `photo:` in the frontmatter
 
