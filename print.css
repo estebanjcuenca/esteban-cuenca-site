@@ -254,8 +254,10 @@ html.a4-mode #hero-scroll { display: none !important; }
   }
 
   html.a4-mode #toolbar,
-  html.a4-mode #sound-panel,
-  html.a4-mode #hero-scroll {
+  html.a4-mode #hover-panel,
+  html.a4-mode #studio-panel,
+  html.a4-mode #hero-scroll,
+  html.a4-mode .footer-actions {
     display: none !important;
   }
 

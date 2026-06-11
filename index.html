@@ -1,8 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" translate="no" class="notranslate">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="content-language" content="en">
+<meta name="google" content="notranslate">
 <title>Esteban Cuenca</title>
 <meta name="description" content="Esteban Cuenca — Film & Immersive Producer based in Amsterdam.">
 <meta name="author" content="Esteban Cuenca">
@@ -23,8 +25,10 @@
 }
 </script>
 <script>if(localStorage.getItem('ec-dark')==='1')document.documentElement.classList.add('dark')</script>
+<script>document.documentElement.classList.add('browse-mode')</script>
 <link rel="stylesheet" href="fonts.css">
 <link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="studio.css">
 <link rel="stylesheet" href="print.css">
 </head>
 <body>
@@ -38,282 +42,284 @@
   </div>
   <div id="toolbar-site" class="toolbar-actions">
     <button class="tb-btn" id="btn-dark" onclick="toggleDark()" title="Toggle dark mode">◐</button>
-    <div class="toolbar-sound">
-      <button class="tb-btn" id="btn-sound" onclick="toggleSound()">Music: Off</button>
-      <button class="tb-btn tb-icon-btn" id="btn-sound-settings" onclick="toggleSoundPanel()" title="Music settings" aria-label="Music settings">
-        <svg class="tb-icon" viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
-          <path d="M3 2.5v11M8 4.5v7M13 2v12" stroke="currentColor" stroke-width="1.15" stroke-linecap="round"/>
-          <circle cx="3" cy="9.5" r="1.35" fill="currentColor"/>
-          <circle cx="8" cy="6.5" r="1.35" fill="currentColor"/>
-          <circle cx="13" cy="11" r="1.35" fill="currentColor"/>
-        </svg>
-      </button>
-    </div>
-    <button class="tb-btn tb-icon-btn" id="btn-export" type="button" title="Export PDF" aria-label="Export PDF">
-      <svg class="tb-icon" viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
-        <path d="M5 11h6M8 3v6.5M5.5 7.5L8 10l2.5-2.5" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"/>
+    <button class="tb-btn" id="btn-studio" onclick="toggleStudio()" title="Beat studio">Studio</button>
+    <button class="tb-btn tb-icon-btn" id="btn-hover-settings" onclick="toggleHoverPanel()" title="Table hover settings" aria-label="Table hover settings">
+      <svg class="tb-icon tb-menu-icon" viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
+        <path d="M3 4.5h10M3 8h10M3 11.5h10" stroke="currentColor" stroke-width="1.15" stroke-linecap="round"/>
       </svg>
     </button>
   </div>
   <div id="toolbar-export" class="toolbar-actions" hidden>
-    <button class="tb-btn" id="btn-print" type="button">Print</button>
-    <button class="tb-btn" id="btn-back" type="button">Back</button>
+    <button class="tb-btn" id="btn-nav-back" type="button">Back</button>
   </div>
 </header>
 
-<div id="sound-panel" aria-hidden="true">
-  <div id="sound-panel-inner">
-    <div class="sp-header">
-      <span class="sp-title">Music</span>
-      <button class="sp-close" data-action="close">&#x2715;</button>
-    </div>
-
-    <div class="sp-row">
-      <span class="sp-label">Wave</span>
-      <div class="sp-seg" data-param="wave">
-        <button class="sp-seg-btn active" data-val="sine">Sine</button>
-        <button class="sp-seg-btn" data-val="triangle">Triangle</button>
-        <button class="sp-seg-btn" data-val="sawtooth">Saw</button>
-        <button class="sp-seg-btn" data-val="square">Square</button>
+<aside id="hover-panel" class="audio-drawer" aria-hidden="true">
+  <header class="sl-header">
+    <h2 class="sl-title">Table hover</h2>
+    <button class="sl-close" data-action="close-hover" type="button" aria-label="Close">
+      <svg class="sl-close-icon" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+        <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </header>
+  <div class="sl-panel-body">
+    <section class="sl-block sl-block-global">
+      <p class="sp-hint">CV row hover — separate from the beat maker. Move across rows on the résumé to play tone.</p>
+      <div class="sl-wave-picker sl-wave-picker-global">
+        <span class="sl-field-label">Hover wave</span>
+        <div class="sl-wave-grid sp-seg" data-param="wave" data-scope="global">
+          <button class="sl-wave-btn sp-seg-btn" type="button" data-val="sine">Sine</button>
+          <button class="sl-wave-btn sp-seg-btn" type="button" data-val="triangle">Tri</button>
+          <button class="sl-wave-btn sp-seg-btn active" type="button" data-val="sawtooth">Saw</button>
+          <button class="sl-wave-btn sp-seg-btn" type="button" data-val="square">Sqr</button>
+        </div>
       </div>
-    </div>
-
-    <div class="sp-row">
-      <span class="sp-label">Volume</span>
-      <input class="sp-range" data-param="gain" type="range"
-             min="0" max="0.4" step="0.01" value="0.12">
-      <span class="sp-val" id="sp-gain-val">12%</span>
-    </div>
-
-    <div class="sp-row">
-      <span class="sp-label">Attack</span>
-      <input class="sp-range" data-param="attack" type="range"
-             min="0.01" max="1.0" step="0.01" value="0.18">
-      <span class="sp-val" id="sp-attack-val">180ms</span>
-    </div>
-
-    <div class="sp-row">
-      <span class="sp-label">Decay</span>
-      <input class="sp-range" data-param="decay" type="range"
-             min="0.2" max="4.0" step="0.1" value="1.6">
-      <span class="sp-val" id="sp-decay-val">1.6s</span>
-    </div>
-
-    <div class="sp-row">
-      <span class="sp-label">Detune</span>
-      <input class="sp-range" data-param="detune" type="range"
-             min="-50" max="50" step="1" value="0">
-      <span class="sp-val" id="sp-detune-val">0&#xa2;</span>
-    </div>
-
-    <div class="sp-row">
-      <span class="sp-label">Film</span>
-      <div class="sp-seg" data-param="filmRoot">
-        <button class="sp-seg-btn active" data-val="110">A</button>
-        <button class="sp-seg-btn" data-val="123.47">B</button>
-        <button class="sp-seg-btn" data-val="130.81">C</button>
-        <button class="sp-seg-btn" data-val="146.83">D</button>
-        <button class="sp-seg-btn" data-val="164.81">E</button>
+      <div class="sl-knob-grid sl-knob-grid-global">
+        <div class="sl-field sl-field-block">
+          <label class="sl-field-label">Row hover</label>
+          <div class="sp-seg" data-param="mode">
+            <button class="sp-seg-btn active" data-val="harmonic">Hold</button>
+            <button class="sp-seg-btn" data-val="arpeggio">Arp</button>
+          </div>
+        </div>
+        <div class="sl-field">
+          <label class="sl-field-label">High-pass</label>
+          <input class="sp-range" data-param="browseHp" type="range" min="40" max="320" step="5" value="80">
+          <span class="sp-val" id="sp-browseHp-val">80 Hz</span>
+        </div>
+        <div class="sl-field">
+          <label class="sl-field-label">Reverb</label>
+          <input class="sp-range" data-param="reverbAmt" type="range" min="0" max="0.4" step="0.01" value="0.14">
+          <span class="sp-val" id="sp-reverbAmt-val">14%</span>
+        </div>
+        <div class="sl-field">
+          <label class="sl-field-label">Poly floor</label>
+          <input class="sp-range" data-param="browsePolyFloor" type="range" min="0.1" max="0.6" step="0.02" value="0.28">
+          <span class="sp-val" id="sp-browsePolyFloor-val">28%</span>
+        </div>
+        <div class="sl-field">
+          <label class="sl-field-label">Poly curve</label>
+          <input class="sp-range" data-param="browsePolyPow" type="range" min="0.2" max="0.9" step="0.02" value="0.48">
+          <span class="sp-val" id="sp-browsePolyPow-val">0.48</span>
+        </div>
       </div>
-    </div>
-
-    <div class="sp-row">
-      <span class="sp-label">Comm</span>
-      <div class="sp-seg" data-param="commRoot">
-        <button class="sp-seg-btn" data-val="55">A</button>
-        <button class="sp-seg-btn" data-val="61.74">B</button>
-        <button class="sp-seg-btn" data-val="65.41">C</button>
-        <button class="sp-seg-btn active" data-val="73.42">D</button>
-        <button class="sp-seg-btn" data-val="82.41">E</button>
-      </div>
-    </div>
-
-    <div class="sp-row">
-      <span class="sp-label">Ev</span>
-      <div class="sp-seg" data-param="evRoot">
-        <button class="sp-seg-btn" data-val="65.41">A</button>
-        <button class="sp-seg-btn" data-val="73.42">B</button>
-        <button class="sp-seg-btn active" data-val="82.41">C</button>
-        <button class="sp-seg-btn" data-val="92.50">D</button>
-        <button class="sp-seg-btn" data-val="98">E</button>
-      </div>
-    </div>
-
-    <div class="sp-row">
-      <span class="sp-label">Edu</span>
-      <div class="sp-seg" data-param="eduRoot">
-        <button class="sp-seg-btn" data-val="73.42">A</button>
-        <button class="sp-seg-btn" data-val="82.41">B</button>
-        <button class="sp-seg-btn" data-val="92.50">C</button>
-        <button class="sp-seg-btn active" data-val="98">D</button>
-        <button class="sp-seg-btn" data-val="110">E</button>
-      </div>
-    </div>
-
-    <div class="sp-row">
-      <span class="sp-label">Play</span>
-      <div class="sp-seg" data-param="mode">
-        <button class="sp-seg-btn active" data-val="harmonic">Hold</button>
-        <button class="sp-seg-btn" data-val="arpeggio">Arp</button>
-      </div>
-    </div>
-
-    <div class="sp-row">
-      <span class="sp-label">Steps</span>
-      <div class="sp-seg" data-param="steps">
-        <button class="sp-seg-btn" data-val="8">8</button>
-        <button class="sp-seg-btn active" data-val="16">16</button>
-      </div>
-    </div>
-
-    <div class="sp-row">
-      <span class="sp-label">BPM</span>
-      <input class="sp-range" data-param="bpm" type="range"
-             min="50" max="150" step="1" value="88">
-      <span class="sp-val" id="sp-bpm-val">88</span>
-    </div>
-
-    <div class="sp-row">
-      <span class="sp-label">Kick</span>
-      <div class="sp-seg" data-param="kick">
-        <button class="sp-seg-btn active" data-val="0">Off</button>
-        <button class="sp-seg-btn" data-val="1">On</button>
-      </div>
-    </div>
-
-    <div class="sp-row">
-      <span class="sp-label">Beat</span>
-      <div class="sp-seg" data-param="kickRepeat">
-        <button class="sp-seg-btn active" data-val="0">Hover</button>
-        <button class="sp-seg-btn" data-val="1">4/4</button>
-      </div>
-    </div>
-
-    <div class="sp-row">
-      <span class="sp-label">Tone</span>
-      <div class="sp-seg" data-param="kickMinimal">
-        <button class="sp-seg-btn active" data-val="1">Min</button>
-        <button class="sp-seg-btn" data-val="0">Full</button>
-      </div>
-    </div>
-
-    <div class="sp-divider">Music</div>
-
-    <div class="sp-row">
-      <span class="sp-label">Scale</span>
-      <div class="sp-seg" data-param="quantizeNotes">
-        <button class="sp-seg-btn" data-val="0">Free</button>
-        <button class="sp-seg-btn active" data-val="1">On</button>
-      </div>
-    </div>
-
-    <div class="sp-row">
-      <span class="sp-label">Key</span>
-      <div class="sp-seg" data-param="scaleType">
-        <button class="sp-seg-btn active" data-val="major">Maj</button>
-        <button class="sp-seg-btn" data-val="minor">Min</button>
-        <button class="sp-seg-btn" data-val="pent">Pent</button>
-      </div>
-    </div>
-
-    <div class="sp-row">
-      <span class="sp-label">Drums</span>
-      <div class="sp-seg" data-param="drumRack">
-        <button class="sp-seg-btn active" data-val="kickClap">K+C</button>
-        <button class="sp-seg-btn" data-val="kick">Kick</button>
-        <button class="sp-seg-btn" data-val="clap">Clap</button>
-      </div>
-    </div>
-
-    <div class="sp-row">
-      <span class="sp-label">Bass</span>
-      <div class="sp-seg" data-param="bassFifth">
-        <button class="sp-seg-btn active" data-val="1">R+5</button>
-        <button class="sp-seg-btn" data-val="0">Root</button>
-      </div>
-    </div>
-
-    <div class="sp-row">
-      <span class="sp-label">Duck</span>
-      <div class="sp-seg" data-param="sidechain">
-        <button class="sp-seg-btn" data-val="0">Off</button>
-        <button class="sp-seg-btn active" data-val="1">On</button>
-      </div>
-    </div>
-
-    <div class="sp-row">
-      <span class="sp-label">Length</span>
-      <div class="sp-seg" data-param="noteLength">
-        <button class="sp-seg-btn" data-val="0.42">Stacc</button>
-        <button class="sp-seg-btn active" data-val="0.72">Legato</button>
-      </div>
-    </div>
-
-    <div class="sp-row">
-      <span class="sp-label">Room</span>
-      <div class="sp-seg" data-param="reverb">
-        <button class="sp-seg-btn" data-val="0">Off</button>
-        <button class="sp-seg-btn active" data-val="1">On</button>
-      </div>
-    </div>
-
-    <div class="sp-row">
-      <span class="sp-label">Room lvl</span>
-      <input class="sp-range" data-param="reverbAmt" type="range"
-             min="0" max="0.35" step="0.01" value="0.14">
-      <span class="sp-val" id="sp-reverbAmt-val">14%</span>
-    </div>
-
-    <div class="sp-divider">Mix</div>
-
-    <div class="sp-row">
-      <span class="sp-label">Kick</span>
-      <input class="sp-range" data-param="kickGain" type="range"
-             min="0" max="0.5" step="0.01" value="0.18">
-      <span class="sp-val" id="sp-kickGain-val">18%</span>
-    </div>
-
-    <div class="sp-row">
-      <span class="sp-label">Clap</span>
-      <input class="sp-range" data-param="clapGain" type="range"
-             min="0" max="0.5" step="0.01" value="0.14">
-      <span class="sp-val" id="sp-clapGain-val">14%</span>
-    </div>
-
-    <div class="sp-row">
-      <span class="sp-label">Bass</span>
-      <input class="sp-range" data-param="bassGain" type="range"
-             min="0" max="0.5" step="0.01" value="0.16">
-      <span class="sp-val" id="sp-bassGain-val">16%</span>
-    </div>
-
-    <div class="sp-row">
-      <span class="sp-label">Note</span>
-      <input class="sp-range" data-param="noteGain" type="range"
-             min="0" max="0.5" step="0.01" value="0.10">
-      <span class="sp-val" id="sp-noteGain-val">10%</span>
-    </div>
-
-    <div class="sp-row">
-      <span class="sp-label">Swing</span>
-      <input class="sp-range" data-param="swing" type="range"
-             min="0.50" max="0.62" step="0.01" value="0.54">
-      <span class="sp-val" id="sp-swing-val">54%</span>
-    </div>
-
-    <div class="sp-divider">Seq</div>
-
-    <div class="sp-row">
-      <span class="sp-label">Human</span>
-      <div class="sp-seg" data-param="humanize">
-        <button class="sp-seg-btn active" data-val="0">Off</button>
-        <button class="sp-seg-btn" data-val="1">On</button>
-      </div>
-    </div>
-
-    <button class="sp-test" data-action="test">&#9654; Test note</button>
+    </section>
   </div>
-</div>
+</aside>
+
+<aside id="studio-panel" class="audio-drawer" aria-hidden="true">
+  <header class="sl-header">
+    <h2 class="sl-title" id="sl-title">Beat Studio</h2>
+    <button class="sl-close" data-action="close-studio" type="button" aria-label="Close">
+      <svg class="sl-close-icon" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+        <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </header>
+  <div class="sl-panel-body sl-panel-stack">
+    <div class="sl-instructions" id="sl-instructions"></div>
+    <div class="sl-viz-stack">
+      <div class="sl-layer-preview" id="sl-layer-preview">
+        <span class="sl-viz-label">Selected dot</span>
+        <div class="sl-preview-stage">
+          <div id="sl-preview-dot" class="sl-preview-dot is-empty"></div>
+        </div>
+      </div>
+      <div class="sl-viz-block">
+        <span class="sl-viz-label">Live waveform</span>
+        <canvas id="sl-scope" class="sl-scope" aria-hidden="true"></canvas>
+      </div>
+      <div class="sl-viz-block">
+        <span class="sl-viz-label">Spectrum</span>
+        <canvas id="sl-spectrum" class="sl-spectrum" aria-hidden="true"></canvas>
+      </div>
+      <div class="sl-viz-duo">
+        <div class="sl-viz-block sl-viz-block-half">
+          <span class="sl-viz-label">Wave</span>
+          <canvas id="sl-wave-shape" class="sl-shape-canvas" aria-hidden="true"></canvas>
+        </div>
+        <div class="sl-viz-block sl-viz-block-half">
+          <span class="sl-viz-label">Filter</span>
+          <canvas id="sl-filter-curve" class="sl-shape-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+      <dl class="sl-readout">
+        <div><dt>Dot</dt><dd id="sl-ro-layer-id">—</dd></div>
+        <div><dt>Note</dt><dd id="sl-ro-note">—</dd></div>
+        <div><dt>Filter</dt><dd id="sl-ro-filter">—</dd></div>
+        <div><dt>Gain</dt><dd id="sl-ro-gain">—</dd></div>
+        <div><dt>Space</dt><dd id="sl-ro-space">—</dd></div>
+      </dl>
+      <button class="sp-test sp-test-full" data-action="test" type="button">&#9654; Preview sound</button>
+    </div>
+
+    <div class="sl-settings">
+        <section class="sl-block sl-block-studio-global">
+          <h3 class="sl-block-title">Loop</h3>
+          <p class="sp-hint">6 layers: Kick/Hat/Clap drums + Bass/Lead/Soft synth. ↕ pitch · scroll = pulse.</p>
+          <div class="sl-knob-grid sl-knob-grid-global">
+            <div class="sl-field">
+              <label class="sl-field-label">BPM</label>
+              <input class="sp-range" data-param="bpm" type="range" min="50" max="150" step="1" value="88">
+              <span class="sp-val" id="sp-bpm-val">88</span>
+            </div>
+          </div>
+        </section>
+
+        <p class="sp-hint sl-layer-empty" id="sl-layer-empty">Tap a step on a lane to add a hit. Bass/Lead/Soft repeat with pulse.</p>
+        <ul class="sl-loop-list" id="sl-loop-list" hidden></ul>
+
+        <section class="sl-block sl-block-layer" id="sl-block-layer" hidden>
+          <div class="sl-dot-head">
+            <h3 class="sl-block-title" id="sl-layer-title">Dot</h3>
+            <button class="sp-solo-hold" data-action="solo-hold" type="button" title="Hold to hear only this dot">Solo</button>
+          </div>
+          <p class="sp-hint sl-loop-note" id="sl-loop-note">—</p>
+
+          <h4 class="sl-subtitle">1 · Pick instrument</h4>
+          <p class="sp-hint" id="sl-preset-hint">Color matches instrument — kick red, hat cyan, bass purple.</p>
+          <div class="sl-presets" data-scope="dot">
+            <button class="sl-preset-btn" type="button" data-action="preset" data-scope="dot" data-preset="kick">Kick</button>
+            <button class="sl-preset-btn" type="button" data-action="preset" data-scope="dot" data-preset="hat">Hat</button>
+            <button class="sl-preset-btn" type="button" data-action="preset" data-scope="dot" data-preset="bass">Bass</button>
+            <button class="sl-preset-btn" type="button" data-action="preset" data-scope="dot" data-preset="clap">Clap</button>
+            <button class="sl-preset-btn sl-preset-melodic" type="button" data-action="preset" data-scope="dot" data-preset="bright">Lead</button>
+            <button class="sl-preset-btn sl-preset-melodic" type="button" data-action="preset" data-scope="dot" data-preset="minimal">Soft</button>
+          </div>
+
+          <h4 class="sl-subtitle">2 · Pattern</h4>
+          <p class="sp-hint sl-pitch-hint sl-dot-drum-only" hidden>Drums: one hit per step — drag ↔ to move.</p>
+          <p class="sp-hint sl-pitch-hint sl-dot-melodic-only" hidden>Synth: ↕ = pitch · ↔ = timbre · pulse/scroll = how often it repeats.</p>
+
+
+          <div class="sl-knob-grid sl-dot-timing">
+            <div class="sl-field sl-field-block sl-field-span">
+              <label class="sl-field-label">Pulse rate</label>
+              <div class="sp-seg" data-loop-density>
+                <button class="sp-seg-btn" type="button" data-val="8">½ bar</button>
+                <button class="sp-seg-btn active" type="button" data-val="4">¼ bar</button>
+                <button class="sp-seg-btn" type="button" data-val="2">⅛ bar</button>
+              </div>
+            </div>
+            <div class="sl-field">
+              <label class="sl-field-label">Beat offset</label>
+              <input class="sp-range" id="sl-loop-step" type="range" min="0" max="15" step="1" value="0">
+              <span class="sp-val" id="sl-loop-step-val">1</span>
+            </div>
+            <div class="sl-field">
+              <label class="sl-field-label">Size</label>
+              <input class="sp-range" id="sl-loop-size" type="range" min="0.08" max="1" step="0.02" value="0.35">
+              <span class="sp-val" id="sl-loop-size-val">35%</span>
+            </div>
+            <div class="sl-field">
+              <label class="sl-field-label">Level</label>
+              <input class="sp-range" id="sl-loop-level" type="range" min="0.4" max="1.5" step="0.02" value="1">
+              <span class="sp-val" id="sl-loop-level-val">100%</span>
+            </div>
+          </div>
+          <p class="sp-hint sl-solo-hint">Hold <strong>Solo</strong> to hear only this dot while tuning.</p>
+
+          <div class="sl-dot-synth-only">
+          <h4 class="sl-subtitle">3 · Sound</h4>
+          <div class="sl-wave-picker sl-dot-melodic-only" hidden>
+            <span class="sl-field-label">Wave</span>
+            <div class="sl-wave-grid sp-seg" data-param="wave" data-scope="dot">
+              <button class="sl-wave-btn sp-seg-btn" type="button" data-val="sine">Sine</button>
+              <button class="sl-wave-btn sp-seg-btn" type="button" data-val="triangle">Tri</button>
+              <button class="sl-wave-btn sp-seg-btn active" type="button" data-val="sawtooth">Saw</button>
+              <button class="sl-wave-btn sp-seg-btn" type="button" data-val="square">Sqr</button>
+            </div>
+          </div>
+          <div class="sl-knob-grid sl-dot-synth-grid">
+            <div class="sl-field">
+              <label class="sl-field-label">Volume</label>
+              <input class="sp-range" data-param="gain" type="range" min="0" max="0.4" step="0.01" value="0.13">
+              <span class="sp-val" id="sp-gain-val">13%</span>
+            </div>
+            <div class="sl-field sl-dot-melodic-only">
+              <label class="sl-field-label">Attack</label>
+              <input class="sp-range" data-param="attack" type="range" min="0.02" max="0.6" step="0.01" value="0.11">
+              <span class="sp-val" id="sp-attack-val">110ms</span>
+            </div>
+            <div class="sl-field sl-dot-melodic-only">
+              <label class="sl-field-label">Release</label>
+              <input class="sp-range" data-param="decay" type="range" min="0.2" max="4" step="0.1" value="1.1">
+              <span class="sp-val" id="sp-decay-val">1.1s</span>
+            </div>
+            <div class="sl-field sl-dot-melodic-only">
+              <label class="sl-field-label">Detune</label>
+              <input class="sp-range" data-param="detune" type="range" min="-50" max="50" step="1" value="0">
+              <span class="sp-val" id="sp-detune-val">0&#xa2;</span>
+            </div>
+            <div class="sl-field sl-dot-melodic-only">
+              <label class="sl-field-label">Tone</label>
+              <input class="sp-range" data-param="browseTone" type="range" min="0" max="1" step="0.01" value="0.58">
+              <span class="sp-val" id="sp-browseTone-val">58%</span>
+            </div>
+            <div class="sl-field sl-dot-melodic-only">
+              <label class="sl-field-label">Harmonics</label>
+              <input class="sp-range" data-param="browseHarmonics" type="range" min="0" max="1" step="0.02" value="0.58">
+              <span class="sp-val" id="sp-browseHarmonics-val">58%</span>
+            </div>
+            <div class="sl-field sl-dot-melodic-only">
+              <label class="sl-field-label">Filter min</label>
+              <input class="sp-range" data-param="browseFilterMin" type="range" min="200" max="8000" step="20" value="320">
+              <span class="sp-val" id="sp-browseFilterMin-val">320 Hz</span>
+            </div>
+            <div class="sl-field sl-dot-melodic-only">
+              <label class="sl-field-label">Filter max</label>
+              <input class="sp-range" data-param="browseFilterMax" type="range" min="800" max="14000" step="50" value="7200">
+              <span class="sp-val" id="sp-browseFilterMax-val">7200 Hz</span>
+            </div>
+            <div class="sl-field sl-dot-melodic-only">
+              <label class="sl-field-label">Filter Q</label>
+              <input class="sp-range" data-param="browseFilterQ" type="range" min="0.2" max="3" step="0.02" value="0.72">
+              <span class="sp-val" id="sp-browseFilterQ-val">0.72</span>
+            </div>
+            <div class="sl-field sl-dot-melodic-only">
+              <label class="sl-field-label">Sub mix</label>
+              <input class="sp-range" data-param="browseSubMix" type="range" min="0" max="0.2" step="0.001" value="0.012">
+              <span class="sp-val" id="sp-browseSubMix-val">1%</span>
+            </div>
+            <div class="sl-field sl-dot-melodic-only">
+              <label class="sl-field-label">Space</label>
+              <input class="sp-range" data-param="browseSpace" type="range" min="0" max="0.4" step="0.01" value="0.07">
+              <span class="sp-val" id="sp-browseSpace-val">7%</span>
+            </div>
+            <div class="sl-field sl-dot-melodic-only">
+              <label class="sl-field-label">LFO rate</label>
+              <input class="sp-range" data-param="browseLfoRate" type="range" min="0" max="8" step="0.05" value="0">
+              <span class="sp-val" id="sp-browseLfoRate-val">Off</span>
+            </div>
+            <div class="sl-field sl-dot-melodic-only">
+              <label class="sl-field-label">LFO depth</label>
+              <input class="sp-range" data-param="browseLfoDepth" type="range" min="0" max="1" step="0.01" value="0.4">
+              <span class="sp-val" id="sp-browseLfoDepth-val">40%</span>
+            </div>
+            <div class="sl-field sl-field-block sl-field-span sl-dot-melodic-only">
+              <label class="sl-field-label">LFO target</label>
+              <div class="sp-seg" data-param="browseLfoTarget">
+                <button class="sp-seg-btn active" data-val="filter">Filter</button>
+                <button class="sp-seg-btn" data-val="gain">Gain</button>
+                <button class="sp-seg-btn" data-val="pitch">Pitch</button>
+              </div>
+            </div>
+          </div>
+          </div>
+          <div class="sl-actions-row">
+            <button class="sp-test" data-action="reset-browse" type="button">Reset layer</button>
+            <button class="sp-test" data-action="remove-loop" type="button">Remove dot</button>
+          </div>
+        </section>
+
+        <p class="sp-hint" id="sp-marker-count"></p>
+        <div class="sl-actions-row">
+          <button class="sp-test" data-action="clear-markers" type="button">Clear all dots</button>
+        </div>
+    </div>
+  </div>
+</aside>
 
 <section id="hero">
   <div id="hero-text">
@@ -335,7 +341,19 @@
   </div>
 </div>
 
+<div id="beat-studio" hidden aria-hidden="true">
+  <div class="beat-studio-inner">
+    <div id="beat-transport" hidden aria-hidden="true"></div>
+    <div class="beat-lanes" role="group" aria-label="Beat layers"></div>
+    <div class="beat-studio-overlay table-sound-overlay" aria-hidden="true"></div>
+  </div>
+</div>
+
 <div id="print-work">
+  <div id="beat-guide" class="beat-guide" hidden role="status" aria-live="polite">
+    <p class="beat-guide-text"></p>
+    <button class="beat-guide-dismiss" type="button">Got it</button>
+  </div>
   <main id="cv-sections"></main>
   <footer id="cv-footer"></footer>
 </div>
@@ -344,1499 +362,40 @@
      EDIT CONTENT BELOW — pure markdown, no HTML needed
      ═══════════════════════════════════════════════════════════════════ -->
 
+<!-- Shared audio core -->
+<script src="js/audio/constants.js"></script>
+<script src="js/audio/harmony.js"></script>
+<script src="js/audio/store.js"></script>
+<script src="js/audio/state.js"></script>
+<script src="js/audio/engine.js"></script>
+<script src="js/audio/theory.js"></script>
+<script src="js/audio/presets.js"></script>
+<script src="js/audio/voices.js"></script>
+<!-- CV table hover (must load before sound.js — Sound wraps ECAudio.Browse) -->
+<script src="js/hover/browse-sound.js"></script>
+<script src="js/hover/zones.js"></script>
+<script src="js/hover/browse.js"></script>
+<script src="js/hover/nav-vibe.js"></script>
+<script src="js/audio/sound.js"></script>
+<script src="js/audio/seq.js"></script>
+<script src="js/audio/knobs.js"></script>
+<script src="js/audio/panel-shared.js"></script>
+<script src="js/audio/debug.js"></script>
+<script src="js/hover/panel-hover.js"></script>
+<script src="js/hover/site.js"></script>
+<!-- Beat studio — isolated from CV -->
+<script src="js/studio/marker-drums.js"></script>
+<script src="js/studio/beat-studio.js"></script>
+<script src="js/studio/beat-guide.js"></script>
+<script src="js/studio/markers.js"></script>
+<script src="js/studio/sound-visual.js"></script>
+<script src="js/studio/sound-lab.js"></script>
+<script src="js/studio/panel-studio.js"></script>
+<script src="js/studio/studio-mode.js"></script>
+<script src="js/studio/studio-input.js"></script>
+<script src="js/audio/app.js"></script>
 <script>
-// ── SOUND PANEL ──────────────────────────────────────────────────────────
-var soundFmt = {
-  gain:      function(v){ return Math.round(v * 100) + '%'; },
-  attack:    function(v){ return Math.round(v * 1000) + 'ms'; },
-  decay:     function(v){ return v.toFixed(1) + 's'; },
-  detune:    function(v){ return (v > 0 ? '+' : '') + Math.round(v) + '¢'; },
-  bpm:       function(v){ return Math.round(v); },
-  kickGain:  function(v){ return Math.round(v * 100) + '%'; },
-  clapGain:  function(v){ return Math.round(v * 100) + '%'; },
-  bassGain:  function(v){ return Math.round(v * 100) + '%'; },
-  noteGain:  function(v){ return Math.round(v * 100) + '%'; },
-  swing:     function(v){ return Math.round(v * 100) + '%'; },
-  reverbAmt: function(v){ return Math.round(v * 100) + '%'; }
-};
-
-var SOUND_SCHEMA_V = 2;
-var MIDI_BANK_SLUGS = ['film-immersive-work', 'commercial-production'];
-var LEGACY_SECTION_IDS = {
-  'sec-film': 'sec-film-immersive-work',
-  'sec-comm': 'sec-commercial-production',
-  'sec-ev':   'sec-events-jury',
-  'sec-edu':  'sec-education-languages'
-};
-
-var SECTION_ROOT_KEYS = {
-  filmRoot: 'sec-film-immersive-work',
-  commRoot: 'sec-commercial-production',
-  evRoot:   'sec-events-jury',
-  eduRoot:  'sec-education-languages'
-};
-
-function canonicalSectionId(id) {
-  return LEGACY_SECTION_IDS[id] || id;
-}
-
-function migrateSoundPrefs(raw) {
-  if (!raw) return raw;
-  if (!raw.params) return Object.assign({ v: SOUND_SCHEMA_V }, raw);
-  var p = raw.params;
-  if (!raw.v || raw.v < SOUND_SCHEMA_V) {
-    Object.keys(LEGACY_SECTION_IDS).forEach(function(oldId) {
-      var newId = LEGACY_SECTION_IDS[oldId];
-      if (p.roots && p.roots[oldId] != null && p.roots[newId] == null) {
-        p.roots[newId] = p.roots[oldId];
-      }
-    });
-    ['patterns', 'trackTypes', 'trackMutes', 'trackSolos', 'trackLocks'].forEach(function(key) {
-      if (!p[key]) return;
-      Object.keys(p[key]).slice().forEach(function(tid) {
-        Object.keys(LEGACY_SECTION_IDS).forEach(function(oldId) {
-          var prefix = oldId + '-';
-          if (tid.indexOf(prefix) === 0) {
-            var newTid = LEGACY_SECTION_IDS[oldId] + tid.slice(oldId.length);
-            if (p[key][newTid] == null) p[key][newTid] = p[key][tid];
-          }
-        });
-      });
-    });
-    raw.v = SOUND_SCHEMA_V;
-  }
-  return raw;
-}
-
-function setSectionRoot(param, val) {
-  var secId = SECTION_ROOT_KEYS[param];
-  if (!secId) return;
-  Sound.params.roots[secId] = val;
-  Sound.params[param] = val;
-  if (param === 'filmRoot') Sound.params.filmRoot = val;
-}
-
-function setFilmRoot(val) {
-  setSectionRoot('filmRoot', val);
-}
-
-function updateSoundParamLabel(param, val) {
-  var lbl = document.getElementById('sp-' + param + '-val');
-  if (lbl && soundFmt[param]) lbl.textContent = soundFmt[param](val);
-}
-
-var SOUND_BOOL_PARAMS = [
-  'kick', 'kickRepeat', 'kickMinimal', 'humanize',
-  'quantizeNotes', 'bassFifth', 'sidechain', 'reverb'
-];
-
-function syncSoundPanelUI() {
-  var panel = document.getElementById('sound-panel');
-  if (!panel) return;
-  var p = Sound.params;
-  panel.querySelectorAll('.sp-seg[data-param]').forEach(function(seg) {
-    var param = seg.getAttribute('data-param');
-    var val = p[param];
-    if (SOUND_BOOL_PARAMS.indexOf(param) >= 0) val = val ? '1' : '0';
-    seg.querySelectorAll('.sp-seg-btn').forEach(function(b) {
-      var raw = b.getAttribute('data-val');
-      var match;
-      if (SOUND_BOOL_PARAMS.indexOf(param) >= 0) match = raw === val;
-      else if (isNaN(raw)) match = raw === val;
-      else match = Math.abs(parseFloat(raw) - Number(val)) < 0.02;
-      b.classList.toggle('active', match);
-    });
-  });
-  panel.querySelectorAll('input.sp-range[data-param]').forEach(function(input) {
-    var param = input.getAttribute('data-param');
-    if (p[param] === undefined) return;
-    input.value = String(p[param]);
-    updateSoundParamLabel(param, p[param]);
-  });
-}
-
-function saveSoundPrefs() {
-  try {
-    localStorage.setItem('ec-sound', JSON.stringify({
-      v: SOUND_SCHEMA_V,
-      enabled: soundEnabled,
-      params: JSON.parse(JSON.stringify(Sound.params))
-    }));
-  } catch (e) {}
-}
-
-function loadSoundPrefs() {
-  try {
-    var stored = JSON.parse(localStorage.getItem('ec-sound') || 'null');
-    var needsSave = !!(stored && (!stored.v || stored.v < SOUND_SCHEMA_V));
-    var raw = migrateSoundPrefs(stored);
-    if (!raw) return;
-    if (raw.params) {
-      var defaults = Sound.params;
-      Object.assign(Sound.params, raw.params);
-      Sound.params.roots = Object.assign({}, defaults.roots, raw.params.roots || {});
-      Object.keys(LEGACY_SECTION_IDS).forEach(function(oldId) {
-        var newId = LEGACY_SECTION_IDS[oldId];
-        if (Sound.params.roots[oldId] != null && Sound.params.roots[newId] == null) {
-          Sound.params.roots[newId] = Sound.params.roots[oldId];
-        }
-      });
-      if (raw.params.filmRoot != null) setSectionRoot('filmRoot', raw.params.filmRoot);
-      ['commRoot', 'evRoot', 'eduRoot'].forEach(function(key) {
-        if (raw.params[key] != null) setSectionRoot(key, raw.params[key]);
-        else if (Sound.params.roots[SECTION_ROOT_KEYS[key]] != null) {
-          Sound.params[key] = Sound.params.roots[SECTION_ROOT_KEYS[key]];
-        }
-      });
-      SOUND_BOOL_PARAMS.forEach(function(key) {
-        if (raw.params[key] != null) Sound.params[key] = !!raw.params[key];
-      });
-      if (raw.params.mode) Sound.params.mode = raw.params.mode;
-      if (raw.params.bpm) Sound.params.bpm = raw.params.bpm;
-      if (Sound.params.clapGain == null) {
-        Sound.params.clapGain = (Sound.params.kickGain || 0.18) * 0.78;
-      }
-      if (Sound.params.bassGain == null) {
-        Sound.params.bassGain = (Sound.params.gain || 0.12) * 0.85;
-      }
-      if (Sound.params.noteGain == null) {
-        Sound.params.noteGain = (Sound.params.gain || 0.12) * 0.62;
-      }
-      if (Sound.params.swing == null) Sound.params.swing = 0.54;
-      if (Sound.params.humanize == null) Sound.params.humanize = false;
-      if (!Sound.params.trackMutes) Sound.params.trackMutes = {};
-      if (!Sound.params.trackSolos) Sound.params.trackSolos = {};
-      if (!Sound.params.trackLocks) Sound.params.trackLocks = {};
-      if (Sound.params.quantizeNotes == null) Sound.params.quantizeNotes = true;
-      if (!Sound.params.scaleType) Sound.params.scaleType = 'major';
-      if (!Sound.params.drumRack) Sound.params.drumRack = 'kickClap';
-      if (Sound.params.bassFifth == null) Sound.params.bassFifth = true;
-      if (Sound.params.sidechain == null) Sound.params.sidechain = true;
-      if (Sound.params.noteLength == null) Sound.params.noteLength = 0.72;
-      if (Sound.params.reverb == null) Sound.params.reverb = true;
-      if (Sound.params.reverbAmt == null) Sound.params.reverbAmt = 0.14;
-      if (Sound.params.commRoot == null) Sound.params.commRoot = Sound.params.roots['sec-comm'];
-      if (Sound.params.evRoot == null) Sound.params.evRoot = Sound.params.roots['sec-ev'];
-      if (Sound.params.eduRoot == null) Sound.params.eduRoot = Sound.params.roots['sec-edu'];
-    }
-    soundEnabled = !!raw.enabled;
-    syncMusicBtn();
-    syncSoundPanelUI();
-    applySoundMode();
-    if (soundEnabled && typeof Sound.syncKick === 'function') Sound.syncKick();
-    if (needsSave) saveSoundPrefs();
-  } catch (e) {}
-}
-
-function toggleSoundPanel() {
-  var p    = document.getElementById('sound-panel');
-  var sBtn = document.getElementById('btn-sound-settings');
-  var open = p.classList.toggle('open');
-  p.setAttribute('aria-hidden', String(!open));
-  if (sBtn) sBtn.classList.toggle('panel-open', open);
-  if (open) syncSoundPanelUI();
-}
-
-function initSoundPanel() {
-  var panel = document.getElementById('sound-panel');
-  if (!panel) return;
-
-  panel.addEventListener('click', function(e) {
-    var btn    = e.target.closest('[data-val]');
-    var action = e.target.closest('[data-action]');
-    if (action) {
-      if (action.getAttribute('data-action') === 'close') { toggleSoundPanel(); return; }
-      if (action.getAttribute('data-action') === 'test')  { Sound.test(); return; }
-    }
-    if (!btn) return;
-    var seg = btn.closest('[data-param]');
-    if (!seg) return;
-    var raw   = btn.getAttribute('data-val');
-    var param = seg.getAttribute('data-param');
-    var val;
-    if (SOUND_BOOL_PARAMS.indexOf(param) >= 0) val = raw === '1';
-    else if (isNaN(raw)) val = raw;
-    else val = parseFloat(raw);
-    if (SECTION_ROOT_KEYS[param]) setSectionRoot(param, val);
-    else if (param === 'noteLength') Sound.params.noteLength = val;
-    else Sound.params[param] = val;
-    seg.querySelectorAll('.sp-seg-btn').forEach(function(b){ b.classList.remove('active'); });
-    btn.classList.add('active');
-    if (param === 'kick' || param === 'kickRepeat' || param === 'kickMinimal' || param === 'bpm') {
-      Sound.syncKick();
-    }
-    if (param === 'steps') {
-      document.documentElement.dataset.steps = String(Sound.params.steps);
-      if (soundEnabled) TrackSeq.remount();
-    }
-    saveSoundPrefs();
-  });
-
-  panel.addEventListener('input', function(e) {
-    var el = e.target;
-    if (el.tagName !== 'INPUT') return;
-    var param = el.getAttribute('data-param');
-    var val   = parseFloat(el.value);
-    Sound.params[param] = val;
-    updateSoundParamLabel(param, val);
-    if (param === 'reverbAmt' && typeof Sound.setReverbAmt === 'function') {
-      Sound.setReverbAmt(val);
-    }
-    if (param === 'bpm' || param === 'kickGain' || param === 'swing' ||
-        param === 'clapGain' || param === 'bassGain' || param === 'noteGain') {
-      if (param === 'bpm' || param === 'kickGain') Sound.syncKick();
-      if (soundEnabled && (param === 'bpm' || param === 'swing')) TrackSeq.restartSeq();
-    }
-    saveSoundPrefs();
-  });
-}
-
-// ── NAV VIBE ─────────────────────────────────────────────────────────────
-// Visual ≠ audio sample rate. We draw a short spatial slice of the wave
-// (frequency → how many cycles fit across the bar) and drift phase slowly
-// in time (~0.3–0.6 Hz). Attack / decay mirror Sound.params.
-
-const NavVibe = (function() {
-  var wrap, path, notes = new Map(), rafId = null, t0 = 0, lastNow = 0;
-  var W = 200, H = 24, MID = H / 2, PTS = 96;
-  var REF_FREQ = 110;
-  var NOTE_DELAY_MS = 80;
-  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  function soundParams() {
-    return (typeof Sound !== 'undefined' && Sound.params)
-      ? Sound.params
-      : { wave: 'sine', attack: 0.18, decay: 1.6 };
-  }
-
-  function init() {
-    wrap = document.getElementById('nav-vibe');
-    path = wrap && wrap.querySelector('.nav-vibe-path');
-    setResting();
-  }
-
-  function waveVal(phase, type) {
-    var p = phase * Math.PI * 2;
-    switch (type) {
-      case 'square':
-        return Math.sign(Math.sin(p)) * 0.9;
-      case 'triangle':
-        return (Math.asin(Math.sin(p)) * 2 / Math.PI) * 0.9;
-      case 'sawtooth': {
-        var s = ((phase % 1) + 1) % 1;
-        return (s * 2 - 1) * 0.9;
-      }
-      default:
-        return Math.sin(p) * 0.9;
-    }
-  }
-
-  function spatialCycles(freq) {
-    return 1.4 * (freq / REF_FREQ);
-  }
-
-  function scrollHz(freq) {
-    return 0.28 + 0.1 * Math.log2(freq / REF_FREQ + 1);
-  }
-
-  function setResting() {
-    if (path) path.setAttribute('d', 'M0 ' + MID + ' L' + W + ' ' + MID);
-  }
-
-  function activeNotes() {
-    var list = [];
-    notes.forEach(function(note) {
-      if (note.level > 0.01) list.push(note);
-    });
-    return list;
-  }
-
-  function buildPath(t) {
-    var type = soundParams().wave;
-    var live = activeNotes();
-    if (!live.length) return 'M0 ' + MID + ' L' + W + ' ' + MID;
-
-    var baseAmp = 5.5 + live.length * 0.7;
-    var segs = [];
-
-    for (var i = 0; i <= PTS; i++) {
-      var x = (i / PTS) * W;
-      var norm = i / PTS;
-      var y = MID;
-      live.forEach(function(note) {
-        var phase = norm * spatialCycles(note.freq) + t * scrollHz(note.freq);
-        y += waveVal(phase, type) * baseAmp * note.level / live.length;
-      });
-      segs.push((i === 0 ? 'M' : 'L') + x.toFixed(1) + ' ' + y.toFixed(2));
-    }
-    return segs.join(' ');
-  }
-
-  function updateEnvelopes(now, dt) {
-    var p = soundParams();
-    var toDelete = [];
-    notes.forEach(function(note, row) {
-      if (now < note.delayUntil) return;
-      if (note.target > note.level) {
-        var step = dt / Math.max(0.08, p.attack);
-        note.level = Math.min(note.target, note.level + step);
-      } else if (note.target < note.level) {
-        var step = dt / Math.max(0.25, p.decay);
-        note.level = Math.max(note.target, note.level - step);
-        if (note.releasing && note.level <= 0.02) toDelete.push(row);
-      }
-    });
-    toDelete.forEach(function(row) { notes.delete(row); });
-  }
-
-  function tick(now) {
-    if (!path) { rafId = null; return; }
-    var dt = lastNow ? Math.min(0.05, (now - lastNow) / 1000) : 0.016;
-    lastNow = now;
-    updateEnvelopes(now, dt);
-
-    var live = activeNotes();
-    var t = (now - t0) / 1000;
-
-    if (!live.length && notes.size === 0) {
-      setResting();
-      wrap.classList.remove('active');
-      rafId = null;
-      lastNow = 0;
-      return;
-    }
-
-    path.setAttribute('d', buildPath(t));
-    wrap.classList.toggle('active', peakLevel() > 0.08);
-    rafId = requestAnimationFrame(tick);
-  }
-
-  function peakLevel() {
-    var peak = 0;
-    notes.forEach(function(n) { if (n.level > peak) peak = n.level; });
-    return peak;
-  }
-
-  function ensureLoop() {
-    if (!rafId) {
-      t0 = performance.now();
-      lastNow = 0;
-      rafId = requestAnimationFrame(tick);
-    }
-  }
-
-  function noteOn(row, freq) {
-    if (!path || reduceMotion) return;
-    var now = performance.now();
-    notes.set(row, {
-      freq: freq,
-      level: 0,
-      target: 1,
-      releasing: false,
-      delayUntil: now + NOTE_DELAY_MS
-    });
-    ensureLoop();
-  }
-
-  function noteOff(row) {
-    var note = notes.get(row);
-    if (!note) return;
-    note.target = 0;
-    note.releasing = true;
-    ensureLoop();
-  }
-
-  function reset() {
-    notes.clear();
-    setResting();
-    if (wrap) wrap.classList.remove('active');
-    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
-    lastNow = 0;
-  }
-
-  function pulse(freq, ms) {
-    if (!path || reduceMotion) return;
-    var key = {};
-    noteOn(key, freq);
-    setTimeout(function() { noteOff(key); }, ms || 600);
-  }
-
-  return { init: init, noteOn: noteOn, noteOff: noteOff, reset: reset, pulse: pulse };
-})();
-
-// ── SOUND SYSTEM ──────────────────────────────────────────────────────────
-// Each table row picks a harmonic partial of the section root (film A2, etc.).
-// Hold: sustained tone while hovered. Arp: cycles partials at BPM. Kick: low sine thump.
-
-var soundEnabled = false;
-
-function musicBtnLabel() {
-  return 'Music: ' + (soundEnabled ? 'On' : 'Off');
-}
-
-function syncMusicBtn() {
-  var btn = document.getElementById('btn-sound');
-  if (btn) {
-    btn.textContent = musicBtnLabel();
-    btn.classList.toggle('sound-on', soundEnabled);
-  }
-}
-
-function applySoundMode() {
-  document.documentElement.classList.toggle('sound-on', soundEnabled);
-  document.documentElement.dataset.steps = String(Sound.params.steps || 16);
-  if (soundEnabled) {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    TrackSeq.mount();
-    TrackSeq.syncPlayback();
-    Sound.bootAudio();
-  } else {
-    TrackSeq.closeModuleMenus();
-    TrackSeq.unmount();
-    Sound.tableLeave();
-  }
-}
-
-function toggleSound() {
-  soundEnabled = !soundEnabled;
-  syncMusicBtn();
-  applySoundMode();
-  saveSoundPrefs();
-}
-
-const Sound = (function() {
-  var ctx = null;
-  var masterBus = null;
-  var musicBus = null;
-  var reverbSend = null;
-  var reverbGain = null;
-  var limiterNode = null;
-  var activeNodes = new Map();
-  var kickTimer = null;
-  var inTableZone = false;
-  var PARTIALS = [1, 2, 1.5, 1.25, 1.75, 2.25, 1.333, 1.667];
-  var SCALE_DEFS = {
-    major: [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21, 23, 24],
-    minor: [0, 2, 3, 5, 7, 8, 10, 12, 14, 15, 17, 19, 20, 22, 24],
-    pent:  [0, 2, 4, 7, 9, 12, 14, 17, 19, 21, 24, 26, 28, 31, 33]
-  };
-
-  var params = {
-    wave:        'sine',
-    gain:        0.12,
-    attack:      0.18,
-    decay:       1.6,
-    detune:      0,
-    mode:        'harmonic',
-    bpm:         88,
-    kick:        false,
-    kickRepeat:  false,
-    kickMinimal: true,
-    kickGain:    0.18,
-    clapGain:    0.14,
-    bassGain:    0.16,
-    noteGain:    0.10,
-    swing:       0.54,
-    humanize:    false,
-    quantizeNotes: true,
-    scaleType:   'major',
-    drumRack:    'kickClap',
-    bassFifth:   true,
-    sidechain:   true,
-    noteLength:  0.72,
-    reverb:      true,
-    reverbAmt:   0.14,
-    steps:       16,
-    patterns:    {},
-    trackTypes:  {},
-    trackMutes:  {},
-    trackSolos:  {},
-    trackLocks:  {},
-    filmRoot:    110,
-    commRoot:    73.42,
-    evRoot:      82.41,
-    eduRoot:     98.00,
-    roots: {
-      'sec-film-immersive-work':   110.00,
-      'sec-commercial-production':  73.42,
-      'sec-events-jury':            82.41,
-      'sec-education-languages':    98.00
-    }
-  };
-
-  function getScale() {
-    return SCALE_DEFS[params.scaleType] || SCALE_DEFS.major;
-  }
-
-  function boot() {
-    if (ctx) return;
-    ctx = new (window.AudioContext || window.webkitAudioContext)();
-    masterBus = ctx.createGain();
-    masterBus.gain.value = 0.95;
-    musicBus = ctx.createGain();
-    musicBus.gain.value = 1;
-    musicBus.connect(masterBus);
-    limiterNode = ctx.createDynamicsCompressor();
-    limiterNode.threshold.value = -10;
-    limiterNode.knee.value = 8;
-    limiterNode.ratio.value = 10;
-    limiterNode.attack.value = 0.002;
-    limiterNode.release.value = 0.1;
-    masterBus.connect(limiterNode);
-    limiterNode.connect(ctx.destination);
-  }
-
-  function out() {
-    boot();
-    return masterBus;
-  }
-
-  function musicOut() {
-    boot();
-    return musicBus;
-  }
-
-  function ensureReverb() {
-    if (reverbSend) return;
-    var len = Math.floor(ctx.sampleRate * 0.32);
-    var ir = ctx.createBuffer(2, len, ctx.sampleRate);
-    for (var ch = 0; ch < 2; ch++) {
-      var d = ir.getChannelData(ch);
-      for (var i = 0; i < len; i++) {
-        d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.4);
-      }
-    }
-    var conv = ctx.createConvolver();
-    conv.buffer = ir;
-    reverbSend = ctx.createGain();
-    reverbSend.gain.value = 1;
-    reverbGain = ctx.createGain();
-    reverbGain.gain.value = params.reverbAmt;
-    reverbSend.connect(conv);
-    conv.connect(reverbGain);
-    reverbGain.connect(masterBus);
-  }
-
-  function setReverbAmt(val) {
-    params.reverbAmt = val;
-    if (reverbGain) reverbGain.gain.value = val;
-  }
-
-  function wetSend(fromNode, amt) {
-    if (!params.reverb) return;
-    boot();
-    ensureReverb();
-    var send = ctx.createGain();
-    send.gain.value = amt != null ? amt : params.reverbAmt;
-    fromNode.connect(send);
-    send.connect(reverbSend);
-  }
-
-  function midiFromFreq(freq) {
-    return 69 + 12 * Math.log2(freq / 440);
-  }
-
-  function freqFromMidi(midi) {
-    return 440 * Math.pow(2, (midi - 69) / 12);
-  }
-
-  function triggerSidechain(t) {
-    if (!params.sidechain) return;
-    boot();
-    var amt = 0.42;
-    var atk = 0.006;
-    var hold = 0.055;
-    var rel = 0.14;
-    var g = musicBus.gain;
-    g.cancelScheduledValues(t);
-    g.setValueAtTime(g.value, t);
-    g.linearRampToValueAtTime(amt, t + atk);
-    g.linearRampToValueAtTime(1, t + atk + hold + rel);
-  }
-
-  function bootAudio() {
-    boot();
-    if (ctx && ctx.state === 'suspended') ctx.resume();
-  }
-
-  function getRoot(row) {
-    var sec = row.closest('.cv-section');
-    if (!sec) return 110;
-    var id = canonicalSectionId(sec.id);
-    return params.roots[id] || params.roots[sec.id] || 110;
-  }
-
-  function getPartialIndex(row) {
-    var rows = Array.from(row.closest('tbody').querySelectorAll('tr'));
-    return rows.indexOf(row) % PARTIALS.length;
-  }
-
-  function rowFreq(row, partialIdx) {
-    var idx = partialIdx != null ? partialIdx : getPartialIndex(row);
-    return getRoot(row) * PARTIALS[idx % PARTIALS.length];
-  }
-
-  function noteFreq(row, partialIdx) {
-    if (!params.quantizeNotes) return rowFreq(row, partialIdx);
-    var idx = partialIdx != null ? partialIdx : getPartialIndex(row);
-    var rootMidi = Math.round(midiFromFreq(getRoot(row)));
-    var scale = getScale();
-    var semitone = scale[idx % scale.length];
-    return freqFromMidi(rootMidi + semitone);
-  }
-
-  function stepMs() {
-    return (60000 / params.bpm) / 2;
-  }
-
-  function beatMs() {
-    return 60000 / params.bpm;
-  }
-
-  function stopKickLoop() {
-    if (kickTimer) { clearInterval(kickTimer); kickTimer = null; }
-  }
-
-  function velMult(velocity) {
-    return velocity === 2 ? 0.45 : 1;
-  }
-
-  function playKick(force, velocity) {
-    if (!soundEnabled) return;
-    if (!force && !params.kick) return;
-    boot();
-    var t = ctx.currentTime;
-    var min = params.kickMinimal;
-    var peak = params.kickGain * (min ? 0.88 : 1) * velMult(velocity);
-    var tail = min ? 0.09 : 0.15;
-    var bus = out();
-
-    var clickLen = Math.max(2, Math.floor(ctx.sampleRate * 0.0025));
-    var clickBuf = ctx.createBuffer(1, clickLen, ctx.sampleRate);
-    var cd = clickBuf.getChannelData(0);
-    for (var ci = 0; ci < clickLen; ci++) cd[ci] = Math.random() * 2 - 1;
-    var click = ctx.createBufferSource();
-    click.buffer = clickBuf;
-    var clickHp = ctx.createBiquadFilter();
-    clickHp.type = 'highpass';
-    clickHp.frequency.value = 1800;
-    var clickG = ctx.createGain();
-    clickG.gain.setValueAtTime(peak * 0.42, t);
-    clickG.gain.exponentialRampToValueAtTime(0.001, t + 0.003);
-    click.connect(clickHp);
-    clickHp.connect(clickG);
-    clickG.connect(bus);
-    click.start(t);
-    click.stop(t + 0.004);
-
-    var osc = ctx.createOscillator();
-    var gain = ctx.createGain();
-    var f0 = min ? 68 : 56;
-    var fMid = min ? 54 : 44;
-    var fEnd = min ? 46 : 36;
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(f0, t);
-    osc.frequency.exponentialRampToValueAtTime(fMid, t + 0.028);
-    osc.frequency.exponentialRampToValueAtTime(fEnd, t + tail);
-    gain.gain.setValueAtTime(0, t);
-    gain.gain.linearRampToValueAtTime(peak, t + 0.001);
-    gain.gain.setValueAtTime(peak * 0.9, t + 0.008);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + tail);
-    osc.connect(gain);
-    gain.connect(bus);
-    osc.start(t);
-    osc.stop(t + tail + 0.02);
-    triggerSidechain(t);
-  }
-
-  function syncKick() {
-    stopKickLoop();
-    if (!params.kick || !params.kickRepeat || !soundEnabled || !inTableZone) return;
-    boot();
-    function start() {
-      playKick();
-      kickTimer = setInterval(function() {
-        if (!params.kick || !params.kickRepeat || !soundEnabled) {
-          stopKickLoop();
-          return;
-        }
-        playKick();
-      }, beatMs());
-    }
-    ctx.state === 'suspended' ? ctx.resume().then(start) : start();
-  }
-
-  function tableEnter() {
-    inTableZone = true;
-    if (!soundEnabled) syncKick();
-  }
-
-  function tableLeave() {
-    inTableZone = false;
-    stopKickLoop();
-    if (!soundEnabled) stopAll();
-  }
-
-  var clapBursts = null;
-  function ensureClapBursts() {
-    if (clapBursts) return;
-    clapBursts = [
-      { dur: 0.028, decay: 0.26 },
-      { dur: 0.022, decay: 0.32 },
-      { dur: 0.048, decay: 0.2 }
-    ].map(function(spec) {
-      var len = Math.floor(ctx.sampleRate * spec.dur);
-      var buf = ctx.createBuffer(1, len, ctx.sampleRate);
-      var d = buf.getChannelData(0);
-      for (var i = 0; i < len; i++) {
-        d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (len * spec.decay));
-      }
-      return buf;
-    });
-  }
-
-  function playClap(velocity) {
-    if (!soundEnabled) return;
-    boot();
-    ensureClapBursts();
-    var t = ctx.currentTime;
-    var bus = out();
-    var peak = params.clapGain * velMult(velocity);
-    var offsets = [0, 0.009, 0.022];
-    var levels = [1, 0.68, 0.48];
-
-    offsets.forEach(function(off, i) {
-      var src = ctx.createBufferSource();
-      src.buffer = clapBursts[i];
-      var hp = ctx.createBiquadFilter();
-      hp.type = 'highpass';
-      hp.frequency.value = 420;
-      var bp = ctx.createBiquadFilter();
-      bp.type = 'bandpass';
-      bp.frequency.value = 1450;
-      bp.Q.value = 0.75;
-      var gain = ctx.createGain();
-      var st = t + off;
-      gain.gain.setValueAtTime(0, st);
-      gain.gain.linearRampToValueAtTime(peak * levels[i], st + 0.0015);
-      gain.gain.exponentialRampToValueAtTime(0.001, st + 0.07);
-      src.connect(hp);
-      hp.connect(bp);
-      bp.connect(gain);
-      gain.connect(bus);
-      wetSend(gain, params.reverbAmt * 0.85);
-      src.start(st);
-      src.stop(st + 0.08);
-    });
-  }
-
-  function startTone(freq) {
-    var osc  = ctx.createOscillator();
-    var gain = ctx.createGain();
-    var t = ctx.currentTime;
-    osc.type = params.wave;
-    osc.frequency.setValueAtTime(freq, t);
-    osc.detune.setValueAtTime(params.detune, t);
-    gain.gain.setValueAtTime(0, t);
-    gain.gain.linearRampToValueAtTime(params.gain, t + params.attack);
-    osc.connect(gain);
-    gain.connect(musicOut());
-    osc.start();
-    return { osc: osc, gain: gain };
-  }
-
-  function stopArpVoice(state, t) {
-    if (!state.osc) return;
-    try {
-      state.gain.gain.cancelScheduledValues(t);
-      state.gain.gain.setValueAtTime(Math.max(state.gain.gain.value, 0.0001), t);
-      state.gain.gain.exponentialRampToValueAtTime(0.001, t + 0.035);
-      state.osc.stop(t + 0.04);
-    } catch (e) {}
-    state.osc = null;
-    state.gain = null;
-  }
-
-  function startArpeggio(row) {
-    var step = 0;
-    var vibeKey = 'arp-' + row;
-    var state = { arpeggio: true, timer: null, osc: null, gain: null };
-
-    function tick() {
-      var freq = noteFreq(row, step % PARTIALS.length);
-      NavVibe.noteOn(vibeKey + '-' + step, freq);
-      setTimeout(function() { NavVibe.noteOff(vibeKey + '-' + step); }, stepMs() * 0.85);
-      bootAudio();
-      boot();
-      function go() {
-        var t = ctx.currentTime;
-        var dur = stepMs() / 1000;
-        stopArpVoice(state, t);
-        var osc = ctx.createOscillator();
-        var gain = ctx.createGain();
-        var arpGain = params.gain * 0.62;
-        osc.type = params.wave;
-        osc.frequency.setValueAtTime(freq, t);
-        osc.detune.setValueAtTime(params.detune, t);
-        gain.gain.setValueAtTime(0, t);
-        gain.gain.linearRampToValueAtTime(arpGain, t + Math.min(params.attack, dur * 0.28));
-        gain.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.82);
-        osc.connect(gain);
-        gain.connect(musicOut());
-        osc.start(t);
-        osc.stop(t + dur);
-        state.osc = osc;
-        state.gain = gain;
-      }
-      ctx.state === 'suspended' ? ctx.resume().then(go) : go();
-      step++;
-    }
-
-    tick();
-    state.timer = setInterval(tick, stepMs());
-    activeNodes.set(row, state);
-  }
-
-  function play(row) {
-    if (activeNodes.has(row)) return;
-    if (params.mode === 'arpeggio') {
-      startArpeggio(row);
-      return;
-    }
-    var freq = noteFreq(row);
-    NavVibe.noteOn(row, freq);
-    bootAudio();
-    boot();
-    function go() {
-      activeNodes.set(row, startTone(freq));
-    }
-    ctx.state === 'suspended' ? ctx.resume().then(go) : go();
-  }
-
-  function stop(row) {
-    if (!activeNodes.has(row)) return;
-    var node = activeNodes.get(row);
-    if (node.arpeggio) {
-      clearInterval(node.timer);
-      if (ctx) stopArpVoice(node, ctx.currentTime);
-      activeNodes.delete(row);
-      NavVibe.reset();
-      return;
-    }
-    NavVibe.noteOff(row);
-    var t = ctx.currentTime;
-    node.gain.gain.setValueAtTime(node.gain.gain.value, t);
-    node.gain.gain.exponentialRampToValueAtTime(0.0001, t + params.decay);
-    node.osc.stop(t + params.decay + 0.1);
-    activeNodes.delete(row);
-  }
-
-  function stopAll() {
-    activeNodes.forEach(function(node) {
-      if (node.arpeggio) {
-        clearInterval(node.timer);
-        if (ctx) stopArpVoice(node, ctx.currentTime);
-      }
-    });
-    activeNodes.clear();
-    stopKickLoop();
-    NavVibe.reset();
-  }
-
-  function stepDur() {
-    return (60 / params.bpm) / 4;
-  }
-
-  function stepDelayMs(stepIndex) {
-    var base = stepDur() * 1000;
-    var s = params.swing != null ? params.swing : 0.5;
-    var off = (s - 0.5) * 1.2;
-    return stepIndex % 2 === 0 ? base * (1 - off) : base * (1 + off);
-  }
-
-  function humanizeJitter() {
-    if (!params.humanize) return 0;
-    return (Math.random() * 6 + 2) * (Math.random() < 0.5 ? -1 : 1);
-  }
-
-  function playShortBlip(freq, role, velocity) {
-    var t = ctx.currentTime;
-    var stepLen = stepDur();
-    var isBass = role === 'bass';
-    var lenMult = isBass ? 0.78 : (params.noteLength != null ? params.noteLength : 0.72);
-    var dur = stepLen * lenMult;
-    var peak = (isBass ? params.bassGain : params.noteGain) * velMult(velocity);
-    var osc = ctx.createOscillator();
-    var gain = ctx.createGain();
-    var tail = ctx.createGain();
-    osc.type = params.wave;
-    osc.frequency.setValueAtTime(freq, t);
-    osc.detune.setValueAtTime(params.detune, t);
-    var atk = isBass
-      ? Math.min(0.012, dur * 0.22)
-      : Math.min(params.attack, dur * 0.35);
-    gain.gain.setValueAtTime(0, t);
-    gain.gain.linearRampToValueAtTime(peak, t + atk);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.92);
-    if (isBass) {
-      var lp = ctx.createBiquadFilter();
-      lp.type = 'lowpass';
-      lp.Q.value = 0.65;
-      lp.frequency.setValueAtTime(Math.min(520, freq * 2.8), t);
-      lp.frequency.exponentialRampToValueAtTime(Math.max(72, freq * 0.55), t + dur * 0.85);
-      osc.connect(lp);
-      lp.connect(gain);
-    } else {
-      osc.connect(gain);
-    }
-    gain.connect(tail);
-    tail.connect(musicOut());
-    if (!isBass) wetSend(tail, params.reverbAmt);
-    osc.start(t);
-    osc.stop(t + dur + 0.02);
-  }
-
-  function bassFreq(row) {
-    var rootMidi = Math.round(midiFromFreq(getRoot(row)));
-    if (params.bassFifth) {
-      var idx = getPartialIndex(row) % 2;
-      return freqFromMidi(rootMidi - 12 + (idx === 0 ? 0 : 7));
-    }
-    return freqFromMidi(rootMidi - 12);
-  }
-
-  function navFreqForTrack(type, row) {
-    if (type === 'clap') return 420;
-    if (type === 'kick') return 58;
-    if (type === 'bass') return bassFreq(row);
-    if (type === 'drums') return getRoot(row) * 0.5;
-    return noteFreq(row);
-  }
-
-  function navPulseTrack(type, row, ms) {
-    NavVibe.pulse(navFreqForTrack(type, row), ms || stepDur() * 1000 * 0.9);
-  }
-
-  function triggerTrack(type, row, preview, velocity) {
-    var vel = velocity || 1;
-    var vibeMs = stepDur() * 1000 * 0.9;
-    navPulseTrack(type, row, vibeMs);
-    if (type === 'kick') {
-      playKick(!!preview, vel);
-      return;
-    }
-    if (type === 'clap') {
-      playClap(vel);
-      return;
-    }
-    if (type === 'drums') {
-      var rack = params.drumRack || 'kickClap';
-      if (rack === 'kickClap' || rack === 'kick') {
-        if (preview || params.kick) playKick(!!preview, vel);
-      }
-      if (rack === 'kickClap' || rack === 'clap') playClap(vel);
-      return;
-    }
-    if (type === 'bass') {
-      playShortBlip(bassFreq(row), 'bass', vel);
-      return;
-    }
-    playShortBlip(noteFreq(row), 'note', vel);
-  }
-
-  function playTrackStep(type, row, velocity) {
-    if (!soundEnabled) return;
-    boot();
-    function go() { triggerTrack(type, row, false, velocity); }
-    ctx.state === 'suspended' ? ctx.resume().then(go) : go();
-  }
-
-  function previewTrack(type, row, velocity) {
-    if (!soundEnabled) return;
-    bootAudio();
-    boot();
-    function go() { triggerTrack(type, row, true, velocity || 1); }
-    ctx.state === 'suspended' ? ctx.resume().then(go) : go();
-  }
-
-  function test() {
-    NavVibe.pulse(params.filmRoot, (params.attack + params.decay) * 1000);
-    if (!soundEnabled) return;
-    boot();
-    function go() {
-      if (params.kick) playKick();
-      var osc  = ctx.createOscillator();
-      var gain = ctx.createGain();
-      var t = ctx.currentTime;
-      osc.type = params.wave;
-      osc.frequency.setValueAtTime(params.filmRoot, t);
-      osc.detune.setValueAtTime(params.detune, t);
-      gain.gain.setValueAtTime(0, t);
-      gain.gain.linearRampToValueAtTime(params.gain, t + params.attack);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t + params.attack + params.decay);
-      osc.connect(gain);
-      gain.connect(out());
-      osc.start();
-      osc.stop(t + params.attack + params.decay + 0.1);
-    }
-    ctx.state === 'suspended' ? ctx.resume().then(go) : go();
-  }
-
-  return {
-    play: play, stop: stop, stopAll: stopAll, test: test,
-    syncKick: syncKick, tableEnter: tableEnter, tableLeave: tableLeave,
-    playTrackStep: playTrackStep, previewTrack: previewTrack,
-    stepDur: stepDur, stepDelayMs: stepDelayMs, humanizeJitter: humanizeJitter,
-    navFreqForTrack: navFreqForTrack, setReverbAmt: setReverbAmt,
-    bootAudio: bootAudio, params: params
-  };
-})();
-
-// ── TRACK SEQ (rows = modular layers) ─────────────────────────────────────
-const TrackSeq = (function() {
-  var seqTimer = null;
-  var seqRunning = false;
-  var playhead = 0;
-  var mounted = false;
-  var previewTimer = null;
-  var TYPES = ['drums', 'kick', 'bass', 'clap', 'note'];
-  var TYPE_LABEL = {
-    drums: 'Drums', kick: 'Kick', bass: 'Bass', clap: 'Clap', note: 'Note'
-  };
-
-  function stepCount() {
-    return Sound.params.steps === 8 ? 8 : 16;
-  }
-
-  function rowIndex(row) {
-    return Array.from(row.parentNode.children).indexOf(row);
-  }
-
-  function trackId(row) {
-    var sec = row.closest('.cv-section');
-    var sid = sec ? canonicalSectionId(sec.id) : 'sec';
-    return sid + '-' + rowIndex(row);
-  }
-
-  function defaultType(idx) {
-    if (idx === 0) return 'drums';
-    if (idx === 1) return 'kick';
-    if (idx === 2) return 'bass';
-    if (idx === 3) return 'clap';
-    return 'note';
-  }
-
-  function getType(id, idx) {
-    var t = Sound.params.trackTypes[id] || defaultType(idx);
-    return TYPES.indexOf(t) >= 0 ? t : defaultType(idx);
-  }
-
-  function normStep(val) {
-    if (!val) return 0;
-    return val === 2 ? 2 : 1;
-  }
-
-  function ensurePattern(id) {
-    var n = stepCount();
-    if (!Sound.params.patterns[id] || Sound.params.patterns[id].length !== n) {
-      var old = Sound.params.patterns[id] || [];
-      Sound.params.patterns[id] = new Array(n).fill(0);
-      for (var i = 0; i < Math.min(old.length, n); i++) {
-        Sound.params.patterns[id][i] = normStep(old[i]);
-      }
-    }
-    return Sound.params.patterns[id];
-  }
-
-  function patternActive(pat) {
-    return pat && pat.some(function(v) { return v; });
-  }
-
-  function syncStepButton(btn, val) {
-    btn.classList.toggle('on', val > 0);
-    btn.classList.toggle('soft', val === 2);
-    btn.setAttribute('aria-pressed', val ? 'true' : 'false');
-    btn.setAttribute('aria-label', (val === 2 ? 'Soft ' : val ? 'Loud ' : '') + 'step');
-  }
-
-  function syncLaneState(lane, pat) {
-    lane.classList.toggle('has-notes', patternActive(pat));
-  }
-
-  function hasSolo() {
-    var solos = Sound.params.trackSolos || {};
-    return Object.keys(solos).some(function(k) { return solos[k]; });
-  }
-
-  function rowAudible(id) {
-    if (Sound.params.trackMutes && Sound.params.trackMutes[id]) return false;
-    if (hasSolo()) return !!(Sound.params.trackSolos && Sound.params.trackSolos[id]);
-    return true;
-  }
-
-  function syncLaneMuteSolo(lane, id) {
-    var muted = !!(Sound.params.trackMutes && Sound.params.trackMutes[id]);
-    var solo = !!(Sound.params.trackSolos && Sound.params.trackSolos[id]);
-    var locked = !!(Sound.params.trackLocks && Sound.params.trackLocks[id]);
-    lane.classList.toggle('is-muted', muted);
-    lane.classList.toggle('is-solo', solo);
-    lane.classList.toggle('is-locked', locked);
-    var muteBtn = lane.querySelector('.track-mute');
-    var soloBtn = lane.querySelector('.track-solo');
-    var lockBtn = lane.querySelector('.track-lock');
-    if (muteBtn) {
-      muteBtn.classList.toggle('active', muted);
-      muteBtn.setAttribute('aria-pressed', muted ? 'true' : 'false');
-    }
-    if (soloBtn) {
-      soloBtn.classList.toggle('active', solo);
-      soloBtn.setAttribute('aria-pressed', solo ? 'true' : 'false');
-    }
-    if (lockBtn) {
-      lockBtn.classList.toggle('active', locked);
-      lockBtn.setAttribute('aria-pressed', locked ? 'true' : 'false');
-    }
-  }
-
-  function paintStep(pat, stepIdx, soft) {
-    var cur = pat[stepIdx] || 0;
-    if (soft) {
-      pat[stepIdx] = cur === 2 ? 0 : cur === 1 ? 2 : 2;
-    } else {
-      pat[stepIdx] = cur === 1 ? 0 : cur === 2 ? 1 : 1;
-    }
-    return pat[stepIdx];
-  }
-
-  function clearRow(lane, grid, pat) {
-    pat.fill(0);
-    grid.querySelectorAll('.track-step').forEach(function(btn) {
-      syncStepButton(btn, 0);
-    });
-    syncLaneState(lane, pat);
-    saveSoundPrefs();
-  }
-
-  function flashStep(lane, stepIndex) {
-    var btn = lane.querySelector('.track-step[data-step="' + stepIndex + '"]');
-    if (!btn || !btn.classList.contains('on')) return;
-    btn.classList.add('hit');
-    setTimeout(function() { btn.classList.remove('hit'); }, 100);
-  }
-
-  function closeModuleMenus() {
-    document.querySelectorAll('.track-module-menu').forEach(function(el) { el.remove(); });
-  }
-
-  function syncLaneTypeUI(lane, type) {
-    lane.dataset.trackType = type;
-    lane.className = 'track-lane track-' + type +
-      (lane.classList.contains('is-muted') ? ' is-muted' : '') +
-      (lane.classList.contains('is-solo') ? ' is-solo' : '') +
-      (lane.classList.contains('is-locked') ? ' is-locked' : '') +
-      (lane.classList.contains('has-notes') ? ' has-notes' : '');
-    var lbl = lane.querySelector('.track-label');
-    if (lbl) lbl.textContent = TYPE_LABEL[type];
-  }
-
-  function setTrackType(id, row, lane, type) {
-    if (Sound.params.trackLocks && Sound.params.trackLocks[id]) return;
-    Sound.params.trackTypes[id] = type;
-    row.dataset.trackType = type;
-    syncLaneTypeUI(lane, type);
-    saveSoundPrefs();
-  }
-
-  function openModuleMenu(id, row, lane, labelEl) {
-    if (Sound.params.trackLocks && Sound.params.trackLocks[id]) return;
-    closeModuleMenus();
-    var menu = document.createElement('div');
-    menu.className = 'track-module-menu';
-    menu.setAttribute('role', 'menu');
-    TYPES.forEach(function(t) {
-      var item = document.createElement('button');
-      item.type = 'button';
-      item.className = 'track-module-opt' + (t === getType(id, rowIndex(row)) ? ' active' : '');
-      item.textContent = TYPE_LABEL[t];
-      item.setAttribute('role', 'menuitem');
-      item.addEventListener('click', function(e) {
-        e.stopPropagation();
-        setTrackType(id, row, lane, t);
-        closeModuleMenus();
-        if (soundEnabled) Sound.previewTrack(t, row);
-      });
-      menu.appendChild(item);
-    });
-    labelEl.appendChild(menu);
-  }
-
-  function buildLane(row) {
-    if (row.querySelector('.track-lane')) return;
-    var id = trackId(row);
-    var idx = rowIndex(row);
-    var type = getType(id, idx);
-    var pat = ensurePattern(id);
-    var lane = document.createElement('div');
-    lane.className = 'track-lane track-' + type;
-    lane.dataset.trackId = id;
-    lane.dataset.trackType = type;
-
-    var head = document.createElement('div');
-    head.className = 'track-head';
-
-    var label = document.createElement('button');
-    label.type = 'button';
-    label.className = 'track-label';
-    label.textContent = TYPE_LABEL[type];
-    label.title = 'Click: module menu · Double-click: clear row';
-
-    label.addEventListener('click', function(e) {
-      e.stopPropagation();
-      if (e.target.closest('.track-module-menu')) return;
-      openModuleMenu(id, row, lane, label);
-    });
-    label.addEventListener('dblclick', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      closeModuleMenus();
-      clearRow(lane, grid, pat);
-    });
-
-    var controls = document.createElement('div');
-    controls.className = 'track-controls';
-
-    var muteBtn = document.createElement('button');
-    muteBtn.type = 'button';
-    muteBtn.className = 'track-mute';
-    muteBtn.textContent = 'M';
-    muteBtn.title = 'Mute row';
-    muteBtn.setAttribute('aria-label', 'Mute row');
-    muteBtn.setAttribute('aria-pressed', 'false');
-    muteBtn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      if (!Sound.params.trackMutes) Sound.params.trackMutes = {};
-      Sound.params.trackMutes[id] = !Sound.params.trackMutes[id];
-      syncLaneMuteSolo(lane, id);
-      saveSoundPrefs();
-    });
-
-    var soloBtn = document.createElement('button');
-    soloBtn.type = 'button';
-    soloBtn.className = 'track-solo';
-    soloBtn.textContent = 'S';
-    soloBtn.title = 'Solo row';
-    soloBtn.setAttribute('aria-label', 'Solo row');
-    soloBtn.setAttribute('aria-pressed', 'false');
-    soloBtn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      if (!Sound.params.trackSolos) Sound.params.trackSolos = {};
-      Sound.params.trackSolos[id] = !Sound.params.trackSolos[id];
-      syncLaneMuteSolo(lane, id);
-      saveSoundPrefs();
-    });
-
-    var lockBtn = document.createElement('button');
-    lockBtn.type = 'button';
-    lockBtn.className = 'track-lock';
-    lockBtn.textContent = 'L';
-    lockBtn.title = 'Lock module';
-    lockBtn.setAttribute('aria-label', 'Lock module');
-    lockBtn.setAttribute('aria-pressed', 'false');
-    lockBtn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      closeModuleMenus();
-      if (!Sound.params.trackLocks) Sound.params.trackLocks = {};
-      Sound.params.trackLocks[id] = !Sound.params.trackLocks[id];
-      syncLaneMuteSolo(lane, id);
-      saveSoundPrefs();
-    });
-
-    controls.appendChild(muteBtn);
-    controls.appendChild(soloBtn);
-    controls.appendChild(lockBtn);
-    head.appendChild(label);
-    head.appendChild(controls);
-
-    var vibeKey = 'lane-' + id;
-    lane.addEventListener('mouseenter', function() {
-      if (!soundEnabled) return;
-      clearTimeout(previewTimer);
-      var type = lane.dataset.trackType;
-      NavVibe.noteOn(vibeKey, Sound.navFreqForTrack(type, row));
-      previewTimer = setTimeout(function() {
-        Sound.previewTrack(type, row);
-      }, 70);
-    });
-    lane.addEventListener('mouseleave', function() {
-      clearTimeout(previewTimer);
-      NavVibe.noteOff(vibeKey);
-    });
-
-    var grid = document.createElement('div');
-    grid.className = 'track-grid steps-' + stepCount();
-    for (var i = 0; i < pat.length; i++) {
-      var step = document.createElement('button');
-      step.type = 'button';
-      step.className = 'track-step';
-      step.dataset.step = String(i);
-      syncStepButton(step, pat[i]);
-      step.setAttribute('aria-label', TYPE_LABEL[type] + ' step ' + (i + 1));
-      grid.appendChild(step);
-    }
-
-    function handleStepInput(btn, soft) {
-      clearTimeout(previewTimer);
-      var s = Number(btn.dataset.step);
-      var val = paintStep(pat, s, soft);
-      syncStepButton(btn, val);
-      syncLaneState(lane, pat);
-      saveSoundPrefs();
-      if (soundEnabled) {
-        Sound.bootAudio();
-        if (val) Sound.previewTrack(lane.dataset.trackType, row, val);
-        syncPlayback();
-      }
-    }
-
-    grid.addEventListener('click', function(e) {
-      var btn = e.target.closest('.track-step');
-      if (!btn) return;
-      handleStepInput(btn, e.altKey);
-    });
-
-    grid.addEventListener('contextmenu', function(e) {
-      var btn = e.target.closest('.track-step');
-      if (!btn) return;
-      e.preventDefault();
-      handleStepInput(btn, true);
-    });
-
-    lane.appendChild(head);
-    lane.appendChild(grid);
-    row.appendChild(lane);
-    row.classList.add('has-track-lane');
-    row.dataset.trackType = type;
-    syncLaneState(lane, pat);
-    syncLaneMuteSolo(lane, id);
-  }
-
-  function updatePlayheadUI() {
-    document.querySelectorAll('.track-step.playhead').forEach(function(el) {
-      el.classList.remove('playhead');
-    });
-    document.querySelectorAll('.track-grid').forEach(function(grid) {
-      var btn = grid.querySelector('.track-step[data-step="' + playhead + '"]');
-      if (btn) btn.classList.add('playhead');
-    });
-  }
-
-  function fireStep(step) {
-    document.querySelectorAll('.track-lane').forEach(function(lane) {
-      var id = lane.dataset.trackId;
-      if (!rowAudible(id)) return;
-      var type = lane.dataset.trackType;
-      var pat = Sound.params.patterns[id];
-      if (!pat || !pat[step]) return;
-      flashStep(lane, step);
-      var row = lane.closest('tr');
-      if (row) Sound.playTrackStep(type, row, pat[step]);
-    });
-  }
-
-  function stopSeq() {
-    seqRunning = false;
-    if (seqTimer) { clearTimeout(seqTimer); seqTimer = null; }
-    playhead = 0;
-    updatePlayheadUI();
-    document.documentElement.classList.remove('sound-loop');
-  }
-
-  function startSeq() {
-    if (seqRunning || !soundEnabled) return;
-    seqRunning = true;
-    Sound.bootAudio();
-    document.documentElement.classList.add('sound-loop');
-    function loop() {
-      if (!seqRunning) return;
-      fireStep(playhead);
-      updatePlayheadUI();
-      var delay = Math.max(12, Sound.stepDelayMs(playhead) + Sound.humanizeJitter());
-      playhead = (playhead + 1) % stepCount();
-      seqTimer = setTimeout(loop, delay);
-    }
-    loop();
-  }
-
-  function restartSeq() {
-    stopSeq();
-    startSeq();
-  }
-
-  function syncPlayback() {
-    if (soundEnabled) startSeq();
-    else stopSeq();
-  }
-
-  function mount() {
-    if (mounted) unmount();
-    document.querySelectorAll('.cv-section.midi-bank .cv-table tbody tr').forEach(buildLane);
-    mounted = true;
-  }
-
-  function unmount() {
-    stopSeq();
-    document.querySelectorAll('.track-lane').forEach(function(el) { el.remove(); });
-    document.querySelectorAll('.has-track-lane').forEach(function(row) {
-      row.classList.remove('has-track-lane');
-      delete row.dataset.trackType;
-    });
-    mounted = false;
-  }
-
-  function remount() {
-    if (!soundEnabled) return;
-    unmount();
-    mount();
-    syncPlayback();
-  }
-
-  document.addEventListener('click', function(e) {
-    if (!e.target.closest('.track-label') && !e.target.closest('.track-module-menu')) {
-      closeModuleMenus();
-    }
-  });
-
-  return {
-    mount: mount, unmount: unmount, remount: remount,
-    syncPlayback: syncPlayback, restartSeq: restartSeq,
-    closeModuleMenus: closeModuleMenus
-  };
-})();
-
-initSoundPanel();
-loadSoundPrefs();
-
-function attachTableSound() {
-  document.querySelectorAll('.cv-table tbody tr').forEach(row => {
-    if (row.dataset.soundBound) return;
-    row.dataset.soundBound = '1';
-    row.addEventListener('mouseenter', function() {
-      if (soundEnabled) return;
-      Sound.play(row);
-    });
-    row.addEventListener('mouseleave', function() {
-      if (soundEnabled) return;
-      Sound.stop(row);
-    });
-  });
-
-  document.querySelectorAll('.table-wrap').forEach(function(wrap) {
-    if (wrap.dataset.soundZone) return;
-    wrap.dataset.soundZone = '1';
-    wrap.addEventListener('mouseenter', function() { Sound.tableEnter(); });
-    wrap.addEventListener('mouseleave', function() { Sound.tableLeave(); });
-  });
-}
+// Site script (CV render, A4 export, dark mode). Audio: js/audio/
 
 // ── Preferences (run before DOMContentLoaded to avoid flash) ──
 if (localStorage.getItem('ec-dark') === '1')
@@ -1864,17 +423,11 @@ function toggleSection(id) {
   localStorage.setItem('ec-hidden', JSON.stringify(state));
 }
 
-// ── Scroll reveal ──────────────────────────────────────────────
+// ── Scroll reveal — sections render visible; optional stagger only ──
 function initScrollReveal() {
-  const obs = new IntersectionObserver(entries => {
-    entries.forEach(en => {
-      if (en.isIntersecting) {
-        en.target.classList.add('visible');
-        obs.unobserve(en.target);
-      }
-    });
-  }, { threshold: 0.07, rootMargin: '0px 0px -40px 0px' });
-  document.querySelectorAll('.cv-section').forEach(el => obs.observe(el));
+  const sections = document.querySelectorAll('.cv-section');
+  if (!sections.length) return;
+  sections.forEach((el) => el.classList.add('visible'));
 }
 
 // ── Helpers ────────────────────────────────────────────────────
@@ -2171,6 +724,17 @@ async function render() {
   if (meta.privacy) footerRight.push(`<a href="${meta.privacy}">Privacy Policy</a>`);
   if (meta.location) footerRight.push(`<span class="footer-plain">${meta.location}</span>`);
   footerRight.push(`<span class="footer-plain">© ${new Date().getFullYear()} ${name}. All rights reserved.</span>`);
+  footerRight.push(`<span class="footer-actions screen-only" id="footer-actions">
+    <button class="footer-btn footer-icon-btn" id="btn-export" type="button" title="Export PDF" aria-label="Export PDF">
+      <svg class="footer-icon" viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
+        <rect x="2.5" y="3.5" width="6.5" height="9" rx="0.5" stroke="currentColor" stroke-width="1.15" fill="none"/>
+        <path d="M9.5 8H13M11.5 6l2 2-2 2" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <span id="footer-export-actions" hidden>
+      <button class="footer-btn" id="btn-print" type="button">Print</button>
+    </span>
+  </span>`);
   const footerLeft = meta.email
     ? `<span class="footer-left"><a href="mailto:${meta.email}">${meta.email}</a></span>` : '';
   const footerRightHtml = footerRight.length
@@ -2195,10 +759,10 @@ async function render() {
   document.getElementById('cv-sections').innerHTML = sections.map(sec => {
     const slug  = slugify(sec.title);
     const id    = `sec-${slug}`;
-    const isBank = MIDI_BANK_SLUGS.indexOf(slug) >= 0;
+    const isBank = ECAudio.MIDI_BANK_SLUGS.indexOf(slug) >= 0;
     const tbls  = sec.tables.map(t => buildTable(t.headers, t.rows)).join('');
     const paras = sec.paras.map(p => `<p>${parseInline(p)}</p>`).join('');
-    return `<section class="cv-section${isBank ? ' midi-bank' : ''}" id="${id}" data-bank="${slug}">
+    return `<section class="cv-section visible${isBank ? ' midi-bank' : ''}" id="${id}" data-bank="${slug}">
       <div class="sec-head">
         <span class="sec-label">${parseInline(sec.title)}</span>
         <button class="sec-toggle" onclick="toggleSection('${id}')">Hide</button>
@@ -2216,12 +780,20 @@ async function render() {
     if (btn) btn.textContent = 'Show';
   });
 
+  initInfluenceZones();
+  if (ECAudio.BrowseSound && ECAudio.BrowseSound.applyEngine) ECAudio.BrowseSound.applyEngine();
+  if (typeof syncHoverPanelUI === 'function') syncHoverPanelUI();
+  if (ECAudio.Markers && ECAudio.Markers.initOnLoad) ECAudio.Markers.initOnLoad();
+  else if (ECAudio.Markers && ECAudio.Markers.clearAll) ECAudio.Markers.clearAll();
+  if (ECAudio.Markers && ECAudio.Markers.scheduleRelayout) ECAudio.Markers.scheduleRelayout();
+
   // ── Init scroll animations ──
-  requestAnimationFrame(initScrollReveal);
+  initScrollReveal();
   requestAnimationFrame(function() {
-    attachTableSound();
     if (soundEnabled) TrackSeq.mount();
+    else if (TrackSeq.unmount) TrackSeq.unmount();
     TrackSeq.syncPlayback();
+    if (ECAudio.runSoundDiagnostics) ECAudio.runSoundDiagnostics();
   });
 }
 
@@ -2302,23 +874,33 @@ function unmountA4Content() {
   else wA.parent.appendChild(work);
 }
 
+function syncExportNav(on) {
+  var site = document.getElementById('toolbar-site');
+  var exportBar = document.getElementById('toolbar-export');
+  if (site) site.hidden = on;
+  if (exportBar) exportBar.hidden = !on;
+}
+
 function setA4Mode(on) {
   var html = document.documentElement;
   var stage = document.getElementById('a4-stage');
-  var siteActions = document.getElementById('toolbar-site');
-  var exportActions = document.getElementById('toolbar-export');
-  var soundPanel = document.getElementById('sound-panel');
+  var footerExport = document.getElementById('btn-export');
+  var footerExportActions = document.getElementById('footer-export-actions');
   if (on) {
     mountA4Content();
     html.classList.add('a4-mode');
+    syncExportNav(true);
     if (stage) stage.removeAttribute('hidden');
-    if (siteActions) siteActions.hidden = true;
-    if (exportActions) exportActions.hidden = false;
-    if (soundPanel && soundPanel.classList.contains('open')) toggleSoundPanel();
+    if (footerExport) footerExport.hidden = true;
+    if (footerExportActions) footerExportActions.hidden = false;
+    if (typeof exitBeatStudio === 'function') exitBeatStudio(true);
+    else if (typeof closeHoverPanel === 'function') closeHoverPanel();
+    else if (typeof closeStudioPanel === 'function') closeStudioPanel();
     preparePrintLayout();
     window.scrollTo(0, 0);
   } else {
     html.classList.remove('a4-mode');
+    syncExportNav(false);
     if (stage) {
       stage.setAttribute('hidden', '');
       stage.style.paddingTop = '';
@@ -2328,8 +910,8 @@ function setA4Mode(on) {
     var page2 = document.getElementById('a4-page-2');
     if (page2) page2.style.removeProperty('--a4-work-scale');
     document.documentElement.style.removeProperty('--a4-work-scale');
-    if (siteActions) siteActions.hidden = false;
-    if (exportActions) exportActions.hidden = true;
+    if (footerExport) footerExport.hidden = false;
+    if (footerExportActions) footerExportActions.hidden = true;
     unmountA4Content();
   }
 }
@@ -2347,9 +929,13 @@ function exportA4() {
 var a4EnteredForPrint = false;
 
 function initA4Controls() {
-  document.getElementById('btn-export')?.addEventListener('click', enterExportMode);
-  document.getElementById('btn-print')?.addEventListener('click', exportA4);
-  document.getElementById('btn-back')?.addEventListener('click', function() { setA4Mode(false); });
+  if (initA4Controls.bound) return;
+  initA4Controls.bound = true;
+  document.addEventListener('click', function(e) {
+    if (e.target.closest('#btn-export')) { enterExportMode(); return; }
+    if (e.target.closest('#btn-print')) { exportA4(); return; }
+    if (e.target.closest('#btn-nav-back')) { setA4Mode(false); return; }
+  });
   window.addEventListener('resize', function() {
     if (!isA4Mode()) return;
     syncA4ToolbarOffset();
@@ -2372,10 +958,10 @@ function initA4Controls() {
 
 document.addEventListener('DOMContentLoaded', function() {
   NavVibe.init();
-  loadSoundPrefs();
+  ECAudio.loadSoundPrefs();
   setA4Mode(false);
-  initA4Controls();
   render();
+  initA4Controls();
 });
 
 </script>
