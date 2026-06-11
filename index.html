@@ -31,13 +31,29 @@
 
 <header id="toolbar">
   <span id="toolbar-name">Esteban Cuenca</span>
+  <div id="nav-vibe" aria-hidden="true">
+    <svg class="nav-vibe-svg" viewBox="0 0 200 24" preserveAspectRatio="none" aria-hidden="true">
+      <path class="nav-vibe-path" d="M0 12 L200 12"></path>
+    </svg>
+  </div>
   <div id="toolbar-site" class="toolbar-actions">
     <button class="tb-btn" id="btn-dark" onclick="toggleDark()" title="Toggle dark mode">◐</button>
     <div class="toolbar-sound">
-      <button class="tb-btn" id="btn-sound" onclick="toggleSound()">Sound: Off</button>
-      <button class="tb-btn" id="btn-sound-settings" onclick="toggleSoundPanel()" title="Sound settings">&#9965;</button>
+      <button class="tb-btn" id="btn-sound" onclick="toggleSound()">Music: Off</button>
+      <button class="tb-btn tb-icon-btn" id="btn-sound-settings" onclick="toggleSoundPanel()" title="Music settings" aria-label="Music settings">
+        <svg class="tb-icon" viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
+          <path d="M3 2.5v11M8 4.5v7M13 2v12" stroke="currentColor" stroke-width="1.15" stroke-linecap="round"/>
+          <circle cx="3" cy="9.5" r="1.35" fill="currentColor"/>
+          <circle cx="8" cy="6.5" r="1.35" fill="currentColor"/>
+          <circle cx="13" cy="11" r="1.35" fill="currentColor"/>
+        </svg>
+      </button>
     </div>
-    <button class="tb-btn" id="btn-export" type="button" title="Export PDF">Export</button>
+    <button class="tb-btn tb-icon-btn" id="btn-export" type="button" title="Export PDF" aria-label="Export PDF">
+      <svg class="tb-icon" viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
+        <path d="M5 11h6M8 3v6.5M5.5 7.5L8 10l2.5-2.5" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
   </div>
   <div id="toolbar-export" class="toolbar-actions" hidden>
     <button class="tb-btn" id="btn-print" type="button">Print</button>
@@ -48,7 +64,7 @@
 <div id="sound-panel" aria-hidden="true">
   <div id="sound-panel-inner">
     <div class="sp-header">
-      <span class="sp-title">Sound</span>
+      <span class="sp-title">Music</span>
       <button class="sp-close" data-action="close">&#x2715;</button>
     </div>
 
@@ -91,13 +107,207 @@
     </div>
 
     <div class="sp-row">
-      <span class="sp-label">Root</span>
+      <span class="sp-label">Film</span>
       <div class="sp-seg" data-param="filmRoot">
         <button class="sp-seg-btn active" data-val="110">A</button>
         <button class="sp-seg-btn" data-val="123.47">B</button>
         <button class="sp-seg-btn" data-val="130.81">C</button>
         <button class="sp-seg-btn" data-val="146.83">D</button>
         <button class="sp-seg-btn" data-val="164.81">E</button>
+      </div>
+    </div>
+
+    <div class="sp-row">
+      <span class="sp-label">Comm</span>
+      <div class="sp-seg" data-param="commRoot">
+        <button class="sp-seg-btn" data-val="55">A</button>
+        <button class="sp-seg-btn" data-val="61.74">B</button>
+        <button class="sp-seg-btn" data-val="65.41">C</button>
+        <button class="sp-seg-btn active" data-val="73.42">D</button>
+        <button class="sp-seg-btn" data-val="82.41">E</button>
+      </div>
+    </div>
+
+    <div class="sp-row">
+      <span class="sp-label">Ev</span>
+      <div class="sp-seg" data-param="evRoot">
+        <button class="sp-seg-btn" data-val="65.41">A</button>
+        <button class="sp-seg-btn" data-val="73.42">B</button>
+        <button class="sp-seg-btn active" data-val="82.41">C</button>
+        <button class="sp-seg-btn" data-val="92.50">D</button>
+        <button class="sp-seg-btn" data-val="98">E</button>
+      </div>
+    </div>
+
+    <div class="sp-row">
+      <span class="sp-label">Edu</span>
+      <div class="sp-seg" data-param="eduRoot">
+        <button class="sp-seg-btn" data-val="73.42">A</button>
+        <button class="sp-seg-btn" data-val="82.41">B</button>
+        <button class="sp-seg-btn" data-val="92.50">C</button>
+        <button class="sp-seg-btn active" data-val="98">D</button>
+        <button class="sp-seg-btn" data-val="110">E</button>
+      </div>
+    </div>
+
+    <div class="sp-row">
+      <span class="sp-label">Play</span>
+      <div class="sp-seg" data-param="mode">
+        <button class="sp-seg-btn active" data-val="harmonic">Hold</button>
+        <button class="sp-seg-btn" data-val="arpeggio">Arp</button>
+      </div>
+    </div>
+
+    <div class="sp-row">
+      <span class="sp-label">Steps</span>
+      <div class="sp-seg" data-param="steps">
+        <button class="sp-seg-btn" data-val="8">8</button>
+        <button class="sp-seg-btn active" data-val="16">16</button>
+      </div>
+    </div>
+
+    <div class="sp-row">
+      <span class="sp-label">BPM</span>
+      <input class="sp-range" data-param="bpm" type="range"
+             min="50" max="150" step="1" value="88">
+      <span class="sp-val" id="sp-bpm-val">88</span>
+    </div>
+
+    <div class="sp-row">
+      <span class="sp-label">Kick</span>
+      <div class="sp-seg" data-param="kick">
+        <button class="sp-seg-btn active" data-val="0">Off</button>
+        <button class="sp-seg-btn" data-val="1">On</button>
+      </div>
+    </div>
+
+    <div class="sp-row">
+      <span class="sp-label">Beat</span>
+      <div class="sp-seg" data-param="kickRepeat">
+        <button class="sp-seg-btn active" data-val="0">Hover</button>
+        <button class="sp-seg-btn" data-val="1">4/4</button>
+      </div>
+    </div>
+
+    <div class="sp-row">
+      <span class="sp-label">Tone</span>
+      <div class="sp-seg" data-param="kickMinimal">
+        <button class="sp-seg-btn active" data-val="1">Min</button>
+        <button class="sp-seg-btn" data-val="0">Full</button>
+      </div>
+    </div>
+
+    <div class="sp-divider">Music</div>
+
+    <div class="sp-row">
+      <span class="sp-label">Scale</span>
+      <div class="sp-seg" data-param="quantizeNotes">
+        <button class="sp-seg-btn" data-val="0">Free</button>
+        <button class="sp-seg-btn active" data-val="1">On</button>
+      </div>
+    </div>
+
+    <div class="sp-row">
+      <span class="sp-label">Key</span>
+      <div class="sp-seg" data-param="scaleType">
+        <button class="sp-seg-btn active" data-val="major">Maj</button>
+        <button class="sp-seg-btn" data-val="minor">Min</button>
+        <button class="sp-seg-btn" data-val="pent">Pent</button>
+      </div>
+    </div>
+
+    <div class="sp-row">
+      <span class="sp-label">Drums</span>
+      <div class="sp-seg" data-param="drumRack">
+        <button class="sp-seg-btn active" data-val="kickClap">K+C</button>
+        <button class="sp-seg-btn" data-val="kick">Kick</button>
+        <button class="sp-seg-btn" data-val="clap">Clap</button>
+      </div>
+    </div>
+
+    <div class="sp-row">
+      <span class="sp-label">Bass</span>
+      <div class="sp-seg" data-param="bassFifth">
+        <button class="sp-seg-btn active" data-val="1">R+5</button>
+        <button class="sp-seg-btn" data-val="0">Root</button>
+      </div>
+    </div>
+
+    <div class="sp-row">
+      <span class="sp-label">Duck</span>
+      <div class="sp-seg" data-param="sidechain">
+        <button class="sp-seg-btn" data-val="0">Off</button>
+        <button class="sp-seg-btn active" data-val="1">On</button>
+      </div>
+    </div>
+
+    <div class="sp-row">
+      <span class="sp-label">Length</span>
+      <div class="sp-seg" data-param="noteLength">
+        <button class="sp-seg-btn" data-val="0.42">Stacc</button>
+        <button class="sp-seg-btn active" data-val="0.72">Legato</button>
+      </div>
+    </div>
+
+    <div class="sp-row">
+      <span class="sp-label">Room</span>
+      <div class="sp-seg" data-param="reverb">
+        <button class="sp-seg-btn" data-val="0">Off</button>
+        <button class="sp-seg-btn active" data-val="1">On</button>
+      </div>
+    </div>
+
+    <div class="sp-row">
+      <span class="sp-label">Room lvl</span>
+      <input class="sp-range" data-param="reverbAmt" type="range"
+             min="0" max="0.35" step="0.01" value="0.14">
+      <span class="sp-val" id="sp-reverbAmt-val">14%</span>
+    </div>
+
+    <div class="sp-divider">Mix</div>
+
+    <div class="sp-row">
+      <span class="sp-label">Kick</span>
+      <input class="sp-range" data-param="kickGain" type="range"
+             min="0" max="0.5" step="0.01" value="0.18">
+      <span class="sp-val" id="sp-kickGain-val">18%</span>
+    </div>
+
+    <div class="sp-row">
+      <span class="sp-label">Clap</span>
+      <input class="sp-range" data-param="clapGain" type="range"
+             min="0" max="0.5" step="0.01" value="0.14">
+      <span class="sp-val" id="sp-clapGain-val">14%</span>
+    </div>
+
+    <div class="sp-row">
+      <span class="sp-label">Bass</span>
+      <input class="sp-range" data-param="bassGain" type="range"
+             min="0" max="0.5" step="0.01" value="0.16">
+      <span class="sp-val" id="sp-bassGain-val">16%</span>
+    </div>
+
+    <div class="sp-row">
+      <span class="sp-label">Note</span>
+      <input class="sp-range" data-param="noteGain" type="range"
+             min="0" max="0.5" step="0.01" value="0.10">
+      <span class="sp-val" id="sp-noteGain-val">10%</span>
+    </div>
+
+    <div class="sp-row">
+      <span class="sp-label">Swing</span>
+      <input class="sp-range" data-param="swing" type="range"
+             min="0.50" max="0.62" step="0.01" value="0.54">
+      <span class="sp-val" id="sp-swing-val">54%</span>
+    </div>
+
+    <div class="sp-divider">Seq</div>
+
+    <div class="sp-row">
+      <span class="sp-label">Human</span>
+      <div class="sp-seg" data-param="humanize">
+        <button class="sp-seg-btn active" data-val="0">Off</button>
+        <button class="sp-seg-btn" data-val="1">On</button>
       </div>
     </div>
 
@@ -137,24 +347,88 @@
 <script>
 // ── SOUND PANEL ──────────────────────────────────────────────────────────
 var soundFmt = {
-  gain:   function(v){ return Math.round(v * 100) + '%'; },
-  attack: function(v){ return Math.round(v * 1000) + 'ms'; },
-  decay:  function(v){ return v.toFixed(1) + 's'; },
-  detune: function(v){ return (v > 0 ? '+' : '') + Math.round(v) + '¢'; }
+  gain:      function(v){ return Math.round(v * 100) + '%'; },
+  attack:    function(v){ return Math.round(v * 1000) + 'ms'; },
+  decay:     function(v){ return v.toFixed(1) + 's'; },
+  detune:    function(v){ return (v > 0 ? '+' : '') + Math.round(v) + '¢'; },
+  bpm:       function(v){ return Math.round(v); },
+  kickGain:  function(v){ return Math.round(v * 100) + '%'; },
+  clapGain:  function(v){ return Math.round(v * 100) + '%'; },
+  bassGain:  function(v){ return Math.round(v * 100) + '%'; },
+  noteGain:  function(v){ return Math.round(v * 100) + '%'; },
+  swing:     function(v){ return Math.round(v * 100) + '%'; },
+  reverbAmt: function(v){ return Math.round(v * 100) + '%'; }
 };
 
+var SOUND_SCHEMA_V = 2;
+var MIDI_BANK_SLUGS = ['film-immersive-work', 'commercial-production'];
+var LEGACY_SECTION_IDS = {
+  'sec-film': 'sec-film-immersive-work',
+  'sec-comm': 'sec-commercial-production',
+  'sec-ev':   'sec-events-jury',
+  'sec-edu':  'sec-education-languages'
+};
+
+var SECTION_ROOT_KEYS = {
+  filmRoot: 'sec-film-immersive-work',
+  commRoot: 'sec-commercial-production',
+  evRoot:   'sec-events-jury',
+  eduRoot:  'sec-education-languages'
+};
+
+function canonicalSectionId(id) {
+  return LEGACY_SECTION_IDS[id] || id;
+}
+
+function migrateSoundPrefs(raw) {
+  if (!raw) return raw;
+  if (!raw.params) return Object.assign({ v: SOUND_SCHEMA_V }, raw);
+  var p = raw.params;
+  if (!raw.v || raw.v < SOUND_SCHEMA_V) {
+    Object.keys(LEGACY_SECTION_IDS).forEach(function(oldId) {
+      var newId = LEGACY_SECTION_IDS[oldId];
+      if (p.roots && p.roots[oldId] != null && p.roots[newId] == null) {
+        p.roots[newId] = p.roots[oldId];
+      }
+    });
+    ['patterns', 'trackTypes', 'trackMutes', 'trackSolos', 'trackLocks'].forEach(function(key) {
+      if (!p[key]) return;
+      Object.keys(p[key]).slice().forEach(function(tid) {
+        Object.keys(LEGACY_SECTION_IDS).forEach(function(oldId) {
+          var prefix = oldId + '-';
+          if (tid.indexOf(prefix) === 0) {
+            var newTid = LEGACY_SECTION_IDS[oldId] + tid.slice(oldId.length);
+            if (p[key][newTid] == null) p[key][newTid] = p[key][tid];
+          }
+        });
+      });
+    });
+    raw.v = SOUND_SCHEMA_V;
+  }
+  return raw;
+}
+
+function setSectionRoot(param, val) {
+  var secId = SECTION_ROOT_KEYS[param];
+  if (!secId) return;
+  Sound.params.roots[secId] = val;
+  Sound.params[param] = val;
+  if (param === 'filmRoot') Sound.params.filmRoot = val;
+}
+
 function setFilmRoot(val) {
-  Sound.params.filmRoot = val;
-  Sound.params.roots['sec-film'] = val;
-  Sound.params.roots['sec-comm'] = val * 0.667;
-  Sound.params.roots['sec-ev']   = val * 0.75;
-  Sound.params.roots['sec-edu']  = val * 0.889;
+  setSectionRoot('filmRoot', val);
 }
 
 function updateSoundParamLabel(param, val) {
   var lbl = document.getElementById('sp-' + param + '-val');
   if (lbl && soundFmt[param]) lbl.textContent = soundFmt[param](val);
 }
+
+var SOUND_BOOL_PARAMS = [
+  'kick', 'kickRepeat', 'kickMinimal', 'humanize',
+  'quantizeNotes', 'bassFifth', 'sidechain', 'reverb'
+];
 
 function syncSoundPanelUI() {
   var panel = document.getElementById('sound-panel');
@@ -163,9 +437,13 @@ function syncSoundPanelUI() {
   panel.querySelectorAll('.sp-seg[data-param]').forEach(function(seg) {
     var param = seg.getAttribute('data-param');
     var val = p[param];
+    if (SOUND_BOOL_PARAMS.indexOf(param) >= 0) val = val ? '1' : '0';
     seg.querySelectorAll('.sp-seg-btn').forEach(function(b) {
       var raw = b.getAttribute('data-val');
-      var match = isNaN(raw) ? raw === val : parseFloat(raw) === val;
+      var match;
+      if (SOUND_BOOL_PARAMS.indexOf(param) >= 0) match = raw === val;
+      else if (isNaN(raw)) match = raw === val;
+      else match = Math.abs(parseFloat(raw) - Number(val)) < 0.02;
       b.classList.toggle('active', match);
     });
   });
@@ -180,30 +458,73 @@ function syncSoundPanelUI() {
 function saveSoundPrefs() {
   try {
     localStorage.setItem('ec-sound', JSON.stringify({
+      v: SOUND_SCHEMA_V,
       enabled: soundEnabled,
-      params: Sound.params
+      params: JSON.parse(JSON.stringify(Sound.params))
     }));
   } catch (e) {}
 }
 
 function loadSoundPrefs() {
   try {
-    var raw = JSON.parse(localStorage.getItem('ec-sound') || 'null');
+    var stored = JSON.parse(localStorage.getItem('ec-sound') || 'null');
+    var needsSave = !!(stored && (!stored.v || stored.v < SOUND_SCHEMA_V));
+    var raw = migrateSoundPrefs(stored);
     if (!raw) return;
     if (raw.params) {
+      var defaults = Sound.params;
       Object.assign(Sound.params, raw.params);
-      if (raw.params.roots) Sound.params.roots = Object.assign({}, Sound.params.roots, raw.params.roots);
-      if (raw.params.filmRoot) setFilmRoot(raw.params.filmRoot);
-    }
-    if (raw.enabled) {
-      soundEnabled = true;
-      var btn = document.getElementById('btn-sound');
-      if (btn) {
-        btn.textContent = 'Sound: On';
-        btn.classList.add('sound-on');
+      Sound.params.roots = Object.assign({}, defaults.roots, raw.params.roots || {});
+      Object.keys(LEGACY_SECTION_IDS).forEach(function(oldId) {
+        var newId = LEGACY_SECTION_IDS[oldId];
+        if (Sound.params.roots[oldId] != null && Sound.params.roots[newId] == null) {
+          Sound.params.roots[newId] = Sound.params.roots[oldId];
+        }
+      });
+      if (raw.params.filmRoot != null) setSectionRoot('filmRoot', raw.params.filmRoot);
+      ['commRoot', 'evRoot', 'eduRoot'].forEach(function(key) {
+        if (raw.params[key] != null) setSectionRoot(key, raw.params[key]);
+        else if (Sound.params.roots[SECTION_ROOT_KEYS[key]] != null) {
+          Sound.params[key] = Sound.params.roots[SECTION_ROOT_KEYS[key]];
+        }
+      });
+      SOUND_BOOL_PARAMS.forEach(function(key) {
+        if (raw.params[key] != null) Sound.params[key] = !!raw.params[key];
+      });
+      if (raw.params.mode) Sound.params.mode = raw.params.mode;
+      if (raw.params.bpm) Sound.params.bpm = raw.params.bpm;
+      if (Sound.params.clapGain == null) {
+        Sound.params.clapGain = (Sound.params.kickGain || 0.18) * 0.78;
       }
+      if (Sound.params.bassGain == null) {
+        Sound.params.bassGain = (Sound.params.gain || 0.12) * 0.85;
+      }
+      if (Sound.params.noteGain == null) {
+        Sound.params.noteGain = (Sound.params.gain || 0.12) * 0.62;
+      }
+      if (Sound.params.swing == null) Sound.params.swing = 0.54;
+      if (Sound.params.humanize == null) Sound.params.humanize = false;
+      if (!Sound.params.trackMutes) Sound.params.trackMutes = {};
+      if (!Sound.params.trackSolos) Sound.params.trackSolos = {};
+      if (!Sound.params.trackLocks) Sound.params.trackLocks = {};
+      if (Sound.params.quantizeNotes == null) Sound.params.quantizeNotes = true;
+      if (!Sound.params.scaleType) Sound.params.scaleType = 'major';
+      if (!Sound.params.drumRack) Sound.params.drumRack = 'kickClap';
+      if (Sound.params.bassFifth == null) Sound.params.bassFifth = true;
+      if (Sound.params.sidechain == null) Sound.params.sidechain = true;
+      if (Sound.params.noteLength == null) Sound.params.noteLength = 0.72;
+      if (Sound.params.reverb == null) Sound.params.reverb = true;
+      if (Sound.params.reverbAmt == null) Sound.params.reverbAmt = 0.14;
+      if (Sound.params.commRoot == null) Sound.params.commRoot = Sound.params.roots['sec-comm'];
+      if (Sound.params.evRoot == null) Sound.params.evRoot = Sound.params.roots['sec-ev'];
+      if (Sound.params.eduRoot == null) Sound.params.eduRoot = Sound.params.roots['sec-edu'];
     }
+    soundEnabled = !!raw.enabled;
+    syncMusicBtn();
     syncSoundPanelUI();
+    applySoundMode();
+    if (soundEnabled && typeof Sound.syncKick === 'function') Sound.syncKick();
+    if (needsSave) saveSoundPrefs();
   } catch (e) {}
 }
 
@@ -232,11 +553,22 @@ function initSoundPanel() {
     if (!seg) return;
     var raw   = btn.getAttribute('data-val');
     var param = seg.getAttribute('data-param');
-    var val   = isNaN(raw) ? raw : parseFloat(raw);
-    if (param === 'filmRoot') setFilmRoot(val);
+    var val;
+    if (SOUND_BOOL_PARAMS.indexOf(param) >= 0) val = raw === '1';
+    else if (isNaN(raw)) val = raw;
+    else val = parseFloat(raw);
+    if (SECTION_ROOT_KEYS[param]) setSectionRoot(param, val);
+    else if (param === 'noteLength') Sound.params.noteLength = val;
     else Sound.params[param] = val;
     seg.querySelectorAll('.sp-seg-btn').forEach(function(b){ b.classList.remove('active'); });
     btn.classList.add('active');
+    if (param === 'kick' || param === 'kickRepeat' || param === 'kickMinimal' || param === 'bpm') {
+      Sound.syncKick();
+    }
+    if (param === 'steps') {
+      document.documentElement.dataset.steps = String(Sound.params.steps);
+      if (soundEnabled) TrackSeq.remount();
+    }
     saveSoundPrefs();
   });
 
@@ -247,55 +579,391 @@ function initSoundPanel() {
     var val   = parseFloat(el.value);
     Sound.params[param] = val;
     updateSoundParamLabel(param, val);
+    if (param === 'reverbAmt' && typeof Sound.setReverbAmt === 'function') {
+      Sound.setReverbAmt(val);
+    }
+    if (param === 'bpm' || param === 'kickGain' || param === 'swing' ||
+        param === 'clapGain' || param === 'bassGain' || param === 'noteGain') {
+      if (param === 'bpm' || param === 'kickGain') Sound.syncKick();
+      if (soundEnabled && (param === 'bpm' || param === 'swing')) TrackSeq.restartSeq();
+    }
     saveSoundPrefs();
   });
 }
 
+// ── NAV VIBE ─────────────────────────────────────────────────────────────
+// Visual ≠ audio sample rate. We draw a short spatial slice of the wave
+// (frequency → how many cycles fit across the bar) and drift phase slowly
+// in time (~0.3–0.6 Hz). Attack / decay mirror Sound.params.
+
+const NavVibe = (function() {
+  var wrap, path, notes = new Map(), rafId = null, t0 = 0, lastNow = 0;
+  var W = 200, H = 24, MID = H / 2, PTS = 96;
+  var REF_FREQ = 110;
+  var NOTE_DELAY_MS = 80;
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function soundParams() {
+    return (typeof Sound !== 'undefined' && Sound.params)
+      ? Sound.params
+      : { wave: 'sine', attack: 0.18, decay: 1.6 };
+  }
+
+  function init() {
+    wrap = document.getElementById('nav-vibe');
+    path = wrap && wrap.querySelector('.nav-vibe-path');
+    setResting();
+  }
+
+  function waveVal(phase, type) {
+    var p = phase * Math.PI * 2;
+    switch (type) {
+      case 'square':
+        return Math.sign(Math.sin(p)) * 0.9;
+      case 'triangle':
+        return (Math.asin(Math.sin(p)) * 2 / Math.PI) * 0.9;
+      case 'sawtooth': {
+        var s = ((phase % 1) + 1) % 1;
+        return (s * 2 - 1) * 0.9;
+      }
+      default:
+        return Math.sin(p) * 0.9;
+    }
+  }
+
+  function spatialCycles(freq) {
+    return 1.4 * (freq / REF_FREQ);
+  }
+
+  function scrollHz(freq) {
+    return 0.28 + 0.1 * Math.log2(freq / REF_FREQ + 1);
+  }
+
+  function setResting() {
+    if (path) path.setAttribute('d', 'M0 ' + MID + ' L' + W + ' ' + MID);
+  }
+
+  function activeNotes() {
+    var list = [];
+    notes.forEach(function(note) {
+      if (note.level > 0.01) list.push(note);
+    });
+    return list;
+  }
+
+  function buildPath(t) {
+    var type = soundParams().wave;
+    var live = activeNotes();
+    if (!live.length) return 'M0 ' + MID + ' L' + W + ' ' + MID;
+
+    var baseAmp = 5.5 + live.length * 0.7;
+    var segs = [];
+
+    for (var i = 0; i <= PTS; i++) {
+      var x = (i / PTS) * W;
+      var norm = i / PTS;
+      var y = MID;
+      live.forEach(function(note) {
+        var phase = norm * spatialCycles(note.freq) + t * scrollHz(note.freq);
+        y += waveVal(phase, type) * baseAmp * note.level / live.length;
+      });
+      segs.push((i === 0 ? 'M' : 'L') + x.toFixed(1) + ' ' + y.toFixed(2));
+    }
+    return segs.join(' ');
+  }
+
+  function updateEnvelopes(now, dt) {
+    var p = soundParams();
+    var toDelete = [];
+    notes.forEach(function(note, row) {
+      if (now < note.delayUntil) return;
+      if (note.target > note.level) {
+        var step = dt / Math.max(0.08, p.attack);
+        note.level = Math.min(note.target, note.level + step);
+      } else if (note.target < note.level) {
+        var step = dt / Math.max(0.25, p.decay);
+        note.level = Math.max(note.target, note.level - step);
+        if (note.releasing && note.level <= 0.02) toDelete.push(row);
+      }
+    });
+    toDelete.forEach(function(row) { notes.delete(row); });
+  }
+
+  function tick(now) {
+    if (!path) { rafId = null; return; }
+    var dt = lastNow ? Math.min(0.05, (now - lastNow) / 1000) : 0.016;
+    lastNow = now;
+    updateEnvelopes(now, dt);
+
+    var live = activeNotes();
+    var t = (now - t0) / 1000;
+
+    if (!live.length && notes.size === 0) {
+      setResting();
+      wrap.classList.remove('active');
+      rafId = null;
+      lastNow = 0;
+      return;
+    }
+
+    path.setAttribute('d', buildPath(t));
+    wrap.classList.toggle('active', peakLevel() > 0.08);
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function peakLevel() {
+    var peak = 0;
+    notes.forEach(function(n) { if (n.level > peak) peak = n.level; });
+    return peak;
+  }
+
+  function ensureLoop() {
+    if (!rafId) {
+      t0 = performance.now();
+      lastNow = 0;
+      rafId = requestAnimationFrame(tick);
+    }
+  }
+
+  function noteOn(row, freq) {
+    if (!path || reduceMotion) return;
+    var now = performance.now();
+    notes.set(row, {
+      freq: freq,
+      level: 0,
+      target: 1,
+      releasing: false,
+      delayUntil: now + NOTE_DELAY_MS
+    });
+    ensureLoop();
+  }
+
+  function noteOff(row) {
+    var note = notes.get(row);
+    if (!note) return;
+    note.target = 0;
+    note.releasing = true;
+    ensureLoop();
+  }
+
+  function reset() {
+    notes.clear();
+    setResting();
+    if (wrap) wrap.classList.remove('active');
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    lastNow = 0;
+  }
+
+  function pulse(freq, ms) {
+    if (!path || reduceMotion) return;
+    var key = {};
+    noteOn(key, freq);
+    setTimeout(function() { noteOff(key); }, ms || 600);
+  }
+
+  return { init: init, noteOn: noteOn, noteOff: noteOff, reset: reset, pulse: pulse };
+})();
+
 // ── SOUND SYSTEM ──────────────────────────────────────────────────────────
-// Harmonic series rooted on A2 (110Hz). Each film row = a partial.
-// Commercial, Events, Edu rows use a different root (D2 = 73.4Hz).
-// Notes layer as you hover more rows, dissolve on mouseleave.
-// All gains are low — this is texture, not music.
+// Each table row picks a harmonic partial of the section root (film A2, etc.).
+// Hold: sustained tone while hovered. Arp: cycles partials at BPM. Kick: low sine thump.
 
 var soundEnabled = false;
 
+function musicBtnLabel() {
+  return 'Music: ' + (soundEnabled ? 'On' : 'Off');
+}
+
+function syncMusicBtn() {
+  var btn = document.getElementById('btn-sound');
+  if (btn) {
+    btn.textContent = musicBtnLabel();
+    btn.classList.toggle('sound-on', soundEnabled);
+  }
+}
+
+function applySoundMode() {
+  document.documentElement.classList.toggle('sound-on', soundEnabled);
+  document.documentElement.dataset.steps = String(Sound.params.steps || 16);
+  if (soundEnabled) {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    TrackSeq.mount();
+    TrackSeq.syncPlayback();
+    Sound.bootAudio();
+  } else {
+    TrackSeq.closeModuleMenus();
+    TrackSeq.unmount();
+    Sound.tableLeave();
+  }
+}
+
 function toggleSound() {
   soundEnabled = !soundEnabled;
-  var btn = document.getElementById('btn-sound');
-  btn.textContent = 'Sound: ' + (soundEnabled ? 'On' : 'Off');
-  btn.classList.toggle('sound-on', soundEnabled);
-  if (!soundEnabled) Sound.stopAll();
+  syncMusicBtn();
+  applySoundMode();
   saveSoundPrefs();
 }
 
 const Sound = (function() {
   var ctx = null;
+  var masterBus = null;
+  var musicBus = null;
+  var reverbSend = null;
+  var reverbGain = null;
+  var limiterNode = null;
   var activeNodes = new Map();
+  var kickTimer = null;
+  var inTableZone = false;
   var PARTIALS = [1, 2, 1.5, 1.25, 1.75, 2.25, 1.333, 1.667];
+  var SCALE_DEFS = {
+    major: [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21, 23, 24],
+    minor: [0, 2, 3, 5, 7, 8, 10, 12, 14, 15, 17, 19, 20, 22, 24],
+    pent:  [0, 2, 4, 7, 9, 12, 14, 17, 19, 21, 24, 26, 28, 31, 33]
+  };
 
   var params = {
-    wave:    'sine',
-    gain:    0.12,
-    attack:  0.18,
-    decay:   1.6,
-    detune:  0,
-    filmRoot: 110,
+    wave:        'sine',
+    gain:        0.12,
+    attack:      0.18,
+    decay:       1.6,
+    detune:      0,
+    mode:        'harmonic',
+    bpm:         88,
+    kick:        false,
+    kickRepeat:  false,
+    kickMinimal: true,
+    kickGain:    0.18,
+    clapGain:    0.14,
+    bassGain:    0.16,
+    noteGain:    0.10,
+    swing:       0.54,
+    humanize:    false,
+    quantizeNotes: true,
+    scaleType:   'major',
+    drumRack:    'kickClap',
+    bassFifth:   true,
+    sidechain:   true,
+    noteLength:  0.72,
+    reverb:      true,
+    reverbAmt:   0.14,
+    steps:       16,
+    patterns:    {},
+    trackTypes:  {},
+    trackMutes:  {},
+    trackSolos:  {},
+    trackLocks:  {},
+    filmRoot:    110,
+    commRoot:    73.42,
+    evRoot:      82.41,
+    eduRoot:     98.00,
     roots: {
-      'sec-film':  110.00,
-      'sec-comm':   73.42,
-      'sec-ev':     82.41,
-      'sec-edu':    98.00
+      'sec-film-immersive-work':   110.00,
+      'sec-commercial-production':  73.42,
+      'sec-events-jury':            82.41,
+      'sec-education-languages':    98.00
     }
   };
+
+  function getScale() {
+    return SCALE_DEFS[params.scaleType] || SCALE_DEFS.major;
+  }
 
   function boot() {
     if (ctx) return;
     ctx = new (window.AudioContext || window.webkitAudioContext)();
+    masterBus = ctx.createGain();
+    masterBus.gain.value = 0.95;
+    musicBus = ctx.createGain();
+    musicBus.gain.value = 1;
+    musicBus.connect(masterBus);
+    limiterNode = ctx.createDynamicsCompressor();
+    limiterNode.threshold.value = -10;
+    limiterNode.knee.value = 8;
+    limiterNode.ratio.value = 10;
+    limiterNode.attack.value = 0.002;
+    limiterNode.release.value = 0.1;
+    masterBus.connect(limiterNode);
+    limiterNode.connect(ctx.destination);
+  }
+
+  function out() {
+    boot();
+    return masterBus;
+  }
+
+  function musicOut() {
+    boot();
+    return musicBus;
+  }
+
+  function ensureReverb() {
+    if (reverbSend) return;
+    var len = Math.floor(ctx.sampleRate * 0.32);
+    var ir = ctx.createBuffer(2, len, ctx.sampleRate);
+    for (var ch = 0; ch < 2; ch++) {
+      var d = ir.getChannelData(ch);
+      for (var i = 0; i < len; i++) {
+        d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.4);
+      }
+    }
+    var conv = ctx.createConvolver();
+    conv.buffer = ir;
+    reverbSend = ctx.createGain();
+    reverbSend.gain.value = 1;
+    reverbGain = ctx.createGain();
+    reverbGain.gain.value = params.reverbAmt;
+    reverbSend.connect(conv);
+    conv.connect(reverbGain);
+    reverbGain.connect(masterBus);
+  }
+
+  function setReverbAmt(val) {
+    params.reverbAmt = val;
+    if (reverbGain) reverbGain.gain.value = val;
+  }
+
+  function wetSend(fromNode, amt) {
+    if (!params.reverb) return;
+    boot();
+    ensureReverb();
+    var send = ctx.createGain();
+    send.gain.value = amt != null ? amt : params.reverbAmt;
+    fromNode.connect(send);
+    send.connect(reverbSend);
+  }
+
+  function midiFromFreq(freq) {
+    return 69 + 12 * Math.log2(freq / 440);
+  }
+
+  function freqFromMidi(midi) {
+    return 440 * Math.pow(2, (midi - 69) / 12);
+  }
+
+  function triggerSidechain(t) {
+    if (!params.sidechain) return;
+    boot();
+    var amt = 0.42;
+    var atk = 0.006;
+    var hold = 0.055;
+    var rel = 0.14;
+    var g = musicBus.gain;
+    g.cancelScheduledValues(t);
+    g.setValueAtTime(g.value, t);
+    g.linearRampToValueAtTime(amt, t + atk);
+    g.linearRampToValueAtTime(1, t + atk + hold + rel);
+  }
+
+  function bootAudio() {
+    boot();
+    if (ctx && ctx.state === 'suspended') ctx.resume();
   }
 
   function getRoot(row) {
     var sec = row.closest('.cv-section');
-    return sec ? (params.roots[sec.id] || 110) : 110;
+    if (!sec) return 110;
+    var id = canonicalSectionId(sec.id);
+    return params.roots[id] || params.roots[sec.id] || 110;
   }
 
   function getPartialIndex(row) {
@@ -303,22 +971,244 @@ const Sound = (function() {
     return rows.indexOf(row) % PARTIALS.length;
   }
 
+  function rowFreq(row, partialIdx) {
+    var idx = partialIdx != null ? partialIdx : getPartialIndex(row);
+    return getRoot(row) * PARTIALS[idx % PARTIALS.length];
+  }
+
+  function noteFreq(row, partialIdx) {
+    if (!params.quantizeNotes) return rowFreq(row, partialIdx);
+    var idx = partialIdx != null ? partialIdx : getPartialIndex(row);
+    var rootMidi = Math.round(midiFromFreq(getRoot(row)));
+    var scale = getScale();
+    var semitone = scale[idx % scale.length];
+    return freqFromMidi(rootMidi + semitone);
+  }
+
+  function stepMs() {
+    return (60000 / params.bpm) / 2;
+  }
+
+  function beatMs() {
+    return 60000 / params.bpm;
+  }
+
+  function stopKickLoop() {
+    if (kickTimer) { clearInterval(kickTimer); kickTimer = null; }
+  }
+
+  function velMult(velocity) {
+    return velocity === 2 ? 0.45 : 1;
+  }
+
+  function playKick(force, velocity) {
+    if (!soundEnabled) return;
+    if (!force && !params.kick) return;
+    boot();
+    var t = ctx.currentTime;
+    var min = params.kickMinimal;
+    var peak = params.kickGain * (min ? 0.88 : 1) * velMult(velocity);
+    var tail = min ? 0.09 : 0.15;
+    var bus = out();
+
+    var clickLen = Math.max(2, Math.floor(ctx.sampleRate * 0.0025));
+    var clickBuf = ctx.createBuffer(1, clickLen, ctx.sampleRate);
+    var cd = clickBuf.getChannelData(0);
+    for (var ci = 0; ci < clickLen; ci++) cd[ci] = Math.random() * 2 - 1;
+    var click = ctx.createBufferSource();
+    click.buffer = clickBuf;
+    var clickHp = ctx.createBiquadFilter();
+    clickHp.type = 'highpass';
+    clickHp.frequency.value = 1800;
+    var clickG = ctx.createGain();
+    clickG.gain.setValueAtTime(peak * 0.42, t);
+    clickG.gain.exponentialRampToValueAtTime(0.001, t + 0.003);
+    click.connect(clickHp);
+    clickHp.connect(clickG);
+    clickG.connect(bus);
+    click.start(t);
+    click.stop(t + 0.004);
+
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    var f0 = min ? 68 : 56;
+    var fMid = min ? 54 : 44;
+    var fEnd = min ? 46 : 36;
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(f0, t);
+    osc.frequency.exponentialRampToValueAtTime(fMid, t + 0.028);
+    osc.frequency.exponentialRampToValueAtTime(fEnd, t + tail);
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(peak, t + 0.001);
+    gain.gain.setValueAtTime(peak * 0.9, t + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + tail);
+    osc.connect(gain);
+    gain.connect(bus);
+    osc.start(t);
+    osc.stop(t + tail + 0.02);
+    triggerSidechain(t);
+  }
+
+  function syncKick() {
+    stopKickLoop();
+    if (!params.kick || !params.kickRepeat || !soundEnabled || !inTableZone) return;
+    boot();
+    function start() {
+      playKick();
+      kickTimer = setInterval(function() {
+        if (!params.kick || !params.kickRepeat || !soundEnabled) {
+          stopKickLoop();
+          return;
+        }
+        playKick();
+      }, beatMs());
+    }
+    ctx.state === 'suspended' ? ctx.resume().then(start) : start();
+  }
+
+  function tableEnter() {
+    inTableZone = true;
+    if (!soundEnabled) syncKick();
+  }
+
+  function tableLeave() {
+    inTableZone = false;
+    stopKickLoop();
+    if (!soundEnabled) stopAll();
+  }
+
+  var clapBursts = null;
+  function ensureClapBursts() {
+    if (clapBursts) return;
+    clapBursts = [
+      { dur: 0.028, decay: 0.26 },
+      { dur: 0.022, decay: 0.32 },
+      { dur: 0.048, decay: 0.2 }
+    ].map(function(spec) {
+      var len = Math.floor(ctx.sampleRate * spec.dur);
+      var buf = ctx.createBuffer(1, len, ctx.sampleRate);
+      var d = buf.getChannelData(0);
+      for (var i = 0; i < len; i++) {
+        d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (len * spec.decay));
+      }
+      return buf;
+    });
+  }
+
+  function playClap(velocity) {
+    if (!soundEnabled) return;
+    boot();
+    ensureClapBursts();
+    var t = ctx.currentTime;
+    var bus = out();
+    var peak = params.clapGain * velMult(velocity);
+    var offsets = [0, 0.009, 0.022];
+    var levels = [1, 0.68, 0.48];
+
+    offsets.forEach(function(off, i) {
+      var src = ctx.createBufferSource();
+      src.buffer = clapBursts[i];
+      var hp = ctx.createBiquadFilter();
+      hp.type = 'highpass';
+      hp.frequency.value = 420;
+      var bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 1450;
+      bp.Q.value = 0.75;
+      var gain = ctx.createGain();
+      var st = t + off;
+      gain.gain.setValueAtTime(0, st);
+      gain.gain.linearRampToValueAtTime(peak * levels[i], st + 0.0015);
+      gain.gain.exponentialRampToValueAtTime(0.001, st + 0.07);
+      src.connect(hp);
+      hp.connect(bp);
+      bp.connect(gain);
+      gain.connect(bus);
+      wetSend(gain, params.reverbAmt * 0.85);
+      src.start(st);
+      src.stop(st + 0.08);
+    });
+  }
+
+  function startTone(freq) {
+    var osc  = ctx.createOscillator();
+    var gain = ctx.createGain();
+    var t = ctx.currentTime;
+    osc.type = params.wave;
+    osc.frequency.setValueAtTime(freq, t);
+    osc.detune.setValueAtTime(params.detune, t);
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(params.gain, t + params.attack);
+    osc.connect(gain);
+    gain.connect(musicOut());
+    osc.start();
+    return { osc: osc, gain: gain };
+  }
+
+  function stopArpVoice(state, t) {
+    if (!state.osc) return;
+    try {
+      state.gain.gain.cancelScheduledValues(t);
+      state.gain.gain.setValueAtTime(Math.max(state.gain.gain.value, 0.0001), t);
+      state.gain.gain.exponentialRampToValueAtTime(0.001, t + 0.035);
+      state.osc.stop(t + 0.04);
+    } catch (e) {}
+    state.osc = null;
+    state.gain = null;
+  }
+
+  function startArpeggio(row) {
+    var step = 0;
+    var vibeKey = 'arp-' + row;
+    var state = { arpeggio: true, timer: null, osc: null, gain: null };
+
+    function tick() {
+      var freq = noteFreq(row, step % PARTIALS.length);
+      NavVibe.noteOn(vibeKey + '-' + step, freq);
+      setTimeout(function() { NavVibe.noteOff(vibeKey + '-' + step); }, stepMs() * 0.85);
+      bootAudio();
+      boot();
+      function go() {
+        var t = ctx.currentTime;
+        var dur = stepMs() / 1000;
+        stopArpVoice(state, t);
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        var arpGain = params.gain * 0.62;
+        osc.type = params.wave;
+        osc.frequency.setValueAtTime(freq, t);
+        osc.detune.setValueAtTime(params.detune, t);
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(arpGain, t + Math.min(params.attack, dur * 0.28));
+        gain.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.82);
+        osc.connect(gain);
+        gain.connect(musicOut());
+        osc.start(t);
+        osc.stop(t + dur);
+        state.osc = osc;
+        state.gain = gain;
+      }
+      ctx.state === 'suspended' ? ctx.resume().then(go) : go();
+      step++;
+    }
+
+    tick();
+    state.timer = setInterval(tick, stepMs());
+    activeNodes.set(row, state);
+  }
+
   function play(row) {
-    if (!soundEnabled || activeNodes.has(row)) return;
+    if (activeNodes.has(row)) return;
+    if (params.mode === 'arpeggio') {
+      startArpeggio(row);
+      return;
+    }
+    var freq = noteFreq(row);
+    NavVibe.noteOn(row, freq);
+    bootAudio();
     boot();
     function go() {
-      var freq = getRoot(row) * PARTIALS[getPartialIndex(row)];
-      var osc  = ctx.createOscillator();
-      var gain = ctx.createGain();
-      osc.type = params.wave;
-      osc.frequency.setValueAtTime(freq, ctx.currentTime);
-      osc.detune.setValueAtTime(params.detune, ctx.currentTime);
-      gain.gain.setValueAtTime(0, ctx.currentTime);
-      gain.gain.linearRampToValueAtTime(params.gain, ctx.currentTime + params.attack);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      activeNodes.set(row, { osc: osc, gain: gain });
+      activeNodes.set(row, startTone(freq));
     }
     ctx.state === 'suspended' ? ctx.resume().then(go) : go();
   }
@@ -326,6 +1216,14 @@ const Sound = (function() {
   function stop(row) {
     if (!activeNodes.has(row)) return;
     var node = activeNodes.get(row);
+    if (node.arpeggio) {
+      clearInterval(node.timer);
+      if (ctx) stopArpVoice(node, ctx.currentTime);
+      activeNodes.delete(row);
+      NavVibe.reset();
+      return;
+    }
+    NavVibe.noteOff(row);
     var t = ctx.currentTime;
     node.gain.gain.setValueAtTime(node.gain.gain.value, t);
     node.gain.gain.exponentialRampToValueAtTime(0.0001, t + params.decay);
@@ -334,29 +1232,585 @@ const Sound = (function() {
   }
 
   function stopAll() {
-    activeNodes.forEach(function(_, row) { stop(row); });
+    activeNodes.forEach(function(node) {
+      if (node.arpeggio) {
+        clearInterval(node.timer);
+        if (ctx) stopArpVoice(node, ctx.currentTime);
+      }
+    });
+    activeNodes.clear();
+    stopKickLoop();
+    NavVibe.reset();
+  }
+
+  function stepDur() {
+    return (60 / params.bpm) / 4;
+  }
+
+  function stepDelayMs(stepIndex) {
+    var base = stepDur() * 1000;
+    var s = params.swing != null ? params.swing : 0.5;
+    var off = (s - 0.5) * 1.2;
+    return stepIndex % 2 === 0 ? base * (1 - off) : base * (1 + off);
+  }
+
+  function humanizeJitter() {
+    if (!params.humanize) return 0;
+    return (Math.random() * 6 + 2) * (Math.random() < 0.5 ? -1 : 1);
+  }
+
+  function playShortBlip(freq, role, velocity) {
+    var t = ctx.currentTime;
+    var stepLen = stepDur();
+    var isBass = role === 'bass';
+    var lenMult = isBass ? 0.78 : (params.noteLength != null ? params.noteLength : 0.72);
+    var dur = stepLen * lenMult;
+    var peak = (isBass ? params.bassGain : params.noteGain) * velMult(velocity);
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    var tail = ctx.createGain();
+    osc.type = params.wave;
+    osc.frequency.setValueAtTime(freq, t);
+    osc.detune.setValueAtTime(params.detune, t);
+    var atk = isBass
+      ? Math.min(0.012, dur * 0.22)
+      : Math.min(params.attack, dur * 0.35);
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(peak, t + atk);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.92);
+    if (isBass) {
+      var lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.Q.value = 0.65;
+      lp.frequency.setValueAtTime(Math.min(520, freq * 2.8), t);
+      lp.frequency.exponentialRampToValueAtTime(Math.max(72, freq * 0.55), t + dur * 0.85);
+      osc.connect(lp);
+      lp.connect(gain);
+    } else {
+      osc.connect(gain);
+    }
+    gain.connect(tail);
+    tail.connect(musicOut());
+    if (!isBass) wetSend(tail, params.reverbAmt);
+    osc.start(t);
+    osc.stop(t + dur + 0.02);
+  }
+
+  function bassFreq(row) {
+    var rootMidi = Math.round(midiFromFreq(getRoot(row)));
+    if (params.bassFifth) {
+      var idx = getPartialIndex(row) % 2;
+      return freqFromMidi(rootMidi - 12 + (idx === 0 ? 0 : 7));
+    }
+    return freqFromMidi(rootMidi - 12);
+  }
+
+  function navFreqForTrack(type, row) {
+    if (type === 'clap') return 420;
+    if (type === 'kick') return 58;
+    if (type === 'bass') return bassFreq(row);
+    if (type === 'drums') return getRoot(row) * 0.5;
+    return noteFreq(row);
+  }
+
+  function navPulseTrack(type, row, ms) {
+    NavVibe.pulse(navFreqForTrack(type, row), ms || stepDur() * 1000 * 0.9);
+  }
+
+  function triggerTrack(type, row, preview, velocity) {
+    var vel = velocity || 1;
+    var vibeMs = stepDur() * 1000 * 0.9;
+    navPulseTrack(type, row, vibeMs);
+    if (type === 'kick') {
+      playKick(!!preview, vel);
+      return;
+    }
+    if (type === 'clap') {
+      playClap(vel);
+      return;
+    }
+    if (type === 'drums') {
+      var rack = params.drumRack || 'kickClap';
+      if (rack === 'kickClap' || rack === 'kick') {
+        if (preview || params.kick) playKick(!!preview, vel);
+      }
+      if (rack === 'kickClap' || rack === 'clap') playClap(vel);
+      return;
+    }
+    if (type === 'bass') {
+      playShortBlip(bassFreq(row), 'bass', vel);
+      return;
+    }
+    playShortBlip(noteFreq(row), 'note', vel);
+  }
+
+  function playTrackStep(type, row, velocity) {
+    if (!soundEnabled) return;
+    boot();
+    function go() { triggerTrack(type, row, false, velocity); }
+    ctx.state === 'suspended' ? ctx.resume().then(go) : go();
+  }
+
+  function previewTrack(type, row, velocity) {
+    if (!soundEnabled) return;
+    bootAudio();
+    boot();
+    function go() { triggerTrack(type, row, true, velocity || 1); }
+    ctx.state === 'suspended' ? ctx.resume().then(go) : go();
   }
 
   function test() {
+    NavVibe.pulse(params.filmRoot, (params.attack + params.decay) * 1000);
+    if (!soundEnabled) return;
     boot();
     function go() {
+      if (params.kick) playKick();
       var osc  = ctx.createOscillator();
       var gain = ctx.createGain();
+      var t = ctx.currentTime;
       osc.type = params.wave;
-      osc.frequency.setValueAtTime(params.filmRoot, ctx.currentTime);
-      osc.detune.setValueAtTime(params.detune, ctx.currentTime);
-      gain.gain.setValueAtTime(0, ctx.currentTime);
-      gain.gain.linearRampToValueAtTime(params.gain, ctx.currentTime + params.attack);
-      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + params.attack + params.decay);
+      osc.frequency.setValueAtTime(params.filmRoot, t);
+      osc.detune.setValueAtTime(params.detune, t);
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(params.gain, t + params.attack);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + params.attack + params.decay);
       osc.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(out());
       osc.start();
-      osc.stop(ctx.currentTime + params.attack + params.decay + 0.1);
+      osc.stop(t + params.attack + params.decay + 0.1);
     }
     ctx.state === 'suspended' ? ctx.resume().then(go) : go();
   }
 
-  return { play: play, stop: stop, stopAll: stopAll, test: test, params: params };
+  return {
+    play: play, stop: stop, stopAll: stopAll, test: test,
+    syncKick: syncKick, tableEnter: tableEnter, tableLeave: tableLeave,
+    playTrackStep: playTrackStep, previewTrack: previewTrack,
+    stepDur: stepDur, stepDelayMs: stepDelayMs, humanizeJitter: humanizeJitter,
+    navFreqForTrack: navFreqForTrack, setReverbAmt: setReverbAmt,
+    bootAudio: bootAudio, params: params
+  };
+})();
+
+// ── TRACK SEQ (rows = modular layers) ─────────────────────────────────────
+const TrackSeq = (function() {
+  var seqTimer = null;
+  var seqRunning = false;
+  var playhead = 0;
+  var mounted = false;
+  var previewTimer = null;
+  var TYPES = ['drums', 'kick', 'bass', 'clap', 'note'];
+  var TYPE_LABEL = {
+    drums: 'Drums', kick: 'Kick', bass: 'Bass', clap: 'Clap', note: 'Note'
+  };
+
+  function stepCount() {
+    return Sound.params.steps === 8 ? 8 : 16;
+  }
+
+  function rowIndex(row) {
+    return Array.from(row.parentNode.children).indexOf(row);
+  }
+
+  function trackId(row) {
+    var sec = row.closest('.cv-section');
+    var sid = sec ? canonicalSectionId(sec.id) : 'sec';
+    return sid + '-' + rowIndex(row);
+  }
+
+  function defaultType(idx) {
+    if (idx === 0) return 'drums';
+    if (idx === 1) return 'kick';
+    if (idx === 2) return 'bass';
+    if (idx === 3) return 'clap';
+    return 'note';
+  }
+
+  function getType(id, idx) {
+    var t = Sound.params.trackTypes[id] || defaultType(idx);
+    return TYPES.indexOf(t) >= 0 ? t : defaultType(idx);
+  }
+
+  function normStep(val) {
+    if (!val) return 0;
+    return val === 2 ? 2 : 1;
+  }
+
+  function ensurePattern(id) {
+    var n = stepCount();
+    if (!Sound.params.patterns[id] || Sound.params.patterns[id].length !== n) {
+      var old = Sound.params.patterns[id] || [];
+      Sound.params.patterns[id] = new Array(n).fill(0);
+      for (var i = 0; i < Math.min(old.length, n); i++) {
+        Sound.params.patterns[id][i] = normStep(old[i]);
+      }
+    }
+    return Sound.params.patterns[id];
+  }
+
+  function patternActive(pat) {
+    return pat && pat.some(function(v) { return v; });
+  }
+
+  function syncStepButton(btn, val) {
+    btn.classList.toggle('on', val > 0);
+    btn.classList.toggle('soft', val === 2);
+    btn.setAttribute('aria-pressed', val ? 'true' : 'false');
+    btn.setAttribute('aria-label', (val === 2 ? 'Soft ' : val ? 'Loud ' : '') + 'step');
+  }
+
+  function syncLaneState(lane, pat) {
+    lane.classList.toggle('has-notes', patternActive(pat));
+  }
+
+  function hasSolo() {
+    var solos = Sound.params.trackSolos || {};
+    return Object.keys(solos).some(function(k) { return solos[k]; });
+  }
+
+  function rowAudible(id) {
+    if (Sound.params.trackMutes && Sound.params.trackMutes[id]) return false;
+    if (hasSolo()) return !!(Sound.params.trackSolos && Sound.params.trackSolos[id]);
+    return true;
+  }
+
+  function syncLaneMuteSolo(lane, id) {
+    var muted = !!(Sound.params.trackMutes && Sound.params.trackMutes[id]);
+    var solo = !!(Sound.params.trackSolos && Sound.params.trackSolos[id]);
+    var locked = !!(Sound.params.trackLocks && Sound.params.trackLocks[id]);
+    lane.classList.toggle('is-muted', muted);
+    lane.classList.toggle('is-solo', solo);
+    lane.classList.toggle('is-locked', locked);
+    var muteBtn = lane.querySelector('.track-mute');
+    var soloBtn = lane.querySelector('.track-solo');
+    var lockBtn = lane.querySelector('.track-lock');
+    if (muteBtn) {
+      muteBtn.classList.toggle('active', muted);
+      muteBtn.setAttribute('aria-pressed', muted ? 'true' : 'false');
+    }
+    if (soloBtn) {
+      soloBtn.classList.toggle('active', solo);
+      soloBtn.setAttribute('aria-pressed', solo ? 'true' : 'false');
+    }
+    if (lockBtn) {
+      lockBtn.classList.toggle('active', locked);
+      lockBtn.setAttribute('aria-pressed', locked ? 'true' : 'false');
+    }
+  }
+
+  function paintStep(pat, stepIdx, soft) {
+    var cur = pat[stepIdx] || 0;
+    if (soft) {
+      pat[stepIdx] = cur === 2 ? 0 : cur === 1 ? 2 : 2;
+    } else {
+      pat[stepIdx] = cur === 1 ? 0 : cur === 2 ? 1 : 1;
+    }
+    return pat[stepIdx];
+  }
+
+  function clearRow(lane, grid, pat) {
+    pat.fill(0);
+    grid.querySelectorAll('.track-step').forEach(function(btn) {
+      syncStepButton(btn, 0);
+    });
+    syncLaneState(lane, pat);
+    saveSoundPrefs();
+  }
+
+  function flashStep(lane, stepIndex) {
+    var btn = lane.querySelector('.track-step[data-step="' + stepIndex + '"]');
+    if (!btn || !btn.classList.contains('on')) return;
+    btn.classList.add('hit');
+    setTimeout(function() { btn.classList.remove('hit'); }, 100);
+  }
+
+  function closeModuleMenus() {
+    document.querySelectorAll('.track-module-menu').forEach(function(el) { el.remove(); });
+  }
+
+  function syncLaneTypeUI(lane, type) {
+    lane.dataset.trackType = type;
+    lane.className = 'track-lane track-' + type +
+      (lane.classList.contains('is-muted') ? ' is-muted' : '') +
+      (lane.classList.contains('is-solo') ? ' is-solo' : '') +
+      (lane.classList.contains('is-locked') ? ' is-locked' : '') +
+      (lane.classList.contains('has-notes') ? ' has-notes' : '');
+    var lbl = lane.querySelector('.track-label');
+    if (lbl) lbl.textContent = TYPE_LABEL[type];
+  }
+
+  function setTrackType(id, row, lane, type) {
+    if (Sound.params.trackLocks && Sound.params.trackLocks[id]) return;
+    Sound.params.trackTypes[id] = type;
+    row.dataset.trackType = type;
+    syncLaneTypeUI(lane, type);
+    saveSoundPrefs();
+  }
+
+  function openModuleMenu(id, row, lane, labelEl) {
+    if (Sound.params.trackLocks && Sound.params.trackLocks[id]) return;
+    closeModuleMenus();
+    var menu = document.createElement('div');
+    menu.className = 'track-module-menu';
+    menu.setAttribute('role', 'menu');
+    TYPES.forEach(function(t) {
+      var item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'track-module-opt' + (t === getType(id, rowIndex(row)) ? ' active' : '');
+      item.textContent = TYPE_LABEL[t];
+      item.setAttribute('role', 'menuitem');
+      item.addEventListener('click', function(e) {
+        e.stopPropagation();
+        setTrackType(id, row, lane, t);
+        closeModuleMenus();
+        if (soundEnabled) Sound.previewTrack(t, row);
+      });
+      menu.appendChild(item);
+    });
+    labelEl.appendChild(menu);
+  }
+
+  function buildLane(row) {
+    if (row.querySelector('.track-lane')) return;
+    var id = trackId(row);
+    var idx = rowIndex(row);
+    var type = getType(id, idx);
+    var pat = ensurePattern(id);
+    var lane = document.createElement('div');
+    lane.className = 'track-lane track-' + type;
+    lane.dataset.trackId = id;
+    lane.dataset.trackType = type;
+
+    var head = document.createElement('div');
+    head.className = 'track-head';
+
+    var label = document.createElement('button');
+    label.type = 'button';
+    label.className = 'track-label';
+    label.textContent = TYPE_LABEL[type];
+    label.title = 'Click: module menu · Double-click: clear row';
+
+    label.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (e.target.closest('.track-module-menu')) return;
+      openModuleMenu(id, row, lane, label);
+    });
+    label.addEventListener('dblclick', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      closeModuleMenus();
+      clearRow(lane, grid, pat);
+    });
+
+    var controls = document.createElement('div');
+    controls.className = 'track-controls';
+
+    var muteBtn = document.createElement('button');
+    muteBtn.type = 'button';
+    muteBtn.className = 'track-mute';
+    muteBtn.textContent = 'M';
+    muteBtn.title = 'Mute row';
+    muteBtn.setAttribute('aria-label', 'Mute row');
+    muteBtn.setAttribute('aria-pressed', 'false');
+    muteBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (!Sound.params.trackMutes) Sound.params.trackMutes = {};
+      Sound.params.trackMutes[id] = !Sound.params.trackMutes[id];
+      syncLaneMuteSolo(lane, id);
+      saveSoundPrefs();
+    });
+
+    var soloBtn = document.createElement('button');
+    soloBtn.type = 'button';
+    soloBtn.className = 'track-solo';
+    soloBtn.textContent = 'S';
+    soloBtn.title = 'Solo row';
+    soloBtn.setAttribute('aria-label', 'Solo row');
+    soloBtn.setAttribute('aria-pressed', 'false');
+    soloBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (!Sound.params.trackSolos) Sound.params.trackSolos = {};
+      Sound.params.trackSolos[id] = !Sound.params.trackSolos[id];
+      syncLaneMuteSolo(lane, id);
+      saveSoundPrefs();
+    });
+
+    var lockBtn = document.createElement('button');
+    lockBtn.type = 'button';
+    lockBtn.className = 'track-lock';
+    lockBtn.textContent = 'L';
+    lockBtn.title = 'Lock module';
+    lockBtn.setAttribute('aria-label', 'Lock module');
+    lockBtn.setAttribute('aria-pressed', 'false');
+    lockBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      closeModuleMenus();
+      if (!Sound.params.trackLocks) Sound.params.trackLocks = {};
+      Sound.params.trackLocks[id] = !Sound.params.trackLocks[id];
+      syncLaneMuteSolo(lane, id);
+      saveSoundPrefs();
+    });
+
+    controls.appendChild(muteBtn);
+    controls.appendChild(soloBtn);
+    controls.appendChild(lockBtn);
+    head.appendChild(label);
+    head.appendChild(controls);
+
+    var vibeKey = 'lane-' + id;
+    lane.addEventListener('mouseenter', function() {
+      if (!soundEnabled) return;
+      clearTimeout(previewTimer);
+      var type = lane.dataset.trackType;
+      NavVibe.noteOn(vibeKey, Sound.navFreqForTrack(type, row));
+      previewTimer = setTimeout(function() {
+        Sound.previewTrack(type, row);
+      }, 70);
+    });
+    lane.addEventListener('mouseleave', function() {
+      clearTimeout(previewTimer);
+      NavVibe.noteOff(vibeKey);
+    });
+
+    var grid = document.createElement('div');
+    grid.className = 'track-grid steps-' + stepCount();
+    for (var i = 0; i < pat.length; i++) {
+      var step = document.createElement('button');
+      step.type = 'button';
+      step.className = 'track-step';
+      step.dataset.step = String(i);
+      syncStepButton(step, pat[i]);
+      step.setAttribute('aria-label', TYPE_LABEL[type] + ' step ' + (i + 1));
+      grid.appendChild(step);
+    }
+
+    function handleStepInput(btn, soft) {
+      clearTimeout(previewTimer);
+      var s = Number(btn.dataset.step);
+      var val = paintStep(pat, s, soft);
+      syncStepButton(btn, val);
+      syncLaneState(lane, pat);
+      saveSoundPrefs();
+      if (soundEnabled) {
+        Sound.bootAudio();
+        if (val) Sound.previewTrack(lane.dataset.trackType, row, val);
+        syncPlayback();
+      }
+    }
+
+    grid.addEventListener('click', function(e) {
+      var btn = e.target.closest('.track-step');
+      if (!btn) return;
+      handleStepInput(btn, e.altKey);
+    });
+
+    grid.addEventListener('contextmenu', function(e) {
+      var btn = e.target.closest('.track-step');
+      if (!btn) return;
+      e.preventDefault();
+      handleStepInput(btn, true);
+    });
+
+    lane.appendChild(head);
+    lane.appendChild(grid);
+    row.appendChild(lane);
+    row.classList.add('has-track-lane');
+    row.dataset.trackType = type;
+    syncLaneState(lane, pat);
+    syncLaneMuteSolo(lane, id);
+  }
+
+  function updatePlayheadUI() {
+    document.querySelectorAll('.track-step.playhead').forEach(function(el) {
+      el.classList.remove('playhead');
+    });
+    document.querySelectorAll('.track-grid').forEach(function(grid) {
+      var btn = grid.querySelector('.track-step[data-step="' + playhead + '"]');
+      if (btn) btn.classList.add('playhead');
+    });
+  }
+
+  function fireStep(step) {
+    document.querySelectorAll('.track-lane').forEach(function(lane) {
+      var id = lane.dataset.trackId;
+      if (!rowAudible(id)) return;
+      var type = lane.dataset.trackType;
+      var pat = Sound.params.patterns[id];
+      if (!pat || !pat[step]) return;
+      flashStep(lane, step);
+      var row = lane.closest('tr');
+      if (row) Sound.playTrackStep(type, row, pat[step]);
+    });
+  }
+
+  function stopSeq() {
+    seqRunning = false;
+    if (seqTimer) { clearTimeout(seqTimer); seqTimer = null; }
+    playhead = 0;
+    updatePlayheadUI();
+    document.documentElement.classList.remove('sound-loop');
+  }
+
+  function startSeq() {
+    if (seqRunning || !soundEnabled) return;
+    seqRunning = true;
+    Sound.bootAudio();
+    document.documentElement.classList.add('sound-loop');
+    function loop() {
+      if (!seqRunning) return;
+      fireStep(playhead);
+      updatePlayheadUI();
+      var delay = Math.max(12, Sound.stepDelayMs(playhead) + Sound.humanizeJitter());
+      playhead = (playhead + 1) % stepCount();
+      seqTimer = setTimeout(loop, delay);
+    }
+    loop();
+  }
+
+  function restartSeq() {
+    stopSeq();
+    startSeq();
+  }
+
+  function syncPlayback() {
+    if (soundEnabled) startSeq();
+    else stopSeq();
+  }
+
+  function mount() {
+    if (mounted) unmount();
+    document.querySelectorAll('.cv-section.midi-bank .cv-table tbody tr').forEach(buildLane);
+    mounted = true;
+  }
+
+  function unmount() {
+    stopSeq();
+    document.querySelectorAll('.track-lane').forEach(function(el) { el.remove(); });
+    document.querySelectorAll('.has-track-lane').forEach(function(row) {
+      row.classList.remove('has-track-lane');
+      delete row.dataset.trackType;
+    });
+    mounted = false;
+  }
+
+  function remount() {
+    if (!soundEnabled) return;
+    unmount();
+    mount();
+    syncPlayback();
+  }
+
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.track-label') && !e.target.closest('.track-module-menu')) {
+      closeModuleMenus();
+    }
+  });
+
+  return {
+    mount: mount, unmount: unmount, remount: remount,
+    syncPlayback: syncPlayback, restartSeq: restartSeq,
+    closeModuleMenus: closeModuleMenus
+  };
 })();
 
 initSoundPanel();
@@ -364,17 +1818,23 @@ loadSoundPrefs();
 
 function attachTableSound() {
   document.querySelectorAll('.cv-table tbody tr').forEach(row => {
-    // Avoid double-binding
     if (row.dataset.soundBound) return;
     row.dataset.soundBound = '1';
-
-    row.addEventListener('mouseenter', () => Sound.play(row));
-    row.addEventListener('mouseleave', () => Sound.stop(row));
+    row.addEventListener('mouseenter', function() {
+      if (soundEnabled) return;
+      Sound.play(row);
+    });
+    row.addEventListener('mouseleave', function() {
+      if (soundEnabled) return;
+      Sound.stop(row);
+    });
   });
 
-  // Stop all notes when mouse leaves any table
-  document.querySelectorAll('.cv-table').forEach(tbl => {
-    tbl.addEventListener('mouseleave', () => Sound.stopAll());
+  document.querySelectorAll('.table-wrap').forEach(function(wrap) {
+    if (wrap.dataset.soundZone) return;
+    wrap.dataset.soundZone = '1';
+    wrap.addEventListener('mouseenter', function() { Sound.tableEnter(); });
+    wrap.addEventListener('mouseleave', function() { Sound.tableLeave(); });
   });
 }
 
@@ -733,10 +2193,12 @@ async function render() {
 
   // ── Render sections ──
   document.getElementById('cv-sections').innerHTML = sections.map(sec => {
-    const id    = `sec-${slugify(sec.title)}`;
+    const slug  = slugify(sec.title);
+    const id    = `sec-${slug}`;
+    const isBank = MIDI_BANK_SLUGS.indexOf(slug) >= 0;
     const tbls  = sec.tables.map(t => buildTable(t.headers, t.rows)).join('');
     const paras = sec.paras.map(p => `<p>${parseInline(p)}</p>`).join('');
-    return `<section class="cv-section" id="${id}">
+    return `<section class="cv-section${isBank ? ' midi-bank' : ''}" id="${id}" data-bank="${slug}">
       <div class="sec-head">
         <span class="sec-label">${parseInline(sec.title)}</span>
         <button class="sec-toggle" onclick="toggleSection('${id}')">Hide</button>
@@ -756,7 +2218,11 @@ async function render() {
 
   // ── Init scroll animations ──
   requestAnimationFrame(initScrollReveal);
-  requestAnimationFrame(attachTableSound);
+  requestAnimationFrame(function() {
+    attachTableSound();
+    if (soundEnabled) TrackSeq.mount();
+    TrackSeq.syncPlayback();
+  });
 }
 
 // ── Export mode: inline A4 preview, print = WYSIWYG ──
@@ -905,6 +2371,8 @@ function initA4Controls() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+  NavVibe.init();
+  loadSoundPrefs();
   setA4Mode(false);
   initA4Controls();
   render();

@@ -54,6 +54,8 @@ a:hover { text-decoration: underline; }
   position: fixed;
   top: 0; left: 0; right: 0;
   z-index: 200;
+  /* anchor for centered waveform */
+  isolation: isolate;
   height: var(--bar-h);
   display: flex;
   align-items: center;
@@ -68,11 +70,45 @@ a:hover { text-decoration: underline; }
   font-weight: 400;
   letter-spacing: .02em;
   color: var(--ink);
-  flex: 1;
-  min-width: 0;
+  flex-shrink: 0;
+  max-width: min(42vw, 16em);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  position: relative;
+  z-index: 2;
+}
+#nav-vibe {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: clamp(140px, 34vw, 340px);
+  height: 22px;
+  pointer-events: none;
+  z-index: 1;
+}
+.nav-vibe-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.nav-vibe-path {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  opacity: .2;
+  transition: opacity .5s ease;
+}
+#nav-vibe.active .nav-vibe-path {
+  opacity: .92;
+  stroke-width: 3;
+}
+@media (prefers-reduced-motion: reduce) {
+  #nav-vibe { display: none; }
 }
 
 .toolbar-actions {
@@ -80,6 +116,9 @@ a:hover { text-decoration: underline; }
   align-items: center;
   gap: clamp(8px, 1.5vw, 16px);
   flex-shrink: 0;
+  margin-left: auto;
+  position: relative;
+  z-index: 2;
 }
 .toolbar-sound {
   display: flex;
@@ -104,11 +143,18 @@ a:hover { text-decoration: underline; }
   transition: color .15s;
 }
 .tb-btn:hover { text-decoration: underline; }
+.tb-icon-btn:hover { text-decoration: none; }
+.tb-icon-btn:hover .tb-icon { opacity: .55; }
+.tb-icon {
+  display: block;
+  fill: none;
+}
 #btn-dark { letter-spacing: 0; }
 #btn-sound-settings {
   color: var(--mid);
   padding-left: 0 !important;
 }
+#btn-export { color: var(--ink); }
 #btn-sound:hover,
 #btn-sound-settings:hover { color: var(--ink); text-decoration: underline; }
 #btn-sound.sound-on,
@@ -304,10 +350,249 @@ a:hover { text-decoration: underline; }
 
 /* Row hover — subtle bg */
 .cv-table tbody tr {
-  transition: background .12s;
+  transition: background .15s ease, color .15s ease;
 }
 .cv-table tbody tr:hover {
   background: color-mix(in srgb, var(--mid) 8%, var(--bg));
+}
+
+/* ── SOUND ON: MIDI controller layout ── */
+html.sound-on:not(.a4-mode) #hero,
+html.sound-on:not(.a4-mode) #cv-footer,
+html.sound-on:not(.a4-mode) .cv-section:not(.midi-bank) {
+  display: none !important;
+}
+html.sound-on:not(.a4-mode) #print-work {
+  padding-top: var(--bar-h);
+  min-height: 100vh;
+}
+html.sound-on:not(.a4-mode) #cv-sections {
+  padding: clamp(10px, 2vw, 18px) var(--pad-x) clamp(20px, 3vw, 32px);
+  border-top: none;
+  max-width: none;
+  min-height: calc(100vh - var(--bar-h));
+  display: flex;
+  flex-direction: column;
+  gap: clamp(6px, 1vw, 10px);
+}
+html.sound-on:not(.a4-mode) .cv-section.midi-bank {
+  margin: 0;
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none;
+}
+html.sound-on:not(.a4-mode) .sec-head,
+html.sound-on:not(.a4-mode) .sec-body-inner > p {
+  display: none !important;
+}
+html.sound-on:not(.a4-mode) .midi-bank .table-wrap {
+  overflow: visible;
+}
+html.sound-on:not(.a4-mode) .cv-table thead {
+  display: none;
+}
+html.sound-on:not(.a4-mode) .cv-table tbody tr.has-track-lane {
+  position: relative;
+  height: clamp(44px, 5.5vw, 56px);
+  background: transparent;
+}
+html.sound-on:not(.a4-mode) .cv-table tbody tr.has-track-lane:hover {
+  background: transparent;
+}
+html.sound-on:not(.a4-mode) .cv-table tbody tr.has-track-lane td {
+  visibility: hidden;
+  height: 0;
+  padding: 0;
+  border: none;
+  overflow: hidden;
+}
+html.sound-on:not(.a4-mode) .cv-table tbody tr.has-track-lane td {
+  border-top: none;
+}
+html.sound-on:not(.a4-mode) .cv-section.midi-bank[data-bank="film-immersive-work"] .track-lane {
+  --bank-tint: color-mix(in srgb, var(--ink) 4%, transparent);
+}
+html.sound-on:not(.a4-mode) .cv-section.midi-bank[data-bank="commercial-production"] .track-lane {
+  --bank-tint: color-mix(in srgb, var(--mid) 10%, transparent);
+}
+.track-lane {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: stretch;
+  gap: clamp(8px, 1.2vw, 14px);
+  padding: 6px 0;
+  border-top: .5px solid var(--line);
+  box-sizing: border-box;
+  background: var(--bank-tint, transparent);
+}
+.track-head {
+  width: 52px;
+  flex-shrink: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  align-self: center;
+}
+.track-label {
+  font-family: var(--font);
+  font-size: 9px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--mid);
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-underline-offset: 3px;
+}
+.track-label:hover {
+  color: var(--ink);
+  text-decoration: underline;
+}
+.track-controls {
+  display: flex;
+  gap: 2px;
+}
+.track-mute,
+.track-solo,
+.track-lock {
+  font-family: var(--font);
+  font-size: 8px;
+  letter-spacing: .06em;
+  line-height: 1;
+  padding: 2px 3px;
+  background: none;
+  border: .5px solid var(--line);
+  color: var(--mid);
+  cursor: pointer;
+}
+.track-mute:hover,
+.track-solo:hover,
+.track-lock:hover { color: var(--ink); border-color: var(--ink); }
+.track-mute.active,
+.track-solo.active,
+.track-lock.active {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+}
+.track-module-menu {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 4px);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 72px;
+  padding: 4px;
+  background: var(--bg);
+  border: .5px solid var(--line);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--ink) 12%, transparent);
+}
+.track-module-opt {
+  font-family: var(--font);
+  font-size: 9px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  text-align: left;
+  padding: 5px 8px;
+  background: none;
+  border: none;
+  color: var(--mid);
+  cursor: pointer;
+}
+.track-module-opt:hover,
+.track-module-opt.active {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--mid) 10%, transparent);
+}
+.track-lane.is-locked .track-label {
+  cursor: default;
+  opacity: .72;
+}
+.track-lane.is-muted { opacity: .42; }
+.track-lane.is-muted .track-grid { pointer-events: auto; }
+.track-lane.is-solo .track-label {
+  color: var(--ink);
+  font-weight: 500;
+}
+.track-grid {
+  flex: 1;
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  align-items: stretch;
+}
+.track-grid.steps-16 { grid-template-columns: repeat(16, 1fr); }
+.track-grid.steps-8  { grid-template-columns: repeat(8, 1fr); }
+.track-step {
+  appearance: none;
+  -webkit-appearance: none;
+  border: .5px solid var(--line);
+  background: color-mix(in srgb, var(--mid) 7%, transparent);
+  padding: 0;
+  min-height: 24px;
+  cursor: pointer;
+  border-radius: 0;
+  transition: background .1s ease, box-shadow .1s ease;
+}
+html.sound-on:not(.a4-mode) .track-step {
+  min-height: clamp(36px, 4.8vw, 48px);
+}
+.track-step:hover {
+  background: color-mix(in srgb, var(--mid) 18%, transparent);
+}
+.track-step.on {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+.track-step.on.soft {
+  background: color-mix(in srgb, var(--ink) 42%, var(--bg));
+  border-color: color-mix(in srgb, var(--ink) 55%, var(--line));
+}
+.track-step.on:hover { background: var(--ink); }
+.track-step.on.soft:hover {
+  background: color-mix(in srgb, var(--ink) 55%, var(--bg));
+}
+.track-step.playhead {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--ink) 50%, var(--bg));
+}
+.track-step.on.playhead {
+  box-shadow: inset 0 0 0 2px var(--bg);
+}
+.track-step.hit {
+  box-shadow: 0 0 0 2px var(--ink);
+  filter: brightness(1.15);
+}
+.track-step.on.hit {
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--ink);
+}
+.track-drums .track-step.on {
+  background: color-mix(in srgb, var(--ink) 70%, var(--mid));
+}
+.track-kick .track-step.on {
+  background: color-mix(in srgb, var(--ink) 88%, var(--bg));
+}
+.track-bass .track-step.on {
+  background: color-mix(in srgb, var(--mid) 40%, var(--ink));
+}
+.track-clap .track-step.on {
+  background: color-mix(in srgb, var(--mid) 55%, var(--ink));
+}
+.track-note .track-step.on { background: var(--ink); }
+.track-drums .track-label { letter-spacing: .08em; }
+.track-lane.has-notes .track-label {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+html.sound-loop .track-grid {
+  opacity: 1;
 }
 
 /* Status dot */
@@ -406,6 +691,29 @@ a:hover { text-decoration: underline; }
     color: var(--mid);
     font-weight: 400;
     margin-bottom: 3px;
+  }
+
+  html.sound-on:not(.a4-mode) .cv-table tbody tr.has-track-lane {
+    display: block;
+    height: auto;
+    min-height: 52px;
+    padding: 0;
+  }
+  html.sound-on:not(.a4-mode) .track-lane {
+    position: relative;
+    inset: auto;
+    flex-direction: row;
+    gap: 8px;
+    padding: 8px 0;
+  }
+  html.sound-on:not(.a4-mode) .track-head {
+    width: 48px;
+  }
+  html.sound-on:not(.a4-mode) .track-grid {
+    width: 100%;
+  }
+  html.sound-on:not(.a4-mode) .track-step {
+    min-height: 40px;
   }
 }
 
@@ -590,6 +898,11 @@ html.a4-mode #sound-panel { display: none !important; }
 }
 .sp-close:hover { color: var(--ink); text-decoration: underline; }
 
+.sp-divider {
+  font-size: 9px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--ink); margin: 6px 0 12px; padding-top: 4px;
+  border-top: .5px solid var(--line);
+}
 .sp-row {
   display: flex; align-items: center; gap: 10px;
   margin-bottom: 14px;
