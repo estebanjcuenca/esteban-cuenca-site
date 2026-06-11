@@ -35,9 +35,9 @@ Alongside his independent work, he operates as an integrated producer for global
 
 ## Events & Jury
 
-| Event | Role |
-|-------|------|
-| **BITBANG 2022** · Buenos Aires · Festival of Digital Arts | Jury member, GIF Competition · Masterclass coordinator, Julia Pott (British Council) |
+| Event | Role | Details |
+|-------|------|---------|
+| **BITBANG 2022** · Buenos Aires · Festival of Digital Arts | Collaborator | Jury member, GIF Competition · Masterclass coordinator, Julia Pott (British Council) |
 
 ## Education & Languages
 

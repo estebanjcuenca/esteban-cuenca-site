@@ -22,19 +22,27 @@
   "address": { "@type": "PostalAddress", "addressLocality": "Amsterdam" }
 }
 </script>
+<script>if(localStorage.getItem('ec-dark')==='1')document.documentElement.classList.add('dark')</script>
 <link rel="stylesheet" href="fonts.css">
 <link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="print.css">
 </head>
 <body>
 
 <header id="toolbar">
-  <span id="toolbar-name"></span>
-  <button class="tb-btn" id="btn-dark" onclick="toggleDark()" title="Toggle dark mode">◐</button>
-  <div style="display:flex;align-items:center;gap:6px">
-    <button class="tb-btn" id="btn-sound" onclick="toggleSound()">Sound: Off</button>
-    <button class="tb-btn" id="btn-sound-settings" onclick="toggleSoundPanel()" title="Sound settings" style="padding:4px 8px;opacity:.5">&#9965;</button>
+  <span id="toolbar-name">Esteban Cuenca</span>
+  <div id="toolbar-site" class="toolbar-actions">
+    <button class="tb-btn" id="btn-dark" onclick="toggleDark()" title="Toggle dark mode">◐</button>
+    <div class="toolbar-sound">
+      <button class="tb-btn" id="btn-sound" onclick="toggleSound()">Sound: Off</button>
+      <button class="tb-btn" id="btn-sound-settings" onclick="toggleSoundPanel()" title="Sound settings">&#9965;</button>
+    </div>
+    <button class="tb-btn" id="btn-export" type="button" title="Export PDF">Export</button>
   </div>
-  <button class="tb-btn" onclick="window.print()">Print</button>
+  <div id="toolbar-export" class="toolbar-actions" hidden>
+    <button class="tb-btn" id="btn-print" type="button">Print</button>
+    <button class="tb-btn" id="btn-back" type="button">Back</button>
+  </div>
 </header>
 
 <div id="sound-panel" aria-hidden="true">
@@ -102,6 +110,7 @@
     <h1 id="cv-name"></h1>
     <p id="cv-subtitle"></p>
     <div id="cv-bio"></div>
+    <p id="hero-scroll" aria-hidden="true"><a href="#cv-sections">Scroll</a></p>
   </div>
   <div id="hero-photo">
     <!-- Photo file is set via `photo:` in content.md frontmatter -->
@@ -109,8 +118,17 @@
   </div>
 </section>
 
-<main id="cv-sections"></main>
-<footer id="cv-footer"></footer>
+<div id="a4-stage" hidden>
+  <div id="a4-pages">
+    <div class="a4-page" id="a4-page-1"></div>
+    <div class="a4-page" id="a4-page-2"></div>
+  </div>
+</div>
+
+<div id="print-work">
+  <main id="cv-sections"></main>
+  <footer id="cv-footer"></footer>
+</div>
 
 <!-- ═══════════════════════════════════════════════════════════════════
      EDIT CONTENT BELOW — pure markdown, no HTML needed
@@ -118,15 +136,86 @@
 
 <script>
 // ── SOUND PANEL ──────────────────────────────────────────────────────────
+var soundFmt = {
+  gain:   function(v){ return Math.round(v * 100) + '%'; },
+  attack: function(v){ return Math.round(v * 1000) + 'ms'; },
+  decay:  function(v){ return v.toFixed(1) + 's'; },
+  detune: function(v){ return (v > 0 ? '+' : '') + Math.round(v) + '¢'; }
+};
+
+function setFilmRoot(val) {
+  Sound.params.filmRoot = val;
+  Sound.params.roots['sec-film'] = val;
+  Sound.params.roots['sec-comm'] = val * 0.667;
+  Sound.params.roots['sec-ev']   = val * 0.75;
+  Sound.params.roots['sec-edu']  = val * 0.889;
+}
+
+function updateSoundParamLabel(param, val) {
+  var lbl = document.getElementById('sp-' + param + '-val');
+  if (lbl && soundFmt[param]) lbl.textContent = soundFmt[param](val);
+}
+
+function syncSoundPanelUI() {
+  var panel = document.getElementById('sound-panel');
+  if (!panel) return;
+  var p = Sound.params;
+  panel.querySelectorAll('.sp-seg[data-param]').forEach(function(seg) {
+    var param = seg.getAttribute('data-param');
+    var val = p[param];
+    seg.querySelectorAll('.sp-seg-btn').forEach(function(b) {
+      var raw = b.getAttribute('data-val');
+      var match = isNaN(raw) ? raw === val : parseFloat(raw) === val;
+      b.classList.toggle('active', match);
+    });
+  });
+  panel.querySelectorAll('input.sp-range[data-param]').forEach(function(input) {
+    var param = input.getAttribute('data-param');
+    if (p[param] === undefined) return;
+    input.value = String(p[param]);
+    updateSoundParamLabel(param, p[param]);
+  });
+}
+
+function saveSoundPrefs() {
+  try {
+    localStorage.setItem('ec-sound', JSON.stringify({
+      enabled: soundEnabled,
+      params: Sound.params
+    }));
+  } catch (e) {}
+}
+
+function loadSoundPrefs() {
+  try {
+    var raw = JSON.parse(localStorage.getItem('ec-sound') || 'null');
+    if (!raw) return;
+    if (raw.params) {
+      Object.assign(Sound.params, raw.params);
+      if (raw.params.roots) Sound.params.roots = Object.assign({}, Sound.params.roots, raw.params.roots);
+      if (raw.params.filmRoot) setFilmRoot(raw.params.filmRoot);
+    }
+    if (raw.enabled) {
+      soundEnabled = true;
+      var btn = document.getElementById('btn-sound');
+      if (btn) {
+        btn.textContent = 'Sound: On';
+        btn.classList.add('sound-on');
+      }
+    }
+    syncSoundPanelUI();
+  } catch (e) {}
+}
+
 function toggleSoundPanel() {
   var p    = document.getElementById('sound-panel');
   var sBtn = document.getElementById('btn-sound-settings');
   var open = p.classList.toggle('open');
   p.setAttribute('aria-hidden', String(!open));
   if (sBtn) sBtn.classList.toggle('panel-open', open);
+  if (open) syncSoundPanelUI();
 }
 
-// Single delegated listener for the whole panel
 function initSoundPanel() {
   var panel = document.getElementById('sound-panel');
   if (!panel) return;
@@ -144,15 +233,11 @@ function initSoundPanel() {
     var raw   = btn.getAttribute('data-val');
     var param = seg.getAttribute('data-param');
     var val   = isNaN(raw) ? raw : parseFloat(raw);
-    Sound.params[param] = val;
-    if (param === 'filmRoot') {
-      Sound.params.roots['sec-film'] = val;
-      Sound.params.roots['sec-comm'] = val * 0.667;
-      Sound.params.roots['sec-ev']   = val * 0.75;
-      Sound.params.roots['sec-edu']  = val * 0.889;
-    }
+    if (param === 'filmRoot') setFilmRoot(val);
+    else Sound.params[param] = val;
     seg.querySelectorAll('.sp-seg-btn').forEach(function(b){ b.classList.remove('active'); });
     btn.classList.add('active');
+    saveSoundPrefs();
   });
 
   panel.addEventListener('input', function(e) {
@@ -161,17 +246,10 @@ function initSoundPanel() {
     var param = el.getAttribute('data-param');
     var val   = parseFloat(el.value);
     Sound.params[param] = val;
-    var fmt = {
-      gain:   function(v){ return Math.round(v*100)+'%'; },
-      attack: function(v){ return Math.round(v*1000)+'ms'; },
-      decay:  function(v){ return v.toFixed(1)+'s'; },
-      detune: function(v){ return (v>0?'+':'')+Math.round(v)+'¢'; }
-    };
-    var lbl = document.getElementById('sp-'+param+'-val');
-    if (lbl && fmt[param]) lbl.textContent = fmt[param](val);
+    updateSoundParamLabel(param, val);
+    saveSoundPrefs();
   });
 }
-initSoundPanel();
 
 // ── SOUND SYSTEM ──────────────────────────────────────────────────────────
 // Harmonic series rooted on A2 (110Hz). Each film row = a partial.
@@ -187,6 +265,7 @@ function toggleSound() {
   btn.textContent = 'Sound: ' + (soundEnabled ? 'On' : 'Off');
   btn.classList.toggle('sound-on', soundEnabled);
   if (!soundEnabled) Sound.stopAll();
+  saveSoundPrefs();
 }
 
 const Sound = (function() {
@@ -280,6 +359,9 @@ const Sound = (function() {
   return { play: play, stop: stop, stopAll: stopAll, test: test, params: params };
 })();
 
+initSoundPanel();
+loadSoundPrefs();
+
 function attachTableSound() {
   document.querySelectorAll('.cv-table tbody tr').forEach(row => {
     // Avoid double-binding
@@ -372,50 +454,149 @@ function isSeparatorRow(line) {
   return /^\s*\|?\s*[-:]+[-| :]*$/.test(line);
 }
 
-// ── Table builder ──────────────────────────────────────────────
-function buildTable(headers, rows) {
-  const hl = headers.map(h => h.toLowerCase());
-  const isFilm = hl.includes('status');
+// Split entity cells so Role / location align across all tables
+function splitEntityCell(text, kind) {
+  const m = text.match(/^\*\*(.+?)\*\*\s*(?:·\s*)?(.*)/s);
+  if (!m) return { entityHtml: formatCell(text), role: '', premiere: '' };
+  const title = m[1].trim();
+  const rest  = m[2].trim();
+  const titleHtml = `<span class="ent-title">${parseInline(title)}</span>`;
 
-  // Column CSS classes
-  const cls = headers.map(h => {
-    switch (h.toLowerCase()) {
-      case 'status':      return 'col-status';
-      case 'project':
-      case 'company':
-      case 'event':
-      case 'institution': return 'col-entity';
-      case 'festivals':   return 'col-festivals hide-mobile';
-      case 'awards':      return 'col-awards hide-mobile';
-      case 'support':     return 'col-support hide-mobile';
-      default:            return '';
-    }
+  if (kind === 'company') {
+    const parts = rest.split(/\s*·\s*/).filter(Boolean);
+    return {
+      entityHtml: titleHtml,
+      role: parts[0] || '',
+      premiere: parts.slice(1).join(' · ') || ''
+    };
+  }
+  if (kind === 'event') {
+    return { entityHtml: titleHtml, role: '', premiere: rest ? parseInline(rest) : '' };
+  }
+  if (kind === 'institution') {
+    return { entityHtml: titleHtml, role: '', degree: rest ? parseInline(rest) : '' };
+  }
+  return { entityHtml: formatCell(text), role: '', premiere: '' };
+}
+
+/* Shared 7-column grid — all tables pad to these slots for horizontal alignment */
+const MASTER_COLS = [
+  { key: 'status',    cls: 'col-status' },
+  { key: 'entity',    cls: 'col-entity' },
+  { key: 'role',      cls: 'col-role' },
+  { key: 'premiere',  cls: 'col-premiere' },
+  { key: 'festivals', cls: 'col-festivals' },
+  { key: 'awards',    cls: 'col-awards' },
+  { key: 'support',   cls: 'col-support' }
+];
+
+const COL_LABELS = {
+  film: {
+    entity: 'Project', role: 'Role', premiere: 'Premiere',
+    festivals: 'Festivals', awards: 'Awards', support: 'Support'
+  },
+  commercial: {
+    entity: 'Company', role: 'Role', premiere: 'Location',
+    festivals: 'Clients', awards: '', support: ''
+  },
+  event: {
+    entity: 'Event', role: 'Role', premiere: 'Location',
+    festivals: 'Details', awards: '', support: ''
+  },
+  education: {
+    entity: 'Institution', role: 'Degree', premiere: '',
+    festivals: 'Details', awards: '', support: ''
+  }
+};
+
+function tableKind(headers) {
+  const hl = headers.map(h => h.toLowerCase());
+  if (hl.includes('status')) return 'film';
+  if (hl.includes('company')) return 'commercial';
+  if (hl.includes('event')) return 'event';
+  if (hl.includes('institution')) return 'education';
+  return 'generic';
+}
+
+function normalizeTable(headers, rows) {
+  const hl = headers.map(h => h.toLowerCase());
+  const kind = tableKind(headers);
+  const labels = COL_LABELS[kind] || COL_LABELS.film;
+
+  const canon = MASTER_COLS.map(col => {
+    let cls = col.cls;
+    if (col.key === 'festivals' && kind === 'film') cls += ' hide-mobile';
+    if ((col.key === 'awards' || col.key === 'support') && kind === 'film') cls += ' hide-mobile';
+    return { key: col.key, label: labels[col.key] || '', cls };
   });
 
-  let out = '<div class="table-wrap"><table class="cv-table"><thead><tr>';
-  headers.forEach((h, i) => {
-    const c = cls[i] ? ` class="${cls[i]}"` : '';
-    out += `<th${c}>${h.toLowerCase() === 'status' ? '' : parseInline(h)}</th>`;
+  const data = rows.map(cells => {
+    const raw = {};
+    const html = {};
+    hl.forEach((h, i) => { raw[h] = (cells[i] || '').trim(); });
+
+    if (kind === 'film' && raw.project) {
+      html.entity = formatCell(raw.project);
+    } else if (kind === 'commercial' && raw.company) {
+      const s = splitEntityCell(raw.company, 'company');
+      html.entity = s.entityHtml;
+      raw.role = s.role;
+      raw.premiere = s.premiere;
+      raw.festivals = raw.clients || '';
+    } else if (kind === 'event' && raw.event) {
+      const s = splitEntityCell(raw.event, 'event');
+      html.entity = s.entityHtml;
+      raw.premiere = s.premiere;
+      raw.festivals = raw.details || '';
+    } else if (kind === 'education' && raw.institution) {
+      const s = splitEntityCell(raw.institution, 'institution');
+      html.entity = s.entityHtml;
+      raw.role = s.degree || '';
+      raw.festivals = raw.details || '';
+    }
+
+    return { raw, html };
+  });
+
+  return { canon, data, kind };
+}
+
+// ── Table builder ──────────────────────────────────────────────
+function buildTable(headers, rows) {
+  const { canon, data } = normalizeTable(headers, rows);
+
+  let out = '<div class="table-wrap"><table class="cv-table"><colgroup>';
+  canon.forEach(col => { out += `<col class="${col.cls.split(' ')[0]}">`; });
+  out += '</colgroup><thead><tr>';
+
+  canon.forEach(col => {
+    const label = col.label ? parseInline(col.label) : '';
+    const labelAttr = label ? ` data-label="${label.replace(/"/g, '&quot;')}"` : '';
+    out += `<th class="${col.cls}"${labelAttr}>${col.key === 'status' ? '' : label}</th>`;
   });
   out += '</tr></thead><tbody>';
 
-  rows.forEach(cells => {
+  data.forEach(({ raw, html }) => {
     out += '<tr>';
-    headers.forEach((h, i) => {
-      const cell = (cells[i] || '').trim();
-      const c = cls[i] ? ` class="${cls[i]}"` : '';
-      const lh = h.toLowerCase();
+    canon.forEach(col => {
+      const c = ` class="${col.cls}"`;
+      const label = col.label ? parseInline(col.label) : col.key;
+      const labelAttr = col.key === 'status' ? '' :
+        ` data-label="${label.replace(/"/g, '&quot;')}"`;
 
-      const labelAttr = lh === 'status' ? '' :
-        ` data-label="${parseInline(h).replace(/"/g, '&quot;')}"`;
-
-      if (lh === 'status') {
-        const done = cell.toLowerCase() === 'done';
-        out += `<td${c}><span class="dot ${done ? 'dot-done' : 'dot-wip'}"></span></td>`;
-      } else if (lh === 'project' || lh === 'company' || lh === 'event' || lh === 'institution') {
-        out += `<td${c}${labelAttr}>${formatCell(cell)}</td>`;
+      if (col.key === 'status') {
+        if (!raw.status) {
+          out += `<td class="${col.cls} col-status-empty"${labelAttr}></td>`;
+        } else {
+          const done = raw.status.toLowerCase() === 'done';
+          out += `<td${c}><span class="dot ${done ? 'dot-done' : 'dot-wip'}"></span></td>`;
+        }
+      } else if (col.key === 'entity') {
+        const content = html.entity || '';
+        out += `<td${c}${labelAttr}>${content}</td>`;
       } else {
-        out += `<td${c}${labelAttr}>${parseInline(cell)}</td>`;
+        const val = raw[col.key] || '';
+        out += `<td${c}${labelAttr}>${val ? parseInline(val) : ''}</td>`;
       }
     });
     out += '</tr>';
@@ -456,15 +637,6 @@ async function render() {
   // ── Meta fields ──
   if (meta.photo) document.getElementById('cv-photo').src = meta.photo;
   if (meta.subtitle) document.getElementById('cv-subtitle').textContent = meta.subtitle;
-
-  const footerParts = [];
-  if (meta.location) footerParts.push(meta.location);
-  if (meta.email) footerParts.push(`<a href="mailto:${meta.email}">${meta.email}</a>`);
-  if (meta.privacy) footerParts.push(`<a href="${meta.privacy}">Privacy Policy</a>`);
-  if (footerParts.length) {
-    document.getElementById('cv-footer').innerHTML =
-      footerParts.join('<span class="footer-sep"> · </span>');
-  }
 
   // ── Parse body lines ──
   const lines = body.split('\n');
@@ -533,8 +705,17 @@ async function render() {
 
   // ── Set name ──
   document.getElementById('cv-name').textContent = name;
-  document.getElementById('toolbar-name').textContent = name;
   document.title = name + (meta.subtitle ? ' — ' + meta.subtitle : '');
+
+  const footerRight = [];
+  if (meta.privacy) footerRight.push(`<a href="${meta.privacy}">Privacy Policy</a>`);
+  if (meta.location) footerRight.push(`<span class="footer-plain">${meta.location}</span>`);
+  footerRight.push(`<span class="footer-plain">© ${new Date().getFullYear()} ${name}. All rights reserved.</span>`);
+  const footerLeft = meta.email
+    ? `<span class="footer-left"><a href="mailto:${meta.email}">${meta.email}</a></span>` : '';
+  const footerRightHtml = footerRight.length
+    ? `<span class="footer-right">${footerRight.join('')}</span>` : '';
+  document.getElementById('cv-footer').innerHTML = footerLeft + footerRightHtml;
 
   // ── Render bio: split on blank lines into <p> tags ──
   const bioParas = [];
@@ -560,7 +741,7 @@ async function render() {
         <span class="sec-label">${parseInline(sec.title)}</span>
         <button class="sec-toggle" onclick="toggleSection('${id}')">Hide</button>
       </div>
-      <div class="sec-body">${tbls}${paras}</div>
+      <div class="sec-body"><div class="sec-body-inner">${tbls}${paras}</div></div>
     </section>`;
   }).join('');
 
@@ -578,22 +759,156 @@ async function render() {
   requestAnimationFrame(attachTableSound);
 }
 
-document.addEventListener('DOMContentLoaded', render);  function test() {
-    boot();
-    function go() {
-      var osc  = ctx.createOscillator();
-      var gain = ctx.createGain();
-      osc.type = params.wave;
-      osc.frequency.setValueAtTime(params.filmRoot, ctx.currentTime);
-      osc.detune.setValueAtTime(params.detune, ctx.currentTime);
-      gain.gain.setValueAtTime(0, ctx.currentTime);
-      gain.gain.linearRampToValueAtTime(params.gain, ctx.currentTime + params.attack);
-      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + params.attack + params.decay);
-      osc.connect(gain); gain.connect(ctx.destination);
-      osc.start(); osc.stop(ctx.currentTime + params.attack + params.decay + 0.1);
-    }
-    ctx.state === 'suspended' ? ctx.resume().then(go) : go();
+// ── Export mode: inline A4 preview, print = WYSIWYG ──
+var PRINT_PAGE_H_PX = 277 * (96 / 25.4);
+var A4_PAGE_W_PX = 210 * (96 / 25.4);
+var a4Anchors = { hero: null, work: null };
+
+function isA4Mode() {
+  return document.documentElement.classList.contains('a4-mode');
+}
+
+function activeNavBar() {
+  return document.getElementById('toolbar');
+}
+
+function applyWorkScale(pct) {
+  var scale = Math.max(0.5, Math.min(1, (pct || 100) / 100));
+  document.documentElement.style.setProperty('--a4-work-scale', String(scale));
+  var page2 = document.getElementById('a4-page-2');
+  if (page2) page2.style.setProperty('--a4-work-scale', String(scale));
+}
+
+function autoFitWorkScale() {
+  var page2 = document.getElementById('a4-page-2');
+  if (!page2) return;
+  applyWorkScale(100);
+  void page2.offsetHeight;
+  if (page2.scrollHeight > PRINT_PAGE_H_PX) {
+    applyWorkScale(Math.min(100, Math.round((PRINT_PAGE_H_PX / page2.scrollHeight) * 100)));
   }
+}
+
+function preparePrintLayout() {
+  if (!isA4Mode()) return;
+  autoFitWorkScale();
+  syncA4ToolbarOffset();
+  updateA4ViewportScale();
+}
+
+function syncA4ToolbarOffset() {
+  var tb = activeNavBar();
+  var stage = document.getElementById('a4-stage');
+  if (!tb || !stage || !isA4Mode()) return;
+  stage.style.paddingTop = (tb.offsetHeight + 12) + 'px';
+}
+
+function updateA4ViewportScale() {
+  var pages = document.getElementById('a4-pages');
+  if (!pages || !isA4Mode()) return;
+  var scale = Math.min(1, (window.innerWidth - 32) / A4_PAGE_W_PX);
+  pages.style.zoom = scale < 1 ? String(scale) : '';
+}
+
+function mountA4Content() {
+  var hero = document.getElementById('hero');
+  var work = document.getElementById('print-work');
+  var page1 = document.getElementById('a4-page-1');
+  var page2 = document.getElementById('a4-page-2');
+  if (!hero || !work || !page1 || !page2) return;
+  if (!a4Anchors.hero) {
+    a4Anchors.hero = { parent: hero.parentNode, next: hero.nextSibling };
+    a4Anchors.work = { parent: work.parentNode, next: work.nextSibling };
+  }
+  page1.appendChild(hero);
+  page2.appendChild(work);
+}
+
+function unmountA4Content() {
+  var hero = document.getElementById('hero');
+  var work = document.getElementById('print-work');
+  if (!hero || !work || !a4Anchors.hero || !a4Anchors.work) return;
+  var hA = a4Anchors.hero;
+  var wA = a4Anchors.work;
+  if (hA.next) hA.parent.insertBefore(hero, hA.next);
+  else hA.parent.appendChild(hero);
+  if (wA.next) wA.parent.insertBefore(work, wA.next);
+  else wA.parent.appendChild(work);
+}
+
+function setA4Mode(on) {
+  var html = document.documentElement;
+  var stage = document.getElementById('a4-stage');
+  var siteActions = document.getElementById('toolbar-site');
+  var exportActions = document.getElementById('toolbar-export');
+  var soundPanel = document.getElementById('sound-panel');
+  if (on) {
+    mountA4Content();
+    html.classList.add('a4-mode');
+    if (stage) stage.removeAttribute('hidden');
+    if (siteActions) siteActions.hidden = true;
+    if (exportActions) exportActions.hidden = false;
+    if (soundPanel && soundPanel.classList.contains('open')) toggleSoundPanel();
+    preparePrintLayout();
+    window.scrollTo(0, 0);
+  } else {
+    html.classList.remove('a4-mode');
+    if (stage) {
+      stage.setAttribute('hidden', '');
+      stage.style.paddingTop = '';
+    }
+    var pages = document.getElementById('a4-pages');
+    if (pages) pages.style.zoom = '';
+    var page2 = document.getElementById('a4-page-2');
+    if (page2) page2.style.removeProperty('--a4-work-scale');
+    document.documentElement.style.removeProperty('--a4-work-scale');
+    if (siteActions) siteActions.hidden = false;
+    if (exportActions) exportActions.hidden = true;
+    unmountA4Content();
+  }
+}
+
+function enterExportMode() {
+  setA4Mode(true);
+}
+
+function exportA4() {
+  if (!isA4Mode()) setA4Mode(true);
+  preparePrintLayout();
+  window.print();
+}
+
+var a4EnteredForPrint = false;
+
+function initA4Controls() {
+  document.getElementById('btn-export')?.addEventListener('click', enterExportMode);
+  document.getElementById('btn-print')?.addEventListener('click', exportA4);
+  document.getElementById('btn-back')?.addEventListener('click', function() { setA4Mode(false); });
+  window.addEventListener('resize', function() {
+    if (!isA4Mode()) return;
+    syncA4ToolbarOffset();
+    updateA4ViewportScale();
+  });
+  window.addEventListener('beforeprint', function() {
+    if (!isA4Mode()) {
+      a4EnteredForPrint = true;
+      setA4Mode(true);
+    }
+    preparePrintLayout();
+  });
+  window.addEventListener('afterprint', function() {
+    if (a4EnteredForPrint) {
+      a4EnteredForPrint = false;
+      setA4Mode(false);
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  setA4Mode(false);
+  initA4Controls();
+  render();
+});
 
 </script>
 

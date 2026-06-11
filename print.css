@@ -1,0 +1,294 @@
+/* Export layout — active only when html.a4-mode */
+html.a4-mode {
+  --a4-work-scale: 1;
+  --print-page-h: 277mm;
+  --print-photo-h: 138.5mm;
+  --print-name: 22pt;
+  --print-nav: 7pt;
+  --print-bio: 9pt;
+  --print-body: 6.5pt;
+  --print-footer: 7.5pt;
+  --print-footer-gap: 4mm;
+  --print-gap-sm: 4mm;
+  --print-gap-md: 6mm;
+  --print-gap-lg: 7mm;
+  --print-gap-xl: 6mm;
+  --print-cell-y: 2.4mm;
+  --print-cell-x: 2.5mm;
+}
+
+html.a4-mode #hero,
+html.a4-mode #hero-photo,
+html.a4-mode #hero-text,
+html.a4-mode #cv-photo,
+html.a4-mode #print-work,
+html.a4-mode #cv-sections,
+html.a4-mode .cv-section,
+html.a4-mode .sec-body,
+html.a4-mode .sec-body-inner,
+html.a4-mode .cv-table,
+html.a4-mode .cv-table thead,
+html.a4-mode .cv-table tbody,
+html.a4-mode .cv-table tr,
+html.a4-mode .cv-table th,
+html.a4-mode .cv-table td,
+html.a4-mode #cv-footer {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* Page 1: text left, photo right top — half page height */
+html.a4-mode #hero {
+  display: grid !important;
+  grid-template-columns: 1fr 42% !important;
+  grid-template-rows: 1fr !important;
+  gap: var(--print-gap-md) !important;
+  align-items: start !important;
+  position: static !important;
+  min-height: var(--print-page-h) !important;
+  height: var(--print-page-h) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+html.a4-mode #hero-text {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-end !important;
+  align-self: stretch !important;
+  position: static !important;
+  width: auto !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  padding: 0 0 2mm !important;
+  margin: 0 !important;
+  text-align: left !important;
+}
+html.a4-mode #hero-photo {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: flex-end !important;
+  position: static !important;
+  top: auto !important;
+  order: unset !important;
+  width: 100% !important;
+  height: var(--print-photo-h) !important;
+  max-height: var(--print-photo-h) !important;
+  margin: 0 !important;
+  overflow: visible !important;
+  text-align: right !important;
+}
+html.a4-mode #cv-photo {
+  display: block !important;
+  width: auto !important;
+  max-width: 100% !important;
+  height: 100% !important;
+  max-height: var(--print-photo-h) !important;
+  margin: 0 0 0 auto !important;
+  object-fit: contain !important;
+  object-position: right top !important;
+  filter: grayscale(100%) !important;
+}
+html.a4-mode #cv-name {
+  font-size: var(--print-name);
+  font-weight: 400;
+  line-height: .93;
+  letter-spacing: -.03em;
+  margin-bottom: var(--print-gap-sm);
+}
+html.a4-mode #cv-subtitle {
+  font-size: var(--print-nav);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--mid);
+  margin-bottom: var(--print-gap-md);
+}
+html.a4-mode #cv-bio p {
+  font-size: var(--print-bio);
+  line-height: 1.55;
+  max-width: none !important;
+  margin-bottom: .85em;
+  color: var(--ink);
+}
+html.a4-mode #cv-bio p:last-child { margin-bottom: 0; }
+
+/* Page 2: tables scale via slider */
+html.a4-mode #a4-page-2 {
+  zoom: var(--a4-work-scale, 1);
+}
+html.a4-mode #print-work {
+  display: block !important;
+}
+html.a4-mode #cv-sections {
+  display: block !important;
+  position: static !important;
+  padding: 0 !important;
+  border-top: none !important;
+}
+html.a4-mode .cv-section {
+  display: block !important;
+  position: static !important;
+  opacity: 1 !important;
+  transform: none !important;
+  margin-bottom: var(--print-gap-lg) !important;
+}
+html.a4-mode .cv-section:last-child { margin-bottom: 0 !important; }
+html.a4-mode .cv-section.sec-hidden { display: none !important; }
+html.a4-mode .sec-head { margin-bottom: var(--print-gap-sm) !important; }
+html.a4-mode .sec-toggle { display: none !important; }
+html.a4-mode .sec-label { font-size: 6.5pt; letter-spacing: .1em; }
+html.a4-mode .sec-body {
+  display: block !important;
+  grid-template-rows: none !important;
+  overflow: visible !important;
+}
+html.a4-mode .sec-body-inner {
+  display: block !important;
+  position: static !important;
+  opacity: 1 !important;
+  overflow: visible !important;
+  min-height: 0 !important;
+}
+
+html.a4-mode .table-wrap { overflow: visible !important; margin: 0 !important; }
+html.a4-mode .hide-mobile { display: table-cell !important; }
+html.a4-mode .cv-table {
+  display: table !important;
+  width: 100% !important;
+  table-layout: fixed !important;
+  font-size: var(--print-body);
+  line-height: 1.45;
+  border-collapse: collapse !important;
+}
+html.a4-mode .cv-table thead { display: table-header-group !important; }
+html.a4-mode .cv-table tbody { display: table-row-group !important; }
+html.a4-mode .cv-table tr { display: table-row !important; }
+html.a4-mode .cv-table th,
+html.a4-mode .cv-table td {
+  display: table-cell !important;
+  position: static !important;
+  margin: 0 !important;
+  vertical-align: top !important;
+  word-wrap: break-word !important;
+  overflow-wrap: anywhere !important;
+}
+html.a4-mode .cv-table td::before { content: none !important; display: none !important; }
+html.a4-mode .cv-table thead tr { border-top: .25pt solid var(--line); }
+html.a4-mode .cv-table th {
+  font-size: 6pt;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--mid);
+  font-weight: 400;
+  text-align: left;
+  padding: 0 var(--print-cell-x) 2mm 0 !important;
+  border-bottom: .25pt solid var(--line);
+}
+html.a4-mode .cv-table th:last-child { padding-right: 0 !important; }
+html.a4-mode .cv-table td {
+  font-size: var(--print-body);
+  padding: var(--print-cell-y) var(--print-cell-x) var(--print-cell-y) 0 !important;
+  border-bottom: none !important;
+  border-top: none !important;
+}
+html.a4-mode .cv-table td:last-child { padding-right: 0 !important; }
+html.a4-mode .cv-table tbody tr:not(:first-child) td {
+  border-top: .25pt solid var(--line) !important;
+}
+html.a4-mode .cv-table tbody tr:hover { background: none !important; }
+html.a4-mode .ent-title { font-size: 1.05em; letter-spacing: -.01em; line-height: 1.35; }
+html.a4-mode .ent-sub { font-size: .92em; color: var(--mid); margin-top: 1mm; line-height: 1.35; }
+html.a4-mode .col-status     { width: 3% !important; }
+html.a4-mode .col-entity     { width: 22% !important; }
+html.a4-mode .col-role       { width: 12% !important; }
+html.a4-mode .col-premiere   { width: 13% !important; }
+html.a4-mode .col-festivals  { width: 26% !important; }
+html.a4-mode .col-awards     { width: 13% !important; }
+html.a4-mode .col-support    { width: 11% !important; }
+html.a4-mode .col-status th,
+html.a4-mode .col-status td { width: 14px !important; padding-right: 1.5mm !important; }
+html.a4-mode .col-status-empty { display: none !important; }
+html.a4-mode .dot { width: 4px; height: 4px; margin-top: 2px; }
+
+html.a4-mode #cv-footer {
+  display: flex !important;
+  position: static !important;
+  justify-content: space-between !important;
+  align-items: baseline !important;
+  flex-wrap: nowrap !important;
+  gap: var(--print-footer-gap) !important;
+  width: 100% !important;
+  margin: var(--print-gap-lg) 0 0 !important;
+  padding: var(--print-gap-md) 0 0 !important;
+  border-top: .25pt solid var(--line) !important;
+  font-size: var(--print-footer);
+  letter-spacing: .02em;
+  color: var(--ink);
+}
+html.a4-mode .footer-left { flex-shrink: 0 !important; white-space: nowrap !important; }
+html.a4-mode .footer-right {
+  display: flex !important;
+  flex-shrink: 0 !important;
+  flex-wrap: nowrap !important;
+  align-items: baseline !important;
+  justify-content: flex-end !important;
+  gap: var(--print-footer-gap) !important;
+  margin-left: auto !important;
+  white-space: nowrap !important;
+}
+html.a4-mode .footer-right > * { flex-shrink: 0 !important; }
+html.a4-mode #hero-scroll { display: none !important; }
+
+@page { size: A4 portrait; margin: 10mm; }
+
+@media print {
+  html.a4-mode,
+  html.a4-mode body {
+    background: #fff !important;
+    color: #1A1714 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  html.a4-mode #toolbar,
+  html.a4-mode #sound-panel,
+  html.a4-mode #hero-scroll {
+    display: none !important;
+  }
+
+  html.a4-mode #a4-stage,
+  html.a4-mode #a4-pages {
+    zoom: 1 !important;
+    transform: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  html.a4-mode #a4-page-2 {
+    zoom: var(--a4-work-scale, 1) !important;
+  }
+  html.a4-mode .a4-page {
+    width: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+  }
+
+  html.a4-mode #hero {
+    page-break-after: always !important;
+    break-after: page !important;
+    break-inside: avoid !important;
+  }
+  html.a4-mode #print-work {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
+  html.a4-mode #cv-footer {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+}
