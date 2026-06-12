@@ -5,10 +5,6 @@ window.ECAudio = window.ECAudio || {};
 var TIME_BOND_PHASE = 0.52;
 var HARMONY_INTERVALS = [0, 3, 4, 5, 7, 12];
 var HARMONY_TOL = 1.15;
-var PRESET_HUE = {
-  kick: 14, hat: 192, clap: 38, bass: 268, bright: 88, minimal: 215
-};
-
 function beatMarkers() {
   var beatSec = ECAudio.BEAT_STUDIO_SEC_ID || 'beat-studio';
   return (ECAudio.State.markers || []).filter(function(m) {
@@ -118,11 +114,6 @@ function computeBonds(markers, overview, activeEnvId) {
   return bonds;
 }
 
-function presetHue(marker) {
-  var t = marker.presetId || (marker.envId ? marker.envId.replace(/^env-/, '') : 'kick');
-  return PRESET_HUE[t] != null ? PRESET_HUE[t] : 210;
-}
-
 function bondsSvg() {
   if (!ECAudio.BeatStudio || !ECAudio.BeatStudio.studioOverlay) return null;
   var overlay = ECAudio.BeatStudio.studioOverlay();
@@ -201,10 +192,9 @@ function syncBeatBonds() {
     else cls += ' beat-bond-z';
     if (bond.cross) cls += ' beat-bond-cross';
     line.setAttribute('class', cls);
-
-    var hue = Math.round((presetHue(bond.a) + presetHue(bond.b)) * 0.5);
-    line.style.setProperty('--bond-hue', String(hue));
-    line.style.opacity = String(0.34 + bond.strength * 0.48);
+    if (ECAudio.BeatColors && ECAudio.BeatColors.applyBondLine) {
+      ECAudio.BeatColors.applyBondLine(line, bond);
+    }
     svg.appendChild(line);
   }
 }

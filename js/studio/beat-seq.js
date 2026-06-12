@@ -334,6 +334,7 @@ function refreshAllPatternsNow() {
     ECAudio.BeatMix.deClashAllPatterns();
   }
   if (ECAudio.BeatView3d && ECAudio.BeatView3d.schedule) ECAudio.BeatView3d.schedule();
+  if (ECAudio.Markers && ECAudio.Markers.refreshVisuals) ECAudio.Markers.refreshVisuals();
   if (end) end();
 }
 

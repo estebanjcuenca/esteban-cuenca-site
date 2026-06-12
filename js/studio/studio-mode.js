@@ -21,6 +21,7 @@ function bootBeatStudio() {
   if (ECAudio.Markers && ECAudio.Markers.onBeatStudioChange) {
     ECAudio.Markers.onBeatStudioChange(true);
   }
+  if (ECAudio.Markers && ECAudio.Markers.refreshVisuals) ECAudio.Markers.refreshVisuals();
   if (ECAudio.BeatView3d && ECAudio.BeatView3d.resume) ECAudio.BeatView3d.resume();
   syncStudioNav();
   openStudioPanel();

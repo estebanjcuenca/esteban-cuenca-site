@@ -7,10 +7,29 @@ var _vizAnalyser = null;
 var _vizFft = null;
 
 var WAVE_COLORS = { sine: 1, triangle: 0.55, sawtooth: 0.85, square: 0.7 };
-var LAYER_HUE = {
-  kick: 14, hat: 192, clap: 38, bass: 268, bright: 88, minimal: 215
-};
-var CLASH_COLOR = '#c45a2a';
+function layerStrokeColor(layer, alpha) {
+  if (layer && layer.clash && ECAudio.BeatColors && ECAudio.BeatColors.semanticHsl) {
+    var clash = ECAudio.BeatColors.semanticHsl('clash');
+    return ECAudio.BeatColors.hslToCss(clash.h, clash.s, clash.l, alpha != null ? alpha : 1);
+  }
+  if (ECAudio.BeatColors && ECAudio.BeatColors.presetBaseHsl && ECAudio.BeatColors.hslToCss) {
+    var pb = ECAudio.BeatColors.presetBaseHsl(layer.type);
+    return ECAudio.BeatColors.hslToCss(pb.h, pb.s, clampLayerL(pb.l), alpha != null ? alpha : 1);
+  }
+  return 'hsl(210 40% 48% / ' + Math.round((alpha != null ? alpha : 1) * 100) + '%)';
+}
+
+function clampLayerL(l) {
+  return Math.max(34, Math.min(58, l - 2));
+}
+
+function clashFillColor(alpha) {
+  if (ECAudio.BeatColors && ECAudio.BeatColors.semanticHsl && ECAudio.BeatColors.hslToCss) {
+    var c = ECAudio.BeatColors.semanticHsl('clash');
+    return ECAudio.BeatColors.hslToCss(c.h, c.s, c.l, alpha != null ? alpha : 0.18);
+  }
+  return 'color-mix(in srgb, #c45a2a 18%, transparent)';
+}
 
 function vizInk() {
   return getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#111';
@@ -170,10 +189,7 @@ function drawWaveShape(canvas) {
 
   for (li = 0; li < layers.length; li++) {
     var layer = layers[li];
-    var hue = LAYER_HUE[layer.type] != null ? LAYER_HUE[layer.type] : 210;
-    var col = layer.clash
-      ? CLASH_COLOR
-      : 'hsl(' + hue + ' 48% 42% / ' + Math.round((layer.alpha || 1) * 100) + '%)';
+    var col = layerStrokeColor(layer, layer.alpha || 1);
     drawWaveLayer(ctx, w, h, layer, col, layer.alpha < 0.85);
     for (i = 0; i <= n; i++) {
       var y = sampleLayerAt(i / n, layer);
@@ -193,7 +209,7 @@ function drawWaveShape(canvas) {
     ctx.lineWidth = 2;
     ctx.stroke();
     if (clashMask.some(function(v) { return v; })) {
-      ctx.fillStyle = 'color-mix(in srgb, ' + CLASH_COLOR + ' 18%, transparent)';
+      ctx.fillStyle = clashFillColor(0.18);
       for (i = 0; i < n; i++) {
         if (!clashMask[i] && !clashMask[i + 1]) continue;
         ctx.fillRect((i / n) * w, 2, w / n + 1, h - 4);
@@ -315,9 +331,9 @@ function drawScope(canvas) {
     ? ECAudio.BeatMix.duckMeter() : 0;
   if (duck > 0.03) {
     var bandH = h * (0.18 + duck * 0.38);
-    ctx.fillStyle = 'color-mix(in srgb, ' + CLASH_COLOR + ' ' + Math.round(12 + duck * 38) + '%, transparent)';
+    ctx.fillStyle = clashFillColor(0.12 + duck * 0.38);
     ctx.fillRect(0, h * 0.5 - bandH * 0.5, w, bandH);
-    ctx.strokeStyle = 'color-mix(in srgb, ' + CLASH_COLOR + ' 55%, transparent)';
+    ctx.strokeStyle = layerStrokeColor({ clash: true, type: 'kick' }, 0.55);
     ctx.lineWidth = 1;
     ctx.setLineDash([4, 4]);
     ctx.beginPath();
@@ -393,10 +409,7 @@ function drawSpectrum(canvas) {
       if (!layer.band) return;
       var x0 = (layer.band.lo / nyq) * w;
       var x1 = (layer.band.hi / nyq) * w;
-      var hue = LAYER_HUE[layer.type] != null ? LAYER_HUE[layer.type] : 210;
-      ctx.fillStyle = layer.clash
-        ? 'color-mix(in srgb, ' + CLASH_COLOR + ' 22%, transparent)'
-        : 'hsl(' + hue + ' 42% 48% / ' + Math.round((layer.alpha || 1) * 28) + '%)';
+      ctx.fillStyle = layerStrokeColor(layer, (layer.alpha || 1) * (layer.clash ? 0.22 : 0.28));
       ctx.fillRect(x0, 2, Math.max(2, x1 - x0), h - 4);
     });
   }
@@ -457,11 +470,8 @@ function drawPredictedSpectrum(canvas) {
     if (!layer.band) continue;
     var x0 = (layer.band.lo / nyq) * w;
     var x1 = (layer.band.hi / nyq) * w;
-    var hue = LAYER_HUE[layer.type] != null ? LAYER_HUE[layer.type] : 210;
     var bh = (h - 8) * (layer.alpha || 1) * (layer.vel === 2 ? 0.45 : 0.72);
-    ctx.fillStyle = layer.clash
-      ? 'color-mix(in srgb, ' + CLASH_COLOR + ' 55%, transparent)'
-      : 'hsl(' + hue + ' 46% 46% / ' + Math.round((layer.alpha || 1) * 55) + '%)';
+    ctx.fillStyle = layerStrokeColor(layer, (layer.alpha || 1) * (layer.clash ? 0.55 : 0.55));
     ctx.fillRect(x0, h - bh, Math.max(2, x1 - x0), bh);
   }
   ctx.fillStyle = vizMid();

@@ -2,11 +2,6 @@
 // Beat studio — Three.js molecule view (X time · Y pitch · Z presence).
 window.ECAudio = window.ECAudio || {};
 
-var PRESET_HEX = {
-  kick: 0xd45a2a, hat: 0x3a9eb8, clap: 0xc9922e, bass: 0x7a3eb8,
-  bright: 0x6aaa30, minimal: 0x6a7a9a
-};
-
 var POS_SCALE = { x: 9.2, y: 6.4, z: 9.8 };
 var LERP = 0.34;
 
@@ -33,6 +28,8 @@ var _decorDirty = true;
 var _snapMeshes = false;
 var SPHERE_SEGMENTS = 12;
 var SPHERE_RINGS = 10;
+var SPHERE_SEGMENTS_FOCUS = 22;
+var SPHERE_RINGS_FOCUS = 16;
 
 function beatMarkers() {
   var beatSec = ECAudio.BEAT_STUDIO_SEC_ID || 'beat-studio';
@@ -172,16 +169,17 @@ function releaseBondEntry(key) {
 }
 
 function bondTubeStyle(bond) {
-  if (bond.time && bond.harm) {
-    return { color: 0xffc858, radius: 0.062, opacity: 0.82 };
+  if (ECAudio.BeatColors && ECAudio.BeatColors.bondStyle3d) {
+    return ECAudio.BeatColors.bondStyle3d(bond);
   }
-  if (bond.harm) {
-    return { color: 0x5fd88a, radius: 0.05, opacity: 0.72 };
+  return { color: 0x888888, radius: 0.04, opacity: 0.5, kind: 'z' };
+}
+
+function semanticLineHex(name) {
+  if (ECAudio.BeatColors && ECAudio.BeatColors.semanticHex) {
+    return ECAudio.BeatColors.semanticHex(name);
   }
-  if (bond.time) {
-    return { color: 0x4db8e8, radius: 0.044, opacity: 0.68 };
-  }
-  return { color: 0xb090d8, radius: 0.032, opacity: 0.48 };
+  return 0x888888;
 }
 
 function setMouseFromEvent(e) {
@@ -288,6 +286,15 @@ function updateSelectionRing() {
   _selectionRing.position.y -= (mesh.scale.x || 0.25) * 0.08;
   var s = (mesh.scale.x || 0.25) * 1.14;
   _selectionRing.scale.set(s, s, s);
+  var sel = findBeatMarker(_selectedId);
+  var state = sel ? markerVisualState(sel) : null;
+  if (_selectionRing.material && _selectionRing.material.color) {
+    _selectionRing.material.color.setHex(
+      state && state.harmonized
+        ? semanticLineHex('gold')
+        : semanticLineHex('guide')
+    );
+  }
 }
 
 function updateHoverCursor(e) {
@@ -306,9 +313,32 @@ function dotSoloMuted(m) {
   return !!(soloId && m && m.id !== soloId);
 }
 
-function presetHex(m) {
-  var t = m.presetId || (m.envId ? m.envId.replace(/^env-/, '') : 'kick');
-  return PRESET_HEX[t] != null ? PRESET_HEX[t] : 0x6688aa;
+function markerColorHex(m) {
+  if (ECAudio.BeatColors && ECAudio.BeatColors.markerHex) {
+    return ECAudio.BeatColors.markerHex(m);
+  }
+  return 0x6688aa;
+}
+
+function markerEmissiveHex(m) {
+  if (ECAudio.BeatColors && ECAudio.BeatColors.markerEmissiveHex) {
+    return ECAudio.BeatColors.markerEmissiveHex(m);
+  }
+  return markerColorHex(m);
+}
+
+function markerVisualState(m) {
+  if (ECAudio.BeatColors && ECAudio.BeatColors.markerState) {
+    return ECAudio.BeatColors.markerState(m);
+  }
+  return { harmonized: false, clash: false, coupling: 0 };
+}
+
+function sphereLod(id) {
+  if (_selectedId === id || _hoverId === id) {
+    return { w: SPHERE_SEGMENTS_FOCUS, h: SPHERE_RINGS_FOCUS };
+  }
+  return { w: SPHERE_SEGMENTS, h: SPHERE_RINGS };
 }
 
 function envMuted(m) {
@@ -365,16 +395,21 @@ function enable3dPanel() {
 function buildScene() {
   _scene = new THREE.Scene();
   _scene.background = new THREE.Color(readThemeBg());
-  _scene.fog = new THREE.Fog(_scene.background, 18, 42);
+  _scene.fog = new THREE.Fog(_scene.background, 22, 50);
 
-  var amb = new THREE.AmbientLight(0xffffff, 0.62);
+  var hemi = new THREE.HemisphereLight(0xf2f0ea, 0x6a6258, 0.34);
+  _scene.add(hemi);
+  var amb = new THREE.AmbientLight(0xffffff, 0.18);
   _scene.add(amb);
-  var key = new THREE.DirectionalLight(0xfff8f0, 0.85);
-  key.position.set(6, 10, 8);
+  var key = new THREE.DirectionalLight(0xfff6ee, 0.78);
+  key.position.set(7, 11, 6);
   _scene.add(key);
-  var fill = new THREE.DirectionalLight(0xaabbff, 0.35);
-  fill.position.set(-8, 2, -6);
+  var fill = new THREE.DirectionalLight(0xc8d0e0, 0.16);
+  fill.position.set(-7, 3, -5);
   _scene.add(fill);
+  var rim = new THREE.DirectionalLight(0xffe8c8, 0.22);
+  rim.position.set(-4, 5, 9);
+  _scene.add(rim);
 
   var grid = new THREE.GridHelper(10, 16, 0x777777, 0xbbbbbb);
   grid.position.y = -3.35;
@@ -490,7 +525,7 @@ function syncAffinityGuides() {
         new THREE.Vector3(pp.x, 3.7, zMid)
       ]);
       var colMat = new THREE.LineBasicMaterial({
-        color: 0x4db8e8,
+        color: semanticLineHex('bondTime'),
         transparent: true,
         opacity: 0.38 + meta.strength * 0.22
       });
@@ -502,7 +537,7 @@ function syncAffinityGuides() {
         new THREE.Vector3(POS_SCALE.x * 0.46, pp.y, zMid)
       ]);
       var rowMat = new THREE.LineBasicMaterial({
-        color: 0x5fd88a,
+        color: semanticLineHex('bondHarm'),
         transparent: true,
         opacity: 0.36 + meta.strength * 0.2
       });
@@ -512,7 +547,7 @@ function syncAffinityGuides() {
       var sweet = new THREE.Mesh(
         new THREE.SphereGeometry(0.14, 12, 10),
         new THREE.MeshBasicMaterial({
-          color: 0xffc858,
+          color: semanticLineHex('bondBoth'),
           transparent: true,
           opacity: 0.55,
           depthWrite: false
@@ -527,7 +562,7 @@ function syncAffinityGuides() {
         new THREE.Vector3(pp.x, pp.y, zMid)
       ]);
       var clashMat = new THREE.LineBasicMaterial({
-        color: 0xc45a2a,
+        color: semanticLineHex('bondClash'),
         transparent: true,
         opacity: 0.78
       });
@@ -546,7 +581,7 @@ function syncStereoSpread() {
     var p = markerPos3(m);
     var r = sphereRadius(m);
     var spread = pan * POS_SCALE.x * 0.38;
-    var col = presetHex(m);
+    var col = markerColorHex(m);
     var floorY = p.y - r - 0.14;
     var wingGeo = new THREE.BufferGeometry().setFromPoints([
       new THREE.Vector3(p.x, floorY, p.z + 0.06),
@@ -579,41 +614,99 @@ function sphereRadius(m) {
 
 function upsertMesh(m) {
   var mesh = _meshes[m.id];
-  var col = presetHex(m);
+  var col = markerColorHex(m);
+  var emissive = markerEmissiveHex(m);
+  var state = markerVisualState(m);
   var r = sphereRadius(m);
   var p = markerPos3(m);
   var muted = envMuted(m);
+  var lod = sphereLod(m.id);
 
   if (!mesh) {
-    var geo = new THREE.SphereGeometry(1, SPHERE_SEGMENTS, SPHERE_RINGS);
-    var mat = new THREE.MeshStandardMaterial({
+    var geo = new THREE.SphereGeometry(1, lod.w, lod.h);
+    var mat = new THREE.MeshPhysicalMaterial({
       color: col,
-      emissive: col,
-      emissiveIntensity: 0.08,
-      metalness: 0.18,
-      roughness: 0.42,
-      transparent: true,
-      opacity: muted ? 0.28 : 0.92
+      emissive: emissive,
+      emissiveIntensity: 0.04,
+      metalness: 0.06,
+      roughness: 0.52,
+      clearcoat: 0.28,
+      clearcoatRoughness: 0.42,
+      transparent: muted,
+      opacity: muted ? 0.32 : 1
     });
     mesh = new THREE.Mesh(geo, mat);
     mesh.userData.markerId = m.id;
     mesh.position.set(p.x, p.y, p.z);
     mesh.scale.setScalar(r);
+    ensureSphereHalo(mesh, col, state);
+    ensureSphereShadow(mesh);
     _scene.add(mesh);
     _meshes[m.id] = mesh;
+  } else if (mesh.geometry && (mesh.geometry.parameters.widthSegments !== lod.w ||
+      mesh.geometry.parameters.heightSegments !== lod.h)) {
+    mesh.geometry.dispose();
+    mesh.geometry = new THREE.SphereGeometry(1, lod.w, lod.h);
   }
 
   mesh.material.color.setHex(col);
-  mesh.material.emissive.setHex(col);
-  mesh.material.opacity = muted ? 0.26 : 0.92;
-  mesh.material.emissiveIntensity = emissiveForMesh(m.id);
-  if (_pulses[m.id]) mesh.material.emissiveIntensity = Math.max(mesh.material.emissiveIntensity, 0.95);
+  mesh.material.emissive.setHex(emissive);
+  mesh.material.transparent = muted;
+  mesh.material.opacity = muted ? 0.32 : 1;
+  mesh.material.clearcoat = state.harmonized ? 0.42 : 0.28;
+  mesh.material.emissiveIntensity = emissiveForMesh(m.id, state);
+  if (_pulses[m.id]) mesh.material.emissiveIntensity = Math.max(mesh.material.emissiveIntensity, 0.52);
+  updateSphereHalo(mesh, col, state, muted);
 }
 
-function emissiveForMesh(id) {
-  if (_selectedId === id) return 0.58;
-  if (_hoverId === id) return 0.26;
-  return 0.1;
+function ensureSphereHalo(mesh, col, state) {
+  if (!mesh || mesh.userData.haloMesh) return;
+  var haloMat = new THREE.MeshBasicMaterial({
+    color: state.harmonized ? semanticLineHex('gold') : col,
+    transparent: true,
+    opacity: 0.035,
+    depthWrite: false
+  });
+  var halo = new THREE.Mesh(new THREE.SphereGeometry(1.1, 10, 8), haloMat);
+  halo.renderOrder = 1;
+  mesh.add(halo);
+  mesh.userData.haloMesh = halo;
+}
+
+function updateSphereHalo(mesh, col, state, muted) {
+  var halo = mesh && mesh.userData.haloMesh;
+  if (!halo || !halo.material) return;
+  halo.material.color.setHex(
+    state.harmonized ? semanticLineHex('gold')
+      : (state.clash ? semanticLineHex('clash') : col)
+  );
+  halo.material.opacity = muted ? 0.015 : (0.028 + (state.coupling || 0) * 0.04 + (state.harmonized ? 0.022 : 0));
+  var pulse = 1.06 + (state.coupling || 0) * 0.03;
+  halo.scale.setScalar(pulse);
+}
+
+function ensureSphereShadow(mesh) {
+  if (!mesh || mesh.userData.shadowMesh) return;
+  var shadowMat = new THREE.MeshBasicMaterial({
+    color: 0x000000,
+    transparent: true,
+    opacity: 0.14,
+    depthWrite: false
+  });
+  var shadow = new THREE.Mesh(new THREE.CircleGeometry(0.55, 20), shadowMat);
+  shadow.rotation.x = -Math.PI / 2;
+  shadow.position.y = -1.02;
+  shadow.renderOrder = 0;
+  mesh.add(shadow);
+  mesh.userData.shadowMesh = shadow;
+}
+
+function emissiveForMesh(id, state) {
+  var base = state && state.harmonized ? 0.14 : 0.04;
+  if (state && state.clash) base = Math.max(base, 0.09);
+  if (_selectedId === id) return Math.max(base, 0.28);
+  if (_hoverId === id) return Math.max(base, 0.12);
+  return base;
 }
 
 function clearStaleMeshes(liveIds) {
@@ -708,13 +801,26 @@ function syncBondLines() {
 }
 
 function applyMeshStyle(m, mesh) {
-  var col = presetHex(m);
+  var col = markerColorHex(m);
+  var emissive = markerEmissiveHex(m);
+  var state = markerVisualState(m);
   var muted = envMuted(m);
+  var lod = sphereLod(m.id);
+  if (mesh.geometry && (mesh.geometry.parameters.widthSegments !== lod.w ||
+      mesh.geometry.parameters.heightSegments !== lod.h)) {
+    mesh.geometry.dispose();
+    mesh.geometry = new THREE.SphereGeometry(1, lod.w, lod.h);
+  }
   mesh.material.color.setHex(col);
-  mesh.material.emissive.setHex(col);
-  mesh.material.opacity = muted ? 0.26 : 0.92;
-  mesh.material.emissiveIntensity = emissiveForMesh(m.id);
-  if (_pulses[m.id]) mesh.material.emissiveIntensity = Math.max(mesh.material.emissiveIntensity, 0.95);
+  mesh.material.emissive.setHex(emissive);
+  mesh.material.transparent = muted;
+  mesh.material.opacity = muted ? 0.32 : 1;
+  if (mesh.material.clearcoat != null) {
+    mesh.material.clearcoat = state.harmonized ? 0.42 : 0.28;
+  }
+  mesh.material.emissiveIntensity = emissiveForMesh(m.id, state);
+  if (_pulses[m.id]) mesh.material.emissiveIntensity = Math.max(mesh.material.emissiveIntensity, 0.52);
+  updateSphereHalo(mesh, col, state, muted);
 }
 
 function tickMeshMotion() {
@@ -785,7 +891,11 @@ function syncPatternMeshes() {
         continue;
       }
       var p = markerPatternPos(marker, si, vel);
-      var col = PRESET_HEX[type] != null ? PRESET_HEX[type] : 0x6688aa;
+      var col = 0x6688aa;
+      if (ECAudio.BeatColors && ECAudio.BeatColors.presetBaseHsl && ECAudio.BeatColors.hslToHex) {
+        var pb = ECAudio.BeatColors.presetBaseHsl(type);
+        col = ECAudio.BeatColors.hslToHex(pb.h, pb.s, pb.l);
+      }
       var mesh = _patternMeshes[key];
       if (!mesh) {
         var geo = new THREE.BoxGeometry(0.3, 0.18, 0.18);
@@ -839,7 +949,7 @@ function pulsePatternStep(step) {
   _patternGroup.children.forEach(function(ch) {
     if (ch.userData.step !== step) return;
     if (!ch.material) return;
-    ch.material.emissiveIntensity = 0.95;
+    ch.material.emissiveIntensity = 0.38;
     _patternPulses[ch.uuid] = now + 200;
   });
 }
@@ -891,7 +1001,7 @@ function pulseMarkers(step) {
     if (!ECAudio.BeatKaoss.markerHitsStep(m, step)) return;
     _pulses[m.id] = now + 220;
     if (_meshes[m.id]) {
-      _meshes[m.id].material.emissiveIntensity = 1.1;
+      _meshes[m.id].material.emissiveIntensity = 0.48;
       _meshes[m.id].scale.setScalar(sphereRadius(m) * 1.38);
     }
   });
@@ -907,7 +1017,7 @@ function decayPulses() {
     var m = (ECAudio.State.markers || []).filter(function(x) { return x.id === id; })[0];
     if (m) {
       mesh.scale.setScalar(sphereRadius(m));
-      mesh.material.emissiveIntensity = emissiveForMesh(id);
+      mesh.material.emissiveIntensity = emissiveForMesh(id, markerVisualState(m));
     }
   });
 }
@@ -1215,6 +1325,10 @@ function initBeatView3d() {
       failIfMajorPerformanceCaveat: false
     });
     _renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    if (THREE.ACESFilmicToneMapping) {
+      _renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      _renderer.toneMappingExposure = 0.88;
+    }
     _camera = new THREE.PerspectiveCamera(42, 1, 0.1, 120);
     updateCamera();
 

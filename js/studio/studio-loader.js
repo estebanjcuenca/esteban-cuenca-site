@@ -7,6 +7,7 @@ var STUDIO_SCRIPTS = [
   'js/studio/environments.js',
   'js/studio/beat-kaoss.js',
   'js/studio/beat-presence.js',
+  'js/studio/beat-colors.js',
   'js/studio/beat-influence.js',
   'js/studio/beat-scale.js',
   'js/studio/beat-spatial.js',

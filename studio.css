@@ -152,7 +152,11 @@ html.dot-solo .sound-marker.is-soloed {
 }
 .sl-preview-dot.is-empty { width: 10px; height: 10px; opacity: .35; }
 .sl-preview-dot {
-  background: hsl(var(--dot-hue, 210) var(--dot-sat, 48%) var(--dot-light, 48%) / var(--dot-alpha, 0.92));
+  background: radial-gradient(
+    circle at 32% 28%,
+    hsl(var(--dot-hue, 210) var(--dot-sat, 48%) var(--dot-light-hi, 62%) / var(--dot-alpha, 0.92)) 0%,
+    hsl(var(--dot-hue, 210) var(--dot-sat, 48%) var(--dot-light, 48%) / var(--dot-alpha, 0.92)) 100%
+  );
   border-radius: 50%;
   box-shadow: 0 0 0 var(--dot-border-w, 2px) color-mix(in srgb, var(--bg) 75%, transparent);
 }
@@ -292,23 +296,27 @@ html.dot-solo .sound-marker.is-soloed {
 .sl-env-drum-wave-hint { display: none; margin: 0 0 8px; font-size: 9px; }
 .sl-spatial-map-hint { font-size: 9px; margin-top: 0; opacity: 0.85; }
 
-html.beat-studio:not(.a4-mode) .sound-marker.preset-kick {
-  background: hsl(var(--dot-hue, 14) var(--dot-sat, 76%) var(--dot-light, 46%) / var(--dot-alpha, 0.92));
+html.beat-studio:not(.a4-mode) .sound-marker {
+  position: relative;
+  overflow: visible;
+  background: radial-gradient(
+    circle at 32% 28%,
+    hsl(var(--dot-hue, 210) var(--dot-sat, 48%) var(--dot-light-hi, 62%) / var(--dot-alpha, 0.92)) 0%,
+    hsl(var(--dot-hue, 210) var(--dot-sat, 48%) var(--dot-light, 48%) / var(--dot-alpha, 0.92)) 54%,
+    hsl(var(--dot-hue, 210) var(--dot-sat, 48%) var(--dot-light-lo, 36%) / calc(var(--dot-alpha, 0.92) * 0.92)) 100%
+  );
 }
-html.beat-studio:not(.a4-mode) .sound-marker.preset-hat {
-  background: hsl(var(--dot-hue, 192) var(--dot-sat, 48%) var(--dot-light, 66%) / var(--dot-alpha, 0.92));
-}
-html.beat-studio:not(.a4-mode) .sound-marker.preset-bass {
-  background: hsl(var(--dot-hue, 268) var(--dot-sat, 52%) var(--dot-light, 42%) / var(--dot-alpha, 0.92));
-}
-html.beat-studio:not(.a4-mode) .sound-marker.preset-clap {
-  background: hsl(var(--dot-hue, 38) var(--dot-sat, 68%) var(--dot-light, 54%) / var(--dot-alpha, 0.92));
-}
-html.beat-studio:not(.a4-mode) .sound-marker.preset-bright {
-  background: hsl(var(--dot-hue, 88) var(--dot-sat, 70%) var(--dot-light, 52%) / var(--dot-alpha, 0.92));
-}
-html.beat-studio:not(.a4-mode) .sound-marker.preset-minimal {
-  background: hsl(var(--dot-hue, 215) var(--dot-sat, 24%) var(--dot-light, 56%) / var(--dot-alpha, 0.92));
+html.beat-studio:not(.a4-mode) .sound-marker::before {
+  content: '';
+  position: absolute;
+  inset: 12% 20% 44% 14%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in srgb, #fff 18%, transparent) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
 }
 
 .sl-melody-map {
@@ -543,7 +551,8 @@ html.beat-view3d-off .beat-view3d {
   border: .5px solid var(--line);
   border-radius: 3px;
   overflow: hidden;
-  background: color-mix(in srgb, var(--bg) 94%, var(--ink));
+  background: color-mix(in srgb, var(--bg) 96%, var(--ink));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--ink) 4%, transparent);
 }
 #beat-view3d-canvas {
   display: block;
@@ -616,9 +625,10 @@ html.beat-view3d-off .beat-view3d {
       color-mix(in srgb, var(--line) 14%, transparent) calc(100% / 10 - .5px),
       color-mix(in srgb, var(--line) 14%, transparent) calc(100% / 10)
     ),
-    radial-gradient(ellipse 90% 70% at 50% 55%,
-      color-mix(in srgb, var(--mid) 7%, var(--bg)),
-      color-mix(in srgb, var(--mid) 3%, var(--bg)));
+    radial-gradient(ellipse 95% 80% at 50% 42%,
+      color-mix(in srgb, var(--mid) 5%, var(--bg)),
+      color-mix(in srgb, var(--ink) 6%, var(--bg)) 78%,
+      color-mix(in srgb, var(--ink) 10%, var(--bg)));
 }
 .beat-pad.influence-active {
   background:
@@ -715,35 +725,27 @@ html.beat-studio:not(.a4-mode) .sound-marker.is-env-active.is-selected {
 }
 .beat-bond {
   fill: none;
-  stroke: hsl(var(--bond-hue, 210) 42% 52%);
+  stroke: hsl(var(--bond-h, 210) var(--bond-s, 48%) var(--bond-l, 50%));
   stroke-linecap: round;
   transition: opacity .15s ease;
 }
 .beat-bond-time {
   stroke-width: 2;
   stroke-dasharray: 6 4;
-  opacity: 0.52;
 }
 .beat-bond-harm {
   stroke-width: 2.5;
-  opacity: 0.56;
 }
 .beat-bond-both {
   stroke-width: 3.25;
-  opacity: 0.72;
-  filter: drop-shadow(0 0 3px hsl(var(--bond-hue, 210) 50% 50% / 0.45));
 }
 .beat-bond-z {
   stroke-width: 1.5;
   stroke-dasharray: 3 5;
-  opacity: 0.38;
 }
 .beat-bond-clash {
   stroke-width: 3.5;
-  stroke: #c45a2a;
   stroke-dasharray: 2 3;
-  opacity: 0.82;
-  filter: drop-shadow(0 0 4px rgba(196, 90, 42, 0.45));
 }
 .beat-pad-stereo {
   position: absolute;
@@ -789,12 +791,26 @@ html.beat-studio:not(.a4-mode) .sound-marker-preview.is-nudged-preview {
 }
 html.beat-studio:not(.a4-mode) .sound-marker {
   box-shadow:
-    0 0 0 var(--dot-border-w, 2px) color-mix(in srgb, var(--bg) 70%, transparent),
-    0 calc(4px * var(--dot-presence, 0.5)) calc(8px + 12px * var(--dot-presence, 0.5))
-      color-mix(in srgb, hsl(var(--dot-hue, 210) var(--dot-sat, 48%) var(--dot-light, 48%)) 35%, transparent);
+    0 0 0 var(--dot-border-w, 2px) color-mix(in srgb, var(--bg) 82%, transparent),
+    0 0 0 calc(var(--dot-border-w, 2px) + 1px) color-mix(in srgb, var(--ink) 8%, transparent),
+    0 calc(2px + 2px * var(--dot-presence, 0.5)) calc(4px + 6px * var(--dot-presence, 0.5))
+      color-mix(in srgb, var(--ink) calc(10% + var(--dot-presence, 0.5) * 8%), transparent);
+}
+html.beat-studio:not(.a4-mode) .sound-marker.is-harmonized {
+  box-shadow:
+    0 0 0 var(--dot-border-w, 2px) color-mix(in srgb, #c8a860 48%, var(--bg)),
+    0 0 0 calc(var(--dot-border-w, 2px) + 1px) color-mix(in srgb, #c8a860 22%, transparent),
+    0 calc(2px + 2px * var(--dot-presence, 0.5)) calc(4px + 6px * var(--dot-presence, 0.5))
+      color-mix(in srgb, var(--ink) calc(10% + var(--dot-presence, 0.5) * 8%), transparent);
+}
+html.beat-studio:not(.a4-mode) .sound-marker.is-mix-clash {
+  box-shadow:
+    0 0 0 calc(var(--dot-border-w, 2px) + 1px) color-mix(in srgb, #b86840 45%, transparent),
+    0 calc(2px + 2px * var(--dot-presence, 0.5)) calc(4px + 6px * var(--dot-presence, 0.5))
+      color-mix(in srgb, var(--ink) calc(10% + var(--dot-presence, 0.5) * 8%), transparent);
 }
 html.beat-studio:not(.a4-mode) .sound-marker.is-playing {
-  filter: brightness(calc(0.88 + var(--dot-presence, 0.5) * 0.28)) saturate(calc(0.9 + var(--dot-presence, 0.5) * 0.2));
+  filter: brightness(calc(0.94 + var(--dot-presence, 0.5) * 0.1)) saturate(calc(0.96 + var(--dot-coupling, 0) * 0.08));
 }
 html.beat-studio:not(.beat-env-overview) .beat-bond-cross {
   opacity: 0.22;

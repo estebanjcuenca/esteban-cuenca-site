@@ -113,18 +113,12 @@ function markerIsSynth(marker) {
 
 var VIZ_DENSITIES = ['2', '4', '8'];
 
-var PRESET_COLORS = {
-  kick: { h: 14, s: 76, l: 46 },
-  hat: { h: 192, s: 48, l: 66 },
-  bass: { h: 268, s: 52, l: 42 },
-  clap: { h: 38, s: 68, l: 54 },
-  bright: { h: 88, s: 70, l: 52 },
-  minimal: { h: 215, s: 24, l: 56 }
-};
-
 var PRESET_CLASS_IDS = ['kick', 'hat', 'bass', 'clap', 'bright', 'minimal'];
 
 function markerPresetId(marker) {
+  if (ECAudio.BeatColors && ECAudio.BeatColors.markerPresetId) {
+    return ECAudio.BeatColors.markerPresetId(marker);
+  }
   if (!marker) return null;
   if (marker.presetId) return marker.presetId;
   var env = envForMarker(marker);
@@ -146,50 +140,26 @@ function applyMarkerVisual(marker) {
 
   var preset = markerPresetId(marker);
   if (preset && !marker.presetId) marker.presetId = preset;
-  var tone = mp.browseTone != null ? mp.browseTone : 0.58;
-  var harm = mp.browseHarmonics != null ? mp.browseHarmonics : 0.5;
-  var gain = mp.gain != null ? mp.gain : 0.13;
-  var size = marker.sizeNorm != null ? marker.sizeNorm : 0.35;
-  var level = marker.levelMul != null ? marker.levelMul : 1;
   var z = markerNormZ(marker);
   var depth = ECAudio.BeatPresence && ECAudio.BeatPresence.depthScale
     ? ECAudio.BeatPresence.depthScale(z) : (0.78 + z * 0.34);
-  var base = preset && PRESET_COLORS[preset]
-    ? PRESET_COLORS[preset]
-    : { h: Math.round(28 + tone * 90), s: Math.round(32 + harm * 38), l: 50 };
-
-  el.style.setProperty('--dot-hue', String(base.h));
-  el.style.setProperty('--dot-sat', Math.round(Math.min(88, base.s + harm * 6)) + '%');
-  el.style.setProperty('--dot-light', Math.round(Math.min(72, base.l + size * 14 + (level - 1) * 10)) + '%');
-  el.style.setProperty('--dot-alpha', String(Math.min(1, 0.48 + z * 0.44 + level * 0.12)));
-  el.style.setProperty('--dot-border-w', String(1.5 + size * 2.2) + 'px');
-  el.style.setProperty('--dot-presence', String(z));
-  el.style.setProperty('--dot-depth-scale', String(depth));
+  if (ECAudio.BeatColors && ECAudio.BeatColors.applyToElement) {
+    ECAudio.BeatColors.applyToElement(marker, el);
+  }
   var pan = ECAudio.BeatMix && ECAudio.BeatMix.stereoPan
     ? ECAudio.BeatMix.stereoPan(marker) : 0;
   var panPct = Math.round(pan * 100);
-  el.style.setProperty('--dot-pan', String(pan));
   el.dataset.pan = String(panPct);
   el.dataset.panSide = panPct < -8 ? 'left' : (panPct > 8 ? 'right' : 'center');
   el.style.transform = 'translate(calc(-50% + ' + (pan * 10) + 'px), -50%) scale(' + depth + ')';
   el.dataset.presence = String(Math.round(z * 100));
-  if (ECAudio.BeatMix && ECAudio.BeatMix.placementWouldClash && marker.envId) {
-    var place = {
-      normX: marker.normX, normY: marker.normY,
-      beatPhase: marker.beatPhase, step: marker.step, toneNorm: marker.toneNorm
-    };
-    var clash = ECAudio.BeatMix.placementWouldClash(place, marker.envId, marker.id);
-    var type = marker.presetId || (marker.envId ? marker.envId.replace(/^env-/, '') : '');
-    var perc = type === 'kick' || type === 'hat' || type === 'clap';
-    el.classList.toggle('is-mix-clash', !!clash.clash && !perc);
-  } else {
-    el.classList.remove('is-mix-clash');
-  }
 
   for (i = 0; i < PRESET_CLASS_IDS.length; i++) {
     el.classList.remove('preset-' + PRESET_CLASS_IDS[i]);
   }
-  if (preset && PRESET_COLORS[preset]) el.classList.add('preset-' + preset);
+  if (preset && ECAudio.BeatColors && ECAudio.BeatColors.PRESET_COLORS[preset]) {
+    el.classList.add('preset-' + preset);
+  }
   el.dataset.preset = preset || '';
   if (marker.envId) {
     el.dataset.envId = marker.envId;
@@ -1267,6 +1237,12 @@ function syncMarkerElPosition(marker) {
   }
   marker.el.style.left = (marker.normX * 100) + '%';
   marker.el.style.top = (marker.normY * 100) + '%';
+}
+
+function refreshAllMarkerVisuals() {
+  (ECAudio.State.markers || []).forEach(function(m) {
+    if (m && m.el) applyMarkerVisual(m);
+  });
 }
 
 function syncMarkerPresence(marker) {
@@ -2449,6 +2425,7 @@ ECAudio.Markers = {
   restore: restoreMarkers, initOnLoad: initMarkersOnLoad,
   syncPositions: syncAllMarkerPositions,
   syncPresence: syncMarkerPresence,
+  refreshVisuals: refreshAllMarkerVisuals,
   scheduleRelayout: scheduleMarkerRelayout,
   getMarkerParam: getMarkerParam, setMarkerParam: setMarkerParam,
   ensureMarkerParams: ensureMarkerParams, defaultMarkerParams: defaultMarkerParams,
