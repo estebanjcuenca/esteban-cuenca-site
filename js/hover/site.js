@@ -26,6 +26,19 @@ function enterSoundMode() {
   NavVibe.reset();
 }
 
+function syncMusicSequencer() {
+  if (!soundEnabled) return;
+  if (Sound.params.musicSeqEnabled === false) {
+    if (TrackSeq.unmount) TrackSeq.unmount();
+    if (typeof TrackSeq.stopSeq === 'function') TrackSeq.stopSeq();
+    return;
+  }
+  if (document.querySelector('.cv-section.midi-bank')) {
+    if (TrackSeq.mount) TrackSeq.mount();
+    if (TrackSeq.syncPlayback) TrackSeq.syncPlayback();
+  }
+}
+
 function enterMusicMode() {
   exitBeatStudio(false);
   if (ECAudio.Zones && ECAudio.Zones.teardown) ECAudio.Zones.teardown();
@@ -39,10 +52,7 @@ function enterMusicMode() {
   if (ECAudio.Engine.resetMusicBus) ECAudio.Engine.resetMusicBus();
   window.scrollTo({ top: 0, behavior: 'smooth' });
   Sound.bootAudio();
-  if (document.querySelector('.cv-section.midi-bank')) {
-    TrackSeq.mount();
-    TrackSeq.syncPlayback();
-  }
+  syncMusicSequencer();
 }
 
 function applySoundMode() {
@@ -54,6 +64,7 @@ function toggleSound() {
   soundEnabled = !soundEnabled;
   applySoundMode();
   if (typeof syncSoundPanelUI === 'function') syncSoundPanelUI();
+  if (typeof syncHoverModeSections === 'function') syncHoverModeSections();
 }
 
 function reconcileCurrentHover() {
@@ -135,3 +146,6 @@ function initSiteAudio() {
   soundEnabled = false;
   document.documentElement.classList.add('browse-mode');
 }
+
+window.toggleSound = toggleSound;
+window.syncMusicSequencer = syncMusicSequencer;

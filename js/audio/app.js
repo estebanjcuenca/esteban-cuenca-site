@@ -38,9 +38,6 @@ function initAudioKeyboard() {
   });
 }
 
-initSoundLab();
 initHoverPanel();
-initStudioPanel();
 initSiteAudio();
-initStudioInput();
 initAudioKeyboard();

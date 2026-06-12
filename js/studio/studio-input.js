@@ -7,6 +7,7 @@ function initStudioInput() {
 
   document.addEventListener('pointerdown', function(e) {
     if (soundEnabled || !isBeatStudioActive()) return;
+    if (e.target.closest('#beat-view3d, #beat-view3d-canvas')) return;
     if (e.button !== 0 || !ECAudio.Markers || !ECAudio.Markers.onPointerDown) return;
     ECAudio.Markers.onPointerDown(e.clientX, e.clientY, e.pointerId);
   }, { passive: true, capture: true });
@@ -41,4 +42,16 @@ function initStudioInput() {
       ECAudio.Markers.syncPositions();
     }
   }, { passive: true });
+
+  document.addEventListener('keydown', function(e) {
+    if (soundEnabled || !isBeatStudioActive()) return;
+    if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+    if (e.target.closest('input, textarea, select, [contenteditable="true"]')) return;
+    var sel = ECAudio.Markers && ECAudio.Markers.getSelected
+      ? ECAudio.Markers.getSelected() : null;
+    if (!sel || !ECAudio.Markers.remove) return;
+    e.preventDefault();
+    ECAudio.Markers.remove(sel.id);
+    if (ECAudio.Markers.closeLayerSettings) ECAudio.Markers.closeLayerSettings();
+  });
 }

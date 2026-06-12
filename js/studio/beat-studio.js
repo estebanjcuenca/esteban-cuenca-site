@@ -1,126 +1,109 @@
 /* eslint-disable no-var */
-// Dedicated 6-lane beat maker — separate from CV table hover.
+// Beat studio — single XY pad; environments hold dots per element type.
 window.ECAudio = window.ECAudio || {};
 
 ECAudio.BEAT_STUDIO_SEC_ID = 'beat-studio';
-
-var LANE_IDS = ['kick', 'hat', 'bass', 'clap', 'bright', 'minimal'];
 
 function beatStudioRoot() {
   return document.getElementById('beat-studio');
 }
 
-function lanesWrap() {
-  var root = beatStudioRoot();
-  return root ? root.querySelector('.beat-lanes') : null;
+function padZone() {
+  return document.getElementById('beat-pad');
 }
 
 function studioOverlay() {
   var root = beatStudioRoot();
   if (!root) return null;
-  var overlay = root.querySelector('.beat-studio-overlay');
+  var stack = root.querySelector('.beat-pad-stack');
+  var overlay = stack
+    ? stack.querySelector('.beat-studio-overlay')
+    : root.querySelector('.beat-studio-overlay');
   if (!overlay) {
     overlay = document.createElement('div');
     overlay.className = 'beat-studio-overlay table-sound-overlay';
     overlay.setAttribute('aria-hidden', 'true');
-    var inner = root.querySelector('.beat-studio-inner');
-    if (inner) inner.appendChild(overlay);
+    if (stack) stack.appendChild(overlay);
+    else {
+      var inner = root.querySelector('.beat-studio-inner');
+      if (inner) inner.appendChild(overlay);
+    }
   }
   return overlay;
 }
 
-function laneLabel(index) {
-  return ECAudio.MarkerDrums && ECAudio.MarkerDrums.laneLabel
-    ? ECAudio.MarkerDrums.laneLabel(index) : '';
-}
-
-function laneDescription(index) {
-  return ECAudio.MarkerDrums && ECAudio.MarkerDrums.laneDescription
-    ? ECAudio.MarkerDrums.laneDescription(index) : '';
-}
-
-function annotateLane(lane, index) {
-  if (!lane) return;
-  var label = laneLabel(index);
-  var desc = laneDescription(index);
-  lane.classList.add('beat-lane', 'row-pad', 'influence-zone', 'beat-layer-active');
-  lane.dataset.laneIndex = String(index);
-  lane.dataset.beatLayer = label;
-  lane.setAttribute('data-lane-index', String(index));
-  if (label) lane.setAttribute('data-beat-layer', label);
-  lane.setAttribute('data-layer-label', label);
-  lane.title = label + ' — ' + desc + ' · tap step · tap dot = cycle · dbl-click = remove';
-}
-
-function buildLanes() {
-  var wrap = lanesWrap();
-  if (!wrap || wrap.children.length >= LANE_IDS.length) return;
-  wrap.innerHTML = '';
-  var i;
-  for (i = 0; i < LANE_IDS.length; i++) {
-    var lane = document.createElement('div');
-    lane.className = 'beat-lane';
-    lane.setAttribute('role', 'button');
-    lane.setAttribute('tabindex', '-1');
-    var label = document.createElement('span');
-    label.className = 'beat-lane-label';
-    label.textContent = laneLabel(i);
-    lane.appendChild(label);
-    annotateLane(lane, i);
-    wrap.appendChild(lane);
-  }
-}
-
-function allLanes() {
-  var wrap = lanesWrap();
-  return wrap ? wrap.querySelectorAll('.beat-lane') : [];
-}
-
-function laneByIndex(index) {
-  var lanes = allLanes();
-  var i = index != null ? (index | 0) : 0;
-  if (i < 0 || i >= lanes.length) return lanes[0] || null;
-  return lanes[i];
-}
-
-function overlayForLane(lane) {
-  return studioOverlay();
-}
-
-function laneOverlayPoint(lane, normX, normY) {
-  var inner = lane && lane.closest('.beat-studio-inner');
-  if (!lane || !inner) return null;
-  var laneR = lane.getBoundingClientRect();
-  var innerR = inner.getBoundingClientRect();
-  var y = normY != null ? normY : 0.5;
+function padNorm(clientX, clientY) {
+  var pad = padZone();
+  if (!pad) return { x: 0.5, y: 0.5 };
+  var r = pad.getBoundingClientRect();
+  if (r.width < 1 || r.height < 1) return { x: 0.5, y: 0.5 };
   return {
-    left: laneR.left - innerR.left + normX * laneR.width,
-    top: laneR.top - innerR.top + y * laneR.height
+    x: Math.max(0, Math.min(1, (clientX - r.left) / r.width)),
+    y: Math.max(0, Math.min(1, (clientY - r.top) / r.height))
   };
 }
 
-function pointInLane(lane, clientX, clientY) {
-  var r = lane.getBoundingClientRect();
-  return clientX >= r.left - 6 && clientX <= r.right + 6 &&
-    clientY >= r.top - 4 && clientY <= r.bottom + 4;
+function pointInPad(clientX, clientY) {
+  var pad = padZone();
+  if (!pad) return false;
+  var r = pad.getBoundingClientRect();
+  return clientX >= r.left - 8 && clientX <= r.right + 8 &&
+    clientY >= r.top - 8 && clientY <= r.bottom + 8;
 }
 
-function findLaneAt(clientX, clientY) {
+function padOverlayPoint(normX, normY) {
+  var pad = padZone();
+  var stack = beatStudioRoot() && beatStudioRoot().querySelector('.beat-pad-stack');
+  var inner = stack || (beatStudioRoot() && beatStudioRoot().querySelector('.beat-studio-inner'));
+  if (!pad || !inner) return null;
+  var padR = pad.getBoundingClientRect();
+  var innerR = inner.getBoundingClientRect();
+  var y = normY != null ? normY : 0.5;
+  var x = normX != null ? normX : 0.5;
+  return {
+    left: padR.left - innerR.left + x * padR.width,
+    top: padR.top - innerR.top + y * padR.height
+  };
+}
+
+function findPadAt(clientX, clientY) {
   if (!document.documentElement.classList.contains('beat-studio')) return null;
-  var lanes = allLanes();
-  var i;
-  for (i = 0; i < lanes.length; i++) {
-    var lane = lanes[i];
-    if (!pointInLane(lane, clientX, clientY)) continue;
-    var idx = lane.dataset.laneIndex != null ? parseInt(lane.dataset.laneIndex, 10) : i;
-    return {
-      zone: lane,
-      secId: ECAudio.BEAT_STUDIO_SEC_ID,
-      rowIndex: idx,
-      laneIndex: idx
-    };
-  }
-  return null;
+  if (!pointInPad(clientX, clientY)) return null;
+  var norm = padNorm(clientX, clientY);
+  var env = ECAudio.Environments && ECAudio.Environments.getActive
+    ? ECAudio.Environments.getActive() : null;
+  var rowIndex = env && ECAudio.Environments.pitchRowForType
+    ? ECAudio.Environments.pitchRowForType(env.type) : 0;
+  return {
+    zone: padZone(),
+    secId: ECAudio.BEAT_STUDIO_SEC_ID,
+    rowIndex: rowIndex,
+    laneIndex: rowIndex,
+    normX: norm.x,
+    normY: norm.y
+  };
+}
+
+function ensurePadStereoLanes() {
+  var pad = padZone();
+  if (!pad || pad.querySelector('.beat-pad-stereo')) return;
+  var lanes = document.createElement('div');
+  lanes.className = 'beat-pad-stereo';
+  lanes.setAttribute('aria-hidden', 'true');
+  lanes.innerHTML =
+    '<span class="beat-pad-stereo-l">L</span>' +
+    '<span class="beat-pad-stereo-c">beat · pitch</span>' +
+    '<span class="beat-pad-stereo-r">R</span>';
+  pad.appendChild(lanes);
+}
+
+function annotatePad() {
+  var pad = padZone();
+  if (!pad) return;
+  pad.classList.add('beat-pad', 'row-pad', 'influence-zone', 'beat-layer-active');
+  pad.dataset.secId = ECAudio.BEAT_STUDIO_SEC_ID;
+  pad.title = 'Layer 0 beat space — tap dot to open layer · tap empty for all layers · hold to place';
+  ensurePadStereoLanes();
 }
 
 function showStudio() {
@@ -135,18 +118,44 @@ function hideStudio() {
   if (!root) return;
   root.hidden = true;
   root.setAttribute('aria-hidden', 'true');
+  if (ECAudio.BeatView3d && ECAudio.BeatView3d.pause) ECAudio.BeatView3d.pause();
 }
 
 function initBeatStudio() {
-  buildLanes();
+  annotatePad();
   studioOverlay();
-  allLanes().forEach(function(lane, i) {
-    annotateLane(lane, i);
-  });
+  try {
+    if (ECAudio.Environments && ECAudio.Environments.init) ECAudio.Environments.init();
+  } catch (err) { /* keep pad usable */ }
+  try {
+    if (ECAudio.BeatView3d && ECAudio.BeatView3d.init) ECAudio.BeatView3d.init();
+  } catch (err) { /* 2D pad still works */ }
+  try {
+    if (ECAudio.BeatSeq && ECAudio.BeatSeq.init) ECAudio.BeatSeq.init();
+  } catch (err) { /* pad still works */ }
+  try {
+    if (ECAudio.BeatInfluence && ECAudio.BeatInfluence.init) ECAudio.BeatInfluence.init();
+  } catch (err) { /* influence UI optional */ }
+  try {
+    if (ECAudio.BeatScale && ECAudio.BeatScale.init) ECAudio.BeatScale.init();
+  } catch (err) { /* scale UI optional */ }
 }
 
 function isActive() {
   return document.documentElement.classList.contains('beat-studio');
+}
+
+// Legacy lane API stubs (markers.js still references some paths)
+function overlayForLane() {
+  return studioOverlay();
+}
+
+function laneOverlayPoint(lane, normX, normY) {
+  return padOverlayPoint(normX, normY);
+}
+
+function findLaneAt(clientX, clientY) {
+  return findPadAt(clientX, clientY);
 }
 
 ECAudio.BeatStudio = {
@@ -155,10 +164,13 @@ ECAudio.BeatStudio = {
   show: showStudio,
   hide: hideStudio,
   isActive: isActive,
+  padZone: padZone,
+  studioOverlay: studioOverlay,
+  findPadAt: findPadAt,
   findLaneAt: findLaneAt,
-  laneByIndex: laneByIndex,
-  allLanes: allLanes,
+  padNorm: padNorm,
+  padOverlayPoint: padOverlayPoint,
   overlayForLane: overlayForLane,
   laneOverlayPoint: laneOverlayPoint,
-  annotateLane: annotateLane
+  annotatePad: annotatePad
 };

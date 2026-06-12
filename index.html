@@ -11,22 +11,23 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="Esteban Cuenca — Film & Immersive Producer">
 <meta property="og:description" content="Documentary, fiction, and immersive work at the intersection of image, sound, and memory.">
-<meta property="og:url" content="https://yourdomain.com">
-<meta property="og:image" content="https://yourdomain.com/photo.jpg">
+<meta property="og:url" content="https://estebanjcuenca.github.io/esteban-cuenca-site/">
+<meta property="og:image" content="https://estebanjcuenca.github.io/esteban-cuenca-site/photo.jpg">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "Person",
   "name": "Esteban Cuenca",
   "jobTitle": "Film & Immersive Producer",
-  "url": "https://yourdomain.com",
+  "url": "https://estebanjcuenca.github.io/esteban-cuenca-site/",
   "email": "estebanjcuenca@gmail.com",
   "address": { "@type": "PostalAddress", "addressLocality": "Amsterdam" }
 }
 </script>
 <script>if(localStorage.getItem('ec-dark')==='1')document.documentElement.classList.add('dark')</script>
 <script>document.documentElement.classList.add('browse-mode')</script>
-<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="fonts.css" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="fonts.css"></noscript>
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="studio.css">
 <link rel="stylesheet" href="print.css">
@@ -42,6 +43,7 @@
   </div>
   <div id="toolbar-site" class="toolbar-actions">
     <button class="tb-btn" id="btn-dark" onclick="toggleDark()" title="Toggle dark mode">◐</button>
+    <button class="tb-btn" id="btn-sound-mode" onclick="toggleSound()" title="Sound hover vs Music sequencer">Sound</button>
     <button class="tb-btn" id="btn-studio" onclick="toggleStudio()" title="Beat studio">Studio</button>
     <button class="tb-btn tb-icon-btn" id="btn-hover-settings" onclick="toggleHoverPanel()" title="Table hover settings" aria-label="Table hover settings">
       <svg class="tb-icon tb-menu-icon" viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
@@ -64,7 +66,43 @@
     </button>
   </header>
   <div class="sl-panel-body">
-    <section class="sl-block sl-block-global">
+    <section class="sl-block sl-block-music" id="hover-music-seq" hidden>
+      <h3 class="sl-block-title">Sequencer</h3>
+      <p class="sp-hint">Music mode — step grids on <strong>Film</strong> and <strong>Commercial</strong> rows. Click steps to pattern; loop runs when the grid has notes. BPM is shared with Beat Studio.</p>
+      <div class="sl-field sl-field-block">
+        <label class="sl-field-label">Row sequencers</label>
+        <button type="button" class="sp-seg-btn active" id="music-seq-enabled" data-action="music-seq-toggle" aria-pressed="true">On</button>
+      </div>
+      <div class="sl-knob-grid sl-knob-grid-global">
+        <div class="sl-field sl-field-block">
+          <label class="sl-field-label">Steps</label>
+          <div class="sp-seg" data-param="steps">
+            <button class="sp-seg-btn" data-val="8">8</button>
+            <button class="sp-seg-btn active" data-val="16">16</button>
+          </div>
+        </div>
+        <div class="sl-field">
+          <label class="sl-field-label">Swing</label>
+          <input class="sp-range" data-param="swing" type="range" min="0.5" max="0.65" step="0.01" value="0.54">
+          <span class="sp-val" id="sp-swing-val">0.54</span>
+        </div>
+        <div class="sl-field sl-field-block">
+          <label class="sl-field-label">Humanize</label>
+          <div class="sp-seg" data-param="humanize">
+            <button class="sp-seg-btn" data-val="0">Off</button>
+            <button class="sp-seg-btn" data-val="1">On</button>
+          </div>
+        </div>
+        <div class="sl-field sl-field-block">
+          <label class="sl-field-label">Quantize notes</label>
+          <div class="sp-seg" data-param="quantizeNotes">
+            <button class="sp-seg-btn active" data-val="1">On</button>
+            <button class="sp-seg-btn" data-val="0">Off</button>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="sl-block sl-block-global sl-block-browse">
       <p class="sp-hint">CV row hover — separate from the beat maker. Move across rows on the résumé to play tone.</p>
       <div class="sl-wave-picker sl-wave-picker-global">
         <span class="sl-field-label">Hover wave</span>
@@ -127,16 +165,16 @@
         </div>
       </div>
       <div class="sl-viz-block">
-        <span class="sl-viz-label">Live waveform</span>
+        <span class="sl-viz-label">Live mix scope · duck meter</span>
         <canvas id="sl-scope" class="sl-scope" aria-hidden="true"></canvas>
       </div>
       <div class="sl-viz-block">
-        <span class="sl-viz-label">Spectrum</span>
+        <span class="sl-viz-label">Spectrum · band lanes</span>
         <canvas id="sl-spectrum" class="sl-spectrum" aria-hidden="true"></canvas>
       </div>
       <div class="sl-viz-duo">
         <div class="sl-viz-block sl-viz-block-half">
-          <span class="sl-viz-label">Wave</span>
+          <span class="sl-viz-label">Compound wave</span>
           <canvas id="sl-wave-shape" class="sl-shape-canvas" aria-hidden="true"></canvas>
         </div>
         <div class="sl-viz-block sl-viz-block-half">
@@ -150,6 +188,7 @@
         <div><dt>Filter</dt><dd id="sl-ro-filter">—</dd></div>
         <div><dt>Gain</dt><dd id="sl-ro-gain">—</dd></div>
         <div><dt>Space</dt><dd id="sl-ro-space">—</dd></div>
+        <div><dt>Mix</dt><dd id="sl-ro-mix">—</dd></div>
       </dl>
       <button class="sp-test sp-test-full" data-action="test" type="button">&#9654; Preview sound</button>
     </div>
@@ -157,51 +196,202 @@
     <div class="sl-settings">
         <section class="sl-block sl-block-studio-global">
           <h3 class="sl-block-title">Loop</h3>
-          <p class="sp-hint">6 layers: Kick/Hat/Clap drums + Bass/Lead/Soft synth. ↕ pitch · scroll = pulse.</p>
+          <p class="sp-hint">1-bar loop — place dots in space. Close = groove; far = solo hit. Layer 0 shows all dots.</p>
           <div class="sl-knob-grid sl-knob-grid-global">
             <div class="sl-field">
               <label class="sl-field-label">BPM</label>
               <input class="sp-range" data-param="bpm" type="range" min="50" max="150" step="1" value="88">
               <span class="sp-val" id="sp-bpm-val">88</span>
             </div>
+            <div class="sl-field">
+              <label class="sl-field-label">Root pitch</label>
+              <input class="sp-range" id="sl-beat-root" type="range" min="55" max="220" step="1" value="110">
+              <span class="sp-val" id="sl-beat-root-val">A2 · 110 Hz</span>
+            </div>
+            <div class="sl-field sl-field-block sl-field-span">
+              <label class="sl-field-label">Scale</label>
+              <div class="sp-seg sp-seg-compact" id="sl-beat-scale-seg">
+                <button class="sp-seg-btn active" type="button" data-val="pent">Pent</button>
+                <button class="sp-seg-btn" type="button" data-val="major">Major</button>
+                <button class="sp-seg-btn" type="button" data-val="minor">Minor</button>
+              </div>
+            </div>
           </div>
         </section>
 
-        <p class="sp-hint sl-layer-empty" id="sl-layer-empty">Tap a step on a lane to add a hit. Bass/Lead/Soft repeat with pulse.</p>
+        <p class="sp-hint sl-layer-empty" id="sl-layer-empty">Layer 0 — all dots active. Tap a dot or pick an element; hold the pad to place a hit.</p>
         <ul class="sl-loop-list" id="sl-loop-list" hidden></ul>
 
         <section class="sl-block sl-block-layer" id="sl-block-layer" hidden>
           <div class="sl-dot-head">
-            <h3 class="sl-block-title" id="sl-layer-title">Dot</h3>
+            <h3 class="sl-block-title" id="sl-env-title">Environment</h3>
             <button class="sp-solo-hold" data-action="solo-hold" type="button" title="Hold to hear only this dot">Solo</button>
           </div>
+          <h3 class="sl-block-title sl-dot-subtitle" id="sl-layer-title">Dot</h3>
           <p class="sp-hint sl-loop-note" id="sl-loop-note">—</p>
 
-          <h4 class="sl-subtitle">1 · Pick instrument</h4>
-          <p class="sp-hint" id="sl-preset-hint">Color matches instrument — kick red, hat cyan, bass purple.</p>
-          <div class="sl-presets" data-scope="dot">
-            <button class="sl-preset-btn" type="button" data-action="preset" data-scope="dot" data-preset="kick">Kick</button>
-            <button class="sl-preset-btn" type="button" data-action="preset" data-scope="dot" data-preset="hat">Hat</button>
-            <button class="sl-preset-btn" type="button" data-action="preset" data-scope="dot" data-preset="bass">Bass</button>
-            <button class="sl-preset-btn" type="button" data-action="preset" data-scope="dot" data-preset="clap">Clap</button>
-            <button class="sl-preset-btn sl-preset-melodic" type="button" data-action="preset" data-scope="dot" data-preset="bright">Lead</button>
-            <button class="sl-preset-btn sl-preset-melodic" type="button" data-action="preset" data-scope="dot" data-preset="minimal">Soft</button>
+          <h4 class="sl-subtitle">1 · Element</h4>
+          <p class="sp-hint" id="sl-preset-hint">Pick which layer to place — each keeps its own sound settings.</p>
+          <div class="sl-presets" data-scope="env">
+            <button class="sl-preset-btn" type="button" data-action="env-pick" data-env="kick">Kick</button>
+            <button class="sl-preset-btn" type="button" data-action="env-pick" data-env="hat">Hat</button>
+            <button class="sl-preset-btn" type="button" data-action="env-pick" data-env="clap">Clap</button>
+            <button class="sl-preset-btn" type="button" data-action="env-pick" data-env="bass">Bass</button>
+            <button class="sl-preset-btn" type="button" data-action="env-pick" data-env="bright">Lead</button>
+            <button class="sl-preset-btn" type="button" data-action="env-pick" data-env="minimal">Soft</button>
           </div>
 
-          <h4 class="sl-subtitle">2 · Pattern</h4>
-          <p class="sp-hint sl-pitch-hint sl-dot-drum-only" hidden>Drums: one hit per step — drag ↔ to move.</p>
-          <p class="sp-hint sl-pitch-hint sl-dot-melodic-only" hidden>Synth: ↕ = pitch · ↔ = timbre · pulse/scroll = how often it repeats.</p>
-
-
-          <div class="sl-knob-grid sl-dot-timing">
-            <div class="sl-field sl-field-block sl-field-span">
-              <label class="sl-field-label">Pulse rate</label>
-              <div class="sp-seg" data-loop-density>
-                <button class="sp-seg-btn" type="button" data-val="8">½ bar</button>
-                <button class="sp-seg-btn active" type="button" data-val="4">¼ bar</button>
-                <button class="sp-seg-btn" type="button" data-val="2">⅛ bar</button>
+          <h4 class="sl-subtitle">2 · Layer sound</h4>
+          <p class="sp-hint sl-env-editing" id="sl-env-editing">Each element is its own machine — pick above to tune.</p>
+          <div class="sl-env-sound-panel">
+            <div class="sl-wave-picker sl-env-wave" id="sl-env-wave">
+              <span class="sl-field-label">Oscillator wave</span>
+              <div class="sl-wave-grid sp-seg" data-param="wave" data-scope="env">
+                <button class="sl-wave-btn sp-seg-btn" type="button" data-val="sine">Sine</button>
+                <button class="sl-wave-btn sp-seg-btn" type="button" data-val="triangle">Tri</button>
+                <button class="sl-wave-btn sp-seg-btn active" type="button" data-val="sawtooth">Saw</button>
+                <button class="sl-wave-btn sp-seg-btn" type="button" data-val="square">Sqr</button>
               </div>
             </div>
+            <p class="sp-hint sl-env-drum-wave-hint">Kick · Hat · Clap use drum samples — no oscillator wave.</p>
+            <div class="sl-knob-grid sl-env-sound-grid">
+              <div class="sl-field">
+                <label class="sl-field-label">Volume</label>
+                <input class="sp-range" data-param="gain" data-scope="env" type="range" min="0" max="0.55" step="0.005" value="0.13">
+                <span class="sp-val" id="sp-gain-val">13%</span>
+              </div>
+              <div class="sl-field">
+                <label class="sl-field-label" id="sl-env-decay-label">Release</label>
+                <input class="sp-range" data-param="decay" data-scope="env" id="sl-env-decay" type="range" min="0.2" max="4" step="0.1" value="1.1">
+                <span class="sp-val" id="sp-decay-val">1.1s</span>
+              </div>
+              <div class="sl-field sl-dot-melodic-only">
+                <label class="sl-field-label">Attack</label>
+                <input class="sp-range" data-param="attack" data-scope="env" type="range" min="0.02" max="0.6" step="0.01" value="0.11">
+                <span class="sp-val" id="sp-attack-val">110ms</span>
+              </div>
+              <div class="sl-field sl-dot-melodic-only">
+                <label class="sl-field-label">Detune</label>
+                <input class="sp-range" data-param="detune" data-scope="env" type="range" min="-50" max="50" step="1" value="0">
+                <span class="sp-val" id="sp-detune-val">0&#xa2;</span>
+              </div>
+              <div class="sl-field">
+                <label class="sl-field-label">Tone</label>
+                <input class="sp-range" data-param="browseTone" data-scope="env" type="range" min="0" max="1" step="0.01" value="0.58">
+                <span class="sp-val" id="sp-browseTone-val">58%</span>
+              </div>
+              <div class="sl-field">
+                <label class="sl-field-label" id="sl-env-harm-label">Harmonics</label>
+                <input class="sp-range" data-param="browseHarmonics" data-scope="env" type="range" min="0" max="1" step="0.02" value="0.58">
+                <span class="sp-val" id="sp-browseHarmonics-val">58%</span>
+              </div>
+              <div class="sl-field sl-dot-drum-only">
+                <label class="sl-field-label">Sub / body</label>
+                <input class="sp-range" data-param="browseSubMix" data-scope="env" type="range" min="0" max="0.35" step="0.005" value="0.08">
+                <span class="sp-val" id="sp-browseSubMix-val">8%</span>
+              </div>
+              <div class="sl-field">
+                <label class="sl-field-label">Filter min</label>
+                <input class="sp-range" data-param="browseFilterMin" data-scope="env" type="range" min="80" max="8000" step="20" value="320">
+                <span class="sp-val" id="sp-browseFilterMin-val">320 Hz</span>
+              </div>
+              <div class="sl-field">
+                <label class="sl-field-label">Filter max</label>
+                <input class="sp-range" data-param="browseFilterMax" data-scope="env" type="range" min="400" max="14000" step="50" value="7200">
+                <span class="sp-val" id="sp-browseFilterMax-val">7200 Hz</span>
+              </div>
+              <div class="sl-field sl-dot-melodic-only">
+                <label class="sl-field-label">Filter Q</label>
+                <input class="sp-range" data-param="browseFilterQ" data-scope="env" type="range" min="0.2" max="3" step="0.02" value="0.72">
+                <span class="sp-val" id="sp-browseFilterQ-val">0.72</span>
+              </div>
+              <div class="sl-field">
+                <label class="sl-field-label">Space</label>
+                <input class="sp-range" data-param="browseSpace" data-scope="env" type="range" min="0" max="0.45" step="0.01" value="0.07">
+                <span class="sp-val" id="sp-browseSpace-val">7%</span>
+              </div>
+              <div class="sl-field sl-dot-melodic-only">
+                <label class="sl-field-label">LFO rate</label>
+                <input class="sp-range" data-param="browseLfoRate" data-scope="env" type="range" min="0" max="8" step="0.05" value="0">
+                <span class="sp-val" id="sp-browseLfoRate-val">Off</span>
+              </div>
+              <div class="sl-field sl-dot-melodic-only">
+                <label class="sl-field-label">LFO depth</label>
+                <input class="sp-range" data-param="browseLfoDepth" data-scope="env" type="range" min="0" max="1" step="0.01" value="0.35">
+                <span class="sp-val" id="sp-browseLfoDepth-val">35%</span>
+              </div>
+            </div>
+          </div>
+          <div class="sl-actions-row sl-env-actions">
+            <button class="sp-test" data-action="preview-env" type="button">&#9654; Preview layer</button>
+            <button class="sp-test" data-action="reset-browse" type="button">Reset preset</button>
+          </div>
+
+          <h4 class="sl-subtitle">3 · Influence</h4>
+          <p class="sp-hint sl-influence-layer" id="sl-influence-layer">Pick Kick, Bass, Lead… in section 1 — each layer has its own neighbor coupling.</p>
+          <p class="sp-hint"><strong>Reach</strong> = neighbor distance · <strong>Coupling</strong> = bond/duck · <strong>Beat build</strong> = pattern fill · <strong>Melodic blend</strong> = pitch merge. Saved per layer with layer sound.</p>
+          <div class="sl-knob-grid sl-influence-grid">
+            <div class="sl-field">
+              <label class="sl-field-label">Neighbor reach</label>
+              <input class="sp-range" id="sl-influence-reach" type="range" min="0" max="100" step="1" value="48">
+              <span class="sp-val" id="sl-influence-reach-val">48%</span>
+            </div>
+            <div class="sl-field">
+              <label class="sl-field-label">Coupling strength</label>
+              <input class="sp-range" id="sl-influence-coupling" type="range" min="0" max="100" step="1" value="50">
+              <span class="sp-val" id="sl-influence-coupling-val">50%</span>
+            </div>
+            <div class="sl-field">
+              <label class="sl-field-label">Harmonize pull</label>
+              <input class="sp-range" id="sl-influence-pull" type="range" min="0" max="100" step="1" value="28">
+              <span class="sp-val" id="sl-influence-pull-val">28%</span>
+            </div>
+            <div class="sl-field">
+              <label class="sl-field-label">Beat build</label>
+              <input class="sp-range" id="sl-influence-beat-build" type="range" min="0" max="100" step="1" value="50">
+              <span class="sp-val" id="sl-influence-beat-build-val">50%</span>
+            </div>
+            <div class="sl-field">
+              <label class="sl-field-label">Melodic blend</label>
+              <input class="sp-range" id="sl-influence-melodic" type="range" min="0" max="100" step="1" value="50">
+              <span class="sp-val" id="sl-influence-melodic-val">50%</span>
+            </div>
+            <div class="sl-field sl-field-block sl-field-span">
+              <label class="sl-field-label">Snap beat (X)</label>
+              <div class="sp-seg sp-seg-compact" id="sl-influence-snapBeat-seg">
+                <button class="sp-seg-btn active" type="button" data-val="1">On</button>
+                <button class="sp-seg-btn" type="button" data-val="0">Off</button>
+              </div>
+            </div>
+            <div class="sl-field sl-field-block sl-field-span">
+              <label class="sl-field-label">Snap pitch (Y)</label>
+              <div class="sp-seg sp-seg-compact" id="sl-influence-snapPitch-seg">
+                <button class="sp-seg-btn active" type="button" data-val="1">On</button>
+                <button class="sp-seg-btn" type="button" data-val="0">Off</button>
+              </div>
+            </div>
+            <div class="sl-field sl-field-block sl-field-span">
+              <label class="sl-field-label">Auto harmonize on drag</label>
+              <div class="sp-seg sp-seg-compact" id="sl-influence-autoHarmonize-seg">
+                <button class="sp-seg-btn active" type="button" data-val="1">On</button>
+                <button class="sp-seg-btn" type="button" data-val="0">Off</button>
+              </div>
+            </div>
+          </div>
+          <blockquote class="sl-influence-quoted sp-hint">
+            <strong>Per-dot (inactive)</strong> — Presence (Z) will scale harmonize pull per sphere. Layer sliders above apply to every dot on that element for now.
+          </blockquote>
+          <p class="sp-hint sl-influence-effective" id="sl-influence-effective-pull">Pick a layer in section 1 to tune how its dots connect to neighbors.</p>
+          <p class="sp-hint sl-influence-readout" id="sl-influence-readout">Select a dot to see neighbor pull.</p>
+          <div class="sl-actions-row sl-influence-actions">
+            <button class="sp-test" data-action="harmonize-now" type="button">Harmonize selected dot</button>
+          </div>
+
+          <h4 class="sl-subtitle">4 · Dot</h4>
+          <p class="sp-hint sl-pitch-hint">↔ beat (X) · ↕ pitch (Y) · size · level. Layer influence (section 3) sets neighbor coupling for all dots on that element.</p>
+          <p class="sp-hint sl-spatial-map-hint" id="sl-spatial-map-hint">Y maps to pentatonic scale notes per layer · X = step in 16-beat loop · Z = loudness + pull strength.</p>
+
+          <div class="sl-knob-grid sl-dot-timing">
             <div class="sl-field">
               <label class="sl-field-label">Beat offset</label>
               <input class="sp-range" id="sl-loop-step" type="range" min="0" max="15" step="1" value="0">
@@ -217,98 +407,42 @@
               <input class="sp-range" id="sl-loop-level" type="range" min="0.4" max="1.5" step="0.02" value="1">
               <span class="sp-val" id="sl-loop-level-val">100%</span>
             </div>
+            <div class="sl-field sl-presence-linked sl-field-inactive">
+              <label class="sl-field-label">Presence (Z)</label>
+              <input class="sp-range" id="sl-loop-presence" type="range" min="0.05" max="0.98" step="0.02" value="0.55" disabled aria-disabled="true" title="Per-dot presence — inactive for now">
+              <span class="sp-val" id="sl-loop-presence-val">55%</span>
+            </div>
           </div>
-          <p class="sp-hint sl-solo-hint">Hold <strong>Solo</strong> to hear only this dot while tuning.</p>
+          <p class="sp-hint sl-solo-hint">Hold <strong>Solo</strong> to hear only this dot while tuning. Presence (Z) still moves on the pad — per-dot pull scaling is off until enabled.</p>
 
-          <div class="sl-dot-synth-only">
-          <h4 class="sl-subtitle">3 · Sound</h4>
-          <div class="sl-wave-picker sl-dot-melodic-only" hidden>
-            <span class="sl-field-label">Wave</span>
-            <div class="sl-wave-grid sp-seg" data-param="wave" data-scope="dot">
-              <button class="sl-wave-btn sp-seg-btn" type="button" data-val="sine">Sine</button>
-              <button class="sl-wave-btn sp-seg-btn" type="button" data-val="triangle">Tri</button>
-              <button class="sl-wave-btn sp-seg-btn active" type="button" data-val="sawtooth">Saw</button>
-              <button class="sl-wave-btn sp-seg-btn" type="button" data-val="square">Sqr</button>
-            </div>
-          </div>
-          <div class="sl-knob-grid sl-dot-synth-grid">
-            <div class="sl-field">
-              <label class="sl-field-label">Volume</label>
-              <input class="sp-range" data-param="gain" type="range" min="0" max="0.4" step="0.01" value="0.13">
-              <span class="sp-val" id="sp-gain-val">13%</span>
-            </div>
-            <div class="sl-field sl-dot-melodic-only">
-              <label class="sl-field-label">Attack</label>
-              <input class="sp-range" data-param="attack" type="range" min="0.02" max="0.6" step="0.01" value="0.11">
-              <span class="sp-val" id="sp-attack-val">110ms</span>
-            </div>
-            <div class="sl-field sl-dot-melodic-only">
-              <label class="sl-field-label">Release</label>
-              <input class="sp-range" data-param="decay" type="range" min="0.2" max="4" step="0.1" value="1.1">
-              <span class="sp-val" id="sp-decay-val">1.1s</span>
-            </div>
-            <div class="sl-field sl-dot-melodic-only">
-              <label class="sl-field-label">Detune</label>
-              <input class="sp-range" data-param="detune" type="range" min="-50" max="50" step="1" value="0">
-              <span class="sp-val" id="sp-detune-val">0&#xa2;</span>
-            </div>
-            <div class="sl-field sl-dot-melodic-only">
-              <label class="sl-field-label">Tone</label>
-              <input class="sp-range" data-param="browseTone" type="range" min="0" max="1" step="0.01" value="0.58">
-              <span class="sp-val" id="sp-browseTone-val">58%</span>
-            </div>
-            <div class="sl-field sl-dot-melodic-only">
-              <label class="sl-field-label">Harmonics</label>
-              <input class="sp-range" data-param="browseHarmonics" type="range" min="0" max="1" step="0.02" value="0.58">
-              <span class="sp-val" id="sp-browseHarmonics-val">58%</span>
-            </div>
-            <div class="sl-field sl-dot-melodic-only">
-              <label class="sl-field-label">Filter min</label>
-              <input class="sp-range" data-param="browseFilterMin" type="range" min="200" max="8000" step="20" value="320">
-              <span class="sp-val" id="sp-browseFilterMin-val">320 Hz</span>
-            </div>
-            <div class="sl-field sl-dot-melodic-only">
-              <label class="sl-field-label">Filter max</label>
-              <input class="sp-range" data-param="browseFilterMax" type="range" min="800" max="14000" step="50" value="7200">
-              <span class="sp-val" id="sp-browseFilterMax-val">7200 Hz</span>
-            </div>
-            <div class="sl-field sl-dot-melodic-only">
-              <label class="sl-field-label">Filter Q</label>
-              <input class="sp-range" data-param="browseFilterQ" type="range" min="0.2" max="3" step="0.02" value="0.72">
-              <span class="sp-val" id="sp-browseFilterQ-val">0.72</span>
-            </div>
-            <div class="sl-field sl-dot-melodic-only">
-              <label class="sl-field-label">Sub mix</label>
-              <input class="sp-range" data-param="browseSubMix" type="range" min="0" max="0.2" step="0.001" value="0.012">
-              <span class="sp-val" id="sp-browseSubMix-val">1%</span>
-            </div>
-            <div class="sl-field sl-dot-melodic-only">
-              <label class="sl-field-label">Space</label>
-              <input class="sp-range" data-param="browseSpace" type="range" min="0" max="0.4" step="0.01" value="0.07">
-              <span class="sp-val" id="sp-browseSpace-val">7%</span>
-            </div>
-            <div class="sl-field sl-dot-melodic-only">
-              <label class="sl-field-label">LFO rate</label>
-              <input class="sp-range" data-param="browseLfoRate" type="range" min="0" max="8" step="0.05" value="0">
-              <span class="sp-val" id="sp-browseLfoRate-val">Off</span>
-            </div>
-            <div class="sl-field sl-dot-melodic-only">
-              <label class="sl-field-label">LFO depth</label>
-              <input class="sp-range" data-param="browseLfoDepth" type="range" min="0" max="1" step="0.01" value="0.4">
-              <span class="sp-val" id="sp-browseLfoDepth-val">40%</span>
-            </div>
-            <div class="sl-field sl-field-block sl-field-span sl-dot-melodic-only">
-              <label class="sl-field-label">LFO target</label>
-              <div class="sp-seg" data-param="browseLfoTarget">
-                <button class="sp-seg-btn active" data-val="filter">Filter</button>
-                <button class="sp-seg-btn" data-val="gain">Gain</button>
-                <button class="sp-seg-btn" data-val="pitch">Pitch</button>
+          <h4 class="sl-subtitle sl-gravity-title">Cluster</h4>
+          <p class="sp-hint sl-gravity-hint"><strong>Cluster</strong> = spatial tiers (solo → pulse → groove from neighbor coupling). <strong>Solo/Pulse/Groove</strong> = lock that behavior. <strong>Density</strong> = how fast patterns fill.</p>
+          <div class="sl-gravity-controls">
+            <div class="sl-field sl-field-block sl-field-span">
+              <label class="sl-field-label">Pattern mode</label>
+              <div class="sp-seg sp-seg-compact" id="sl-gravity-mode-seg">
+                <button class="sp-seg-btn active" type="button" data-val="auto">Cluster</button>
+                <button class="sp-seg-btn" type="button" data-val="solo">Solo</button>
+                <button class="sp-seg-btn" type="button" data-val="pulse">Pulse</button>
+                <button class="sp-seg-btn" type="button" data-val="groove">Groove</button>
               </div>
             </div>
+            <div class="sl-field">
+              <label class="sl-field-label">Density</label>
+              <input class="sp-range" id="sl-gravity-density" type="range" min="0" max="100" step="1" value="28">
+              <span class="sp-val" id="sl-gravity-density-val">28%</span>
+            </div>
           </div>
-          </div>
+          <p class="sl-gravity-summary" id="sl-gravity-summary">
+            <span id="sl-gravity-mode">—</span>
+            <span class="sl-gravity-sep">·</span>
+            <span>coupling <span id="sl-gravity-pull">—</span></span>
+            <span class="sl-gravity-sep">·</span>
+            <span id="sl-gravity-hits">—</span>
+          </p>
+          <div class="sl-gravity-strip steps-16" id="sl-gravity-strip" aria-hidden="true"></div>
+
           <div class="sl-actions-row">
-            <button class="sp-test" data-action="reset-browse" type="button">Reset layer</button>
             <button class="sp-test" data-action="remove-loop" type="button">Remove dot</button>
           </div>
         </section>
@@ -344,8 +478,26 @@
 <div id="beat-studio" hidden aria-hidden="true">
   <div class="beat-studio-inner">
     <div id="beat-transport" hidden aria-hidden="true"></div>
-    <div class="beat-lanes" role="group" aria-label="Beat layers"></div>
-    <div class="beat-studio-overlay table-sound-overlay" aria-hidden="true"></div>
+    <div class="beat-env-bar" id="beat-env-bar" role="toolbar" aria-label="View">
+      <button type="button" class="beat-env-btn beat-env-btn-3d active" id="btn-beat-3d" title="Toggle 3D loop view">3D</button>
+    </div>
+    <div class="beat-workspace">
+      <div class="beat-view3d" id="beat-view3d" aria-label="3D loop molecule view">
+        <canvas id="beat-view3d-canvas"></canvas>
+        <div class="beat-view3d-hud">
+          <span class="beat-view3d-title">Loop space</span>
+          <span class="beat-view3d-axes">Click sphere to select · drag to move · shift+drag = Z only · empty = orbit</span>
+          <span class="beat-view3d-step" id="beat-view3d-step">—</span>
+        </div>
+      </div>
+      <div class="beat-pad-stack">
+        <div class="beat-pad influence-zone row-pad" id="beat-pad" role="application" aria-label="Beat space">
+          <span class="beat-pad-axis beat-pad-axis-x">Time → (soft grid)</span>
+          <span class="beat-pad-axis beat-pad-axis-y">Pitch / tone ↑</span>
+        </div>
+        <div class="beat-studio-overlay table-sound-overlay" aria-hidden="true"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -370,6 +522,8 @@
 <script src="js/audio/engine.js"></script>
 <script src="js/audio/theory.js"></script>
 <script src="js/audio/presets.js"></script>
+<script src="js/audio/machine-playback.js"></script>
+<script src="js/audio/machines.js"></script>
 <script src="js/audio/voices.js"></script>
 <!-- CV table hover (must load before sound.js — Sound wraps ECAudio.Browse) -->
 <script src="js/hover/browse-sound.js"></script>
@@ -383,16 +537,9 @@
 <script src="js/audio/debug.js"></script>
 <script src="js/hover/panel-hover.js"></script>
 <script src="js/hover/site.js"></script>
-<!-- Beat studio — isolated from CV -->
-<script src="js/studio/marker-drums.js"></script>
-<script src="js/studio/beat-studio.js"></script>
-<script src="js/studio/beat-guide.js"></script>
-<script src="js/studio/markers.js"></script>
-<script src="js/studio/sound-visual.js"></script>
-<script src="js/studio/sound-lab.js"></script>
-<script src="js/studio/panel-studio.js"></script>
+<!-- Beat studio — lazy-loaded via studio-loader.js on first Studio open -->
+<script src="js/studio/studio-loader.js"></script>
 <script src="js/studio/studio-mode.js"></script>
-<script src="js/studio/studio-input.js"></script>
 <script src="js/audio/app.js"></script>
 <script>
 // Site script (CV render, A4 export, dark mode). Audio: js/audio/
@@ -790,9 +937,8 @@ async function render() {
   // ── Init scroll animations ──
   initScrollReveal();
   requestAnimationFrame(function() {
-    if (soundEnabled) TrackSeq.mount();
+    if (soundEnabled && typeof syncMusicSequencer === 'function') syncMusicSequencer();
     else if (TrackSeq.unmount) TrackSeq.unmount();
-    TrackSeq.syncPlayback();
     if (ECAudio.runSoundDiagnostics) ECAudio.runSoundDiagnostics();
   });
 }

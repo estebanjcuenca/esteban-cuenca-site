@@ -153,6 +153,12 @@ a:hover { text-decoration: underline; }
   transition: color .15s;
 }
 .tb-btn:hover { text-decoration: underline; }
+.tb-btn.active {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+  text-decoration: none;
+}
 .tb-icon-btn:hover { text-decoration: none; }
 .tb-icon-btn:hover .tb-icon { opacity: .55; }
 .tb-icon {
@@ -178,6 +184,25 @@ a:hover { text-decoration: underline; }
   color: var(--ink);
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+#btn-studio.is-loading {
+  opacity: 0.55;
+  pointer-events: none;
+}
+html.beat-studio-loading .beat-studio-inner::after {
+  content: 'Loading studio…';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--mid);
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  z-index: 12;
+  pointer-events: none;
 }
 #btn-dark:hover { text-decoration: underline; }
 

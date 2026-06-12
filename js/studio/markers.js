@@ -12,14 +12,15 @@ var QUICK_TAP_MS = 400;
 var MARKER_SETTINGS_HOLD_MS = 420;
 var DOUBLE_MS = 500;
 var DOUBLE_DIST = 48;
-var SIZE_MIN = 12;
-var SIZE_MAX = 44;
+var SIZE_MIN = 14;
+var SIZE_MAX = 50;
 
 var _press = null;
 var _lastQuickTap = null;
 var _selectedId = null;
 var _layerSettingsOpen = null;
 var _soloDotId = null;
+var _placeSelectGraceUntil = 0;
 var _syncingOverlay = false;
 var DRAG_MARK_PX = 6;
 
@@ -123,21 +124,36 @@ var PRESET_COLORS = {
 
 var PRESET_CLASS_IDS = ['kick', 'hat', 'bass', 'clap', 'bright', 'minimal'];
 
+function markerPresetId(marker) {
+  if (!marker) return null;
+  if (marker.presetId) return marker.presetId;
+  var env = envForMarker(marker);
+  if (env && env.type) return env.type;
+  if (marker.envId) return marker.envId.replace(/^env-/, '');
+  if (marker.role && PRESET_CLASS_IDS.indexOf(marker.role) >= 0) return marker.role;
+  return null;
+}
+
 function applyMarkerVisual(marker) {
   var el = marker && marker.el;
   if (!el) return;
-  var mp = ensureMarkerParams(marker);
+  var env = envForMarker(marker);
+  var mp = env && env.params ? env.params : ensureMarkerParams(marker);
   var density = String(normalizeMarkerDensity(markerDensity(marker)));
   var i;
   for (i = 0; i < VIZ_DENSITIES.length; i++) el.classList.remove('viz-density-' + VIZ_DENSITIES[i]);
   el.classList.add('viz-density-' + density);
 
-  var preset = marker.presetId;
+  var preset = markerPresetId(marker);
+  if (preset && !marker.presetId) marker.presetId = preset;
   var tone = mp.browseTone != null ? mp.browseTone : 0.58;
   var harm = mp.browseHarmonics != null ? mp.browseHarmonics : 0.5;
   var gain = mp.gain != null ? mp.gain : 0.13;
   var size = marker.sizeNorm != null ? marker.sizeNorm : 0.35;
   var level = marker.levelMul != null ? marker.levelMul : 1;
+  var z = markerNormZ(marker);
+  var depth = ECAudio.BeatPresence && ECAudio.BeatPresence.depthScale
+    ? ECAudio.BeatPresence.depthScale(z) : (0.78 + z * 0.34);
   var base = preset && PRESET_COLORS[preset]
     ? PRESET_COLORS[preset]
     : { h: Math.round(28 + tone * 90), s: Math.round(32 + harm * 38), l: 50 };
@@ -145,47 +161,184 @@ function applyMarkerVisual(marker) {
   el.style.setProperty('--dot-hue', String(base.h));
   el.style.setProperty('--dot-sat', Math.round(Math.min(88, base.s + harm * 6)) + '%');
   el.style.setProperty('--dot-light', Math.round(Math.min(72, base.l + size * 14 + (level - 1) * 10)) + '%');
-  el.style.setProperty('--dot-alpha', String(Math.min(1, 0.72 + level * 0.22)));
+  el.style.setProperty('--dot-alpha', String(Math.min(1, 0.48 + z * 0.44 + level * 0.12)));
   el.style.setProperty('--dot-border-w', String(1.5 + size * 2.2) + 'px');
+  el.style.setProperty('--dot-presence', String(z));
+  el.style.setProperty('--dot-depth-scale', String(depth));
+  var pan = ECAudio.BeatMix && ECAudio.BeatMix.stereoPan
+    ? ECAudio.BeatMix.stereoPan(marker) : 0;
+  var panPct = Math.round(pan * 100);
+  el.style.setProperty('--dot-pan', String(pan));
+  el.dataset.pan = String(panPct);
+  el.dataset.panSide = panPct < -8 ? 'left' : (panPct > 8 ? 'right' : 'center');
+  el.style.transform = 'translate(calc(-50% + ' + (pan * 10) + 'px), -50%) scale(' + depth + ')';
+  el.dataset.presence = String(Math.round(z * 100));
+  if (ECAudio.BeatMix && ECAudio.BeatMix.placementWouldClash && marker.envId) {
+    var place = {
+      normX: marker.normX, normY: marker.normY,
+      beatPhase: marker.beatPhase, step: marker.step, toneNorm: marker.toneNorm
+    };
+    var clash = ECAudio.BeatMix.placementWouldClash(place, marker.envId, marker.id);
+    var type = marker.presetId || (marker.envId ? marker.envId.replace(/^env-/, '') : '');
+    var perc = type === 'kick' || type === 'hat' || type === 'clap';
+    el.classList.toggle('is-mix-clash', !!clash.clash && !perc);
+  } else {
+    el.classList.remove('is-mix-clash');
+  }
 
   for (i = 0; i < PRESET_CLASS_IDS.length; i++) {
     el.classList.remove('preset-' + PRESET_CLASS_IDS[i]);
   }
   if (preset && PRESET_COLORS[preset]) el.classList.add('preset-' + preset);
   el.dataset.preset = preset || '';
+  if (marker.envId) {
+    el.dataset.envId = marker.envId;
+    var overview = ECAudio.Environments && ECAudio.Environments.isOverview
+      ? ECAudio.Environments.isOverview() : false;
+    if (overview) {
+      el.classList.add('is-env-active');
+      el.classList.remove('is-env-muted');
+    } else {
+      var active = ECAudio.Environments && ECAudio.Environments.getActive
+        ? ECAudio.Environments.getActive() : null;
+      var on = active && active.id === marker.envId;
+      el.classList.toggle('is-env-active', !!on);
+      el.classList.toggle('is-env-muted', !on);
+    }
+  }
 }
 
-function renumberMarkers() {
+function envIdFromSaved(d) {
+  if (!d) return 'env-kick';
+  if (d.envId) return d.envId;
+  if (d.presetId) return 'env-' + d.presetId;
+  if (d.role && ECAudio.Environments && ECAudio.Environments.ELEMENT_TYPES &&
+      ECAudio.Environments.ELEMENT_TYPES.indexOf(d.role) >= 0) {
+    return 'env-' + d.role;
+  }
+  return 'env-kick';
+}
+
+function serializeMarkerData(m) {
+  if (!m) return null;
+  return {
+    id: m.id,
+    num: m.num,
+    envId: m.envId || envIdFromSaved(m),
+    secId: m.secId,
+    normX: m.normX,
+    normY: m.normY,
+    beatPhase: m.beatPhase,
+    rowIndex: m.rowIndex,
+    laneIndex: m.laneIndex,
+    step: m.step,
+    toneNorm: m.toneNorm,
+    density: markerDensity(m),
+    sizeNorm: m.sizeNorm,
+    levelMul: m.levelMul,
+    normZ: markerNormZ(m),
+    role: m.role || (m.presetId || 'kick'),
+    presetId: m.presetId || null,
+    pitchMul: m.pitchMul != null ? m.pitchMul : 1,
+    gravityMode: m.gravityMode || 'auto',
+    gravityDensity: m.gravityDensity != null ? m.gravityDensity : 28
+  };
+}
+
+function syncMarkerDataFromLive() {
+  ECAudio.State.markerData = (ECAudio.State.markers || []).map(serializeMarkerData).filter(Boolean);
+  saveMarkerStore();
+}
+
+function migrateMarkerStoreEntry(d) {
+  if (!d) return d;
+  if (!d.envId) d.envId = envIdFromSaved(d);
+  if (d.beatPhase == null && d.normX != null && ECAudio.BeatKaoss && ECAudio.BeatKaoss.beatPhaseFromX) {
+    d.beatPhase = ECAudio.BeatKaoss.beatPhaseFromX(d.normX);
+  }
+  if (!d.presetId && d.envId) d.presetId = d.envId.replace(/^env-/, '');
+  if (d.normZ == null) {
+    d.normZ = ECAudio.BeatPresence && ECAudio.BeatPresence.DEFAULT
+      ? ECAudio.BeatPresence.DEFAULT : 0.55;
+  }
+  if (!d.gravityMode) d.gravityMode = 'auto';
+  if (d.gravityDensity == null) d.gravityDensity = 28;
+  return d;
+}
+
+function markerNormZ(marker) {
+  if (ECAudio.BeatPresence && ECAudio.BeatPresence.normZ) {
+    return ECAudio.BeatPresence.normZ(marker);
+  }
+  return marker && marker.normZ != null ? marker.normZ : 0.55;
+}
+
+function adjustMarkerPresence(id, dir) {
+  var marker = findMarker(id);
+  if (!marker) return;
+  var step = 0.06;
+  var z = markerNormZ(marker) + dir * step;
+  z = Math.max(0.05, Math.min(0.98, z));
+  updateMarker(id, { normZ: z });
+  if (ECAudio.BeatBonds && ECAudio.BeatBonds.schedule) ECAudio.BeatBonds.schedule();
+  if (ECAudio.BeatView3d && ECAudio.BeatView3d.schedule) ECAudio.BeatView3d.schedule();
+}
+
+function findSavedMarker(marker, saved, index) {
+  var i;
+  if (!marker || !saved || !saved.length) return null;
+  for (i = 0; i < saved.length; i++) {
+    if (saved[i].id === marker.id) return saved[i];
+  }
+  if (marker.num != null) {
+    for (i = 0; i < saved.length; i++) {
+      if (saved[i].num === marker.num) return saved[i];
+    }
+  }
+  if (index != null && index >= 0 && index < saved.length) return saved[index];
+  return null;
+}
+
+function applySavedMarkerFields(marker, saved) {
+  if (!marker || !saved) return;
+  saved = migrateMarkerStoreEntry(saved);
+  if (saved.envId) marker.envId = saved.envId;
+  if (saved.presetId) marker.presetId = saved.presetId;
+  if (saved.role) marker.role = saved.role;
+  if (saved.normX != null) marker.normX = saved.normX;
+  if (saved.normY != null) marker.normY = saved.normY;
+  if (saved.beatPhase != null) marker.beatPhase = saved.beatPhase;
+  if (saved.step != null) marker.step = saved.step;
+  if (saved.toneNorm != null) marker.toneNorm = saved.toneNorm;
+  if (saved.rowIndex != null) marker.rowIndex = saved.rowIndex;
+  if (saved.laneIndex != null) marker.laneIndex = saved.laneIndex;
+  if (saved.normZ != null) marker.normZ = saved.normZ;
+  else if (!marker.normZ) marker.normZ = markerNormZ(marker);
+  if (!marker.envId) marker.envId = envIdFromSaved(marker);
+  if (!marker.presetId && marker.envId) marker.presetId = marker.envId.replace(/^env-/, '');
+}
+
+function renumberMarkers(preferId) {
   var markers = ECAudio.State.markers || [];
-  var prevOpen = _layerSettingsOpen;
-  var prevNum = prevOpen ? (findMarker(prevOpen) || {}).num : null;
+  var prevMarker = _layerSettingsOpen ? findMarker(_layerSettingsOpen) : null;
+  var preferMarker = preferId ? findMarker(preferId) : null;
   var i;
   for (i = 0; i < markers.length; i++) {
     markers[i].num = i + 1;
-    markers[i].id = 'dot-' + (i + 1);
     if (markers[i].el) {
-      markers[i].el.dataset.markerId = markers[i].id;
       markers[i].el.setAttribute('aria-label', 'Dot ' + (i + 1));
     }
   }
-  if (prevNum != null && prevNum <= markers.length) {
-    _layerSettingsOpen = 'dot-' + prevNum;
-    _selectedId = _layerSettingsOpen;
-  } else if (prevOpen) {
+  if (preferMarker) {
+    _layerSettingsOpen = preferMarker.id;
+    _selectedId = preferMarker.id;
+  } else if (prevMarker) {
+    _layerSettingsOpen = prevMarker.id;
+    _selectedId = prevMarker.id;
+  } else if (_layerSettingsOpen) {
     closeLayerSettings();
   }
-  ECAudio.State.markerData = markers.map(function(m) {
-    return {
-      id: m.id, num: m.num, secId: m.secId, normX: m.normX, normY: m.normY,
-      rowIndex: m.rowIndex, laneIndex: m.laneIndex, step: m.step,
-      toneNorm: m.toneNorm, density: markerDensity(m),
-      sizeNorm: m.sizeNorm, levelMul: m.levelMul, role: m.role || 'kick',
-      params: m.params ? JSON.parse(JSON.stringify(m.params)) : defaultMarkerParams(),
-      presetId: m.presetId || null,
-      pitchMul: m.pitchMul != null ? m.pitchMul : 1
-    };
-  });
-  saveMarkerStore();
+  syncMarkerDataFromLive();
   markers.forEach(function(m) {
     syncMarkerLabel(m);
     applyMarkerVisual(m);
@@ -228,8 +381,15 @@ function ensureMarkerParams(marker) {
   return marker.params;
 }
 
+function envForMarker(marker) {
+  if (!marker || !marker.envId || !ECAudio.Environments) return null;
+  return ECAudio.Environments.get(marker.envId);
+}
+
 function getMarkerParam(marker, key) {
   if (!marker) return ECAudio.params[key];
+  var env = envForMarker(marker);
+  if (env && ECAudio.Environments.getParam) return ECAudio.Environments.getParam(env, key);
   var mp = ensureMarkerParams(marker);
   if (mp[key] != null) return mp[key];
   if (markerParamKeys().indexOf(key) >= 0) {
@@ -242,6 +402,13 @@ function getMarkerParam(marker, key) {
 
 function setMarkerParam(marker, key, val) {
   if (!marker) return;
+  var env = envForMarker(marker);
+  if (env && ECAudio.Environments.setParam) {
+    ECAudio.Environments.setParam(env.id, key, val);
+    applyMarkerVisual(marker);
+    syncLayerPreview(marker);
+    return;
+  }
   var mp = ensureMarkerParams(marker);
   mp[key] = val;
   if (key === 'browseHarmonics') mp.browseDrive = val;
@@ -294,8 +461,12 @@ function syncMarkerLabel(marker) {
   }
   if (metaEl) {
     var beatNum = (marker.step != null ? marker.step : 0) + 1;
-    if (markerIsSynth(marker)) {
-      metaEl.textContent = 'beat ' + beatNum + ' · ' + formatDensity(density);
+    var zPct = Math.round(markerNormZ(marker) * 100);
+    if (isBeatStudioActive()) {
+      var panPct = ECAudio.BeatMix && ECAudio.BeatMix.stereoPan
+        ? Math.round(ECAudio.BeatMix.stereoPan(marker) * 100) : 0;
+      var panTxt = panPct < -4 ? 'L' + Math.abs(panPct) : (panPct > 4 ? 'R' + panPct : 'C');
+      metaEl.textContent = 'beat ' + beatNum + ' · ' + panTxt + ' · Z ' + zPct + '%';
     } else {
       metaEl.textContent = 'beat ' + beatNum;
     }
@@ -314,6 +485,7 @@ function setDotSolo(id) {
   });
   var btn = document.querySelector('[data-action="solo-hold"]');
   if (btn) btn.classList.add('is-active');
+  if (ECAudio.BeatView3d && ECAudio.BeatView3d.schedule) ECAudio.BeatView3d.schedule();
 }
 
 function clearDotSolo() {
@@ -325,6 +497,18 @@ function clearDotSolo() {
   });
   var btn = document.querySelector('[data-action="solo-hold"]');
   if (btn) btn.classList.remove('is-active');
+  if (ECAudio.BeatView3d && ECAudio.BeatView3d.schedule) ECAudio.BeatView3d.schedule();
+}
+
+function resolveSoloMarker() {
+  var sel = getSelected();
+  if (sel && sel.id) return sel;
+  if (!ECAudio.Environments || !ECAudio.Environments.panelEnv) return null;
+  var env = ECAudio.Environments.panelEnv();
+  if (!env || !ECAudio.Environments.markersIn) return null;
+  var dots = ECAudio.Environments.markersIn(env.id);
+  if (dots.length === 1) return dots[0];
+  return null;
 }
 
 function shouldPlayInMix(marker) {
@@ -341,6 +525,9 @@ function selectDot(id) {
   if (!marker) return;
   _layerSettingsOpen = id;
   _selectedId = id;
+  if (marker.envId && ECAudio.Environments && ECAudio.Environments.activate) {
+    ECAudio.Environments.activate(marker.envId);
+  }
   document.querySelectorAll('.sound-marker').forEach(function(el) {
     el.classList.toggle('is-selected', el.dataset.markerId === id);
     if (_soloDotId) {
@@ -355,6 +542,9 @@ function selectDot(id) {
   if (ECAudio.BeatGuide) {
     ECAudio.BeatGuide.fire('select_dot', { rect: marker.el ? marker.el.getBoundingClientRect() : null });
   }
+  if (ECAudio.BeatView3d && ECAudio.BeatView3d.setSelected) {
+    ECAudio.BeatView3d.setSelected(id);
+  }
 }
 
 function openLayerSettings(id) {
@@ -365,11 +555,13 @@ function closeLayerSettings() {
   clearDotSolo();
   _layerSettingsOpen = null;
   _selectedId = null;
+  _placeSelectGraceUntil = 0;
   document.querySelectorAll('.sound-marker').forEach(function(el) {
     el.classList.remove('is-selected', 'is-soloed', 'is-solo-muted');
   });
   if (typeof slClearMarkerTarget === 'function') slClearMarkerTarget();
   syncMarkerEditor();
+  if (ECAudio.BeatView3d && ECAudio.BeatView3d.setSelected) ECAudio.BeatView3d.setSelected(null);
 }
 
 function cycleMarkerDensity(id, dir) {
@@ -443,41 +635,108 @@ function markerLaneIndex(marker) {
   return marker.rowIndex || 0;
 }
 
+function envLabel(marker) {
+  if (!marker) return '—';
+  var env = envForMarker(marker);
+  if (env) return env.label;
+  if (marker.presetId && ECAudio.Environments && ECAudio.Environments.ELEMENT_LABELS) {
+    return ECAudio.Environments.ELEMENT_LABELS[marker.presetId] || marker.presetId;
+  }
+  return marker.presetId || '—';
+}
+
 function loopNoteLabel(marker) {
   if (!marker) return '—';
   var step = marker.step != null ? marker.step : (ECAudio.Theory && ECAudio.Theory.stepFromNormX
     ? ECAudio.Theory.stepFromNormX(marker.normX) : 0);
-  var lane = marker.laneIndex != null ? marker.laneIndex : marker.rowIndex;
-  var laneName = ECAudio.MarkerDrums && ECAudio.MarkerDrums.laneLabel
-    ? ECAudio.MarkerDrums.laneLabel(lane) : ('Lane ' + ((lane | 0) + 1));
-  var line = laneName + ' · step ' + (step + 1);
-  if (marker.presetId === 'bass') line += ' · ' + markerNoteShort(marker);
-  else if (marker.presetId === 'bright' || marker.presetId === 'minimal') {
-    line += ' · ' + markerNoteShort(marker);
+  var line = envLabel(marker) + ' · beat ' + (step + 1);
+  if (ECAudio.BeatKaoss && ECAudio.BeatKaoss.noteLabel) {
+    var row = ECAudio.Theory.markerPitchRow
+      ? ECAudio.Theory.markerPitchRow(marker) : marker.rowIndex;
+    line += ' · ' + ECAudio.BeatKaoss.noteLabel(row, marker.normY);
+  } else if (ECAudio.Theory && ECAudio.Theory.browsePadNoteLabel) {
+    var row2 = ECAudio.Theory.markerPitchRow
+      ? ECAudio.Theory.markerPitchRow(marker) : marker.rowIndex;
+    line += ' · ' + ECAudio.Theory.browsePadNoteLabel(row2, marker.normY).split(' · ')[0];
   }
   return line;
+}
+
+function panelEnvType(marker) {
+  var env = marker ? envForMarker(marker) : null;
+  if (!env && ECAudio.Environments && ECAudio.Environments.panelEnv) {
+    env = ECAudio.Environments.panelEnv();
+  }
+  if (env && env.type) return env.type;
+  if (marker && marker.presetId) return marker.presetId;
+  return null;
 }
 
 function syncDotPanelMode(marker) {
   var lab = document.getElementById('studio-panel');
   if (!lab) return;
-  var perc = markerIsPercussion(marker);
-  var synth = markerIsSynth(marker);
-  var hasPreset = !!(marker && marker.presetId);
-  lab.classList.toggle('sl-dot-is-drum', perc);
-  lab.classList.toggle('sl-dot-is-melodic', synth);
-  lab.classList.toggle('sl-dot-no-preset', !hasPreset);
-  lab.classList.toggle('sl-dot-step-grid', perc);
-  lab.querySelectorAll('.sl-dot-melodic-only').forEach(function(el) {
-    el.hidden = !synth;
-  });
-  lab.querySelectorAll('.sl-dot-drum-only').forEach(function(el) {
-    el.hidden = !perc;
-  });
+  var env = marker ? envForMarker(marker) : null;
+  if (!env && ECAudio.Environments && ECAudio.Environments.panelEnv) {
+    env = ECAudio.Environments.panelEnv();
+  }
+  var type = panelEnvType(marker);
+  var isDrum = !!(type && ECAudio.MarkerDrums && ECAudio.MarkerDrums.isDrum(type));
+  var isSynth = !!(type && ECAudio.MarkerDrums && ECAudio.MarkerDrums.isSynthLayer(type));
+  var hasEnv = !!(env || (marker && marker.presetId));
+  lab.classList.remove('sl-dot-is-drum', 'sl-dot-is-melodic', 'sl-dot-no-preset', 'sl-dot-step-grid', 'sl-env-is-synth');
+  lab.classList.toggle('sl-dot-is-drum', isDrum);
+  lab.classList.toggle('sl-dot-is-melodic', !isDrum);
+  lab.classList.toggle('sl-env-is-synth', isSynth);
+  lab.classList.toggle('sl-dot-no-preset', !hasEnv);
+  var decayInput = document.getElementById('sl-env-decay');
+  var decayLabel = document.getElementById('sl-env-decay-label');
+  var harmLabel = document.getElementById('sl-env-harm-label');
+  if (ECAudio.Machines && ECAudio.Machines.syncPanelLabels) {
+    ECAudio.Machines.syncPanelLabels(type);
+  } else if (harmLabel) {
+    harmLabel.textContent = isDrum ? 'Snap / character' : 'Harmonics';
+  }
+  if (decayInput) {
+    if (isDrum) {
+      decayInput.min = '0.04';
+      decayInput.max = '0.5';
+      decayInput.step = '0.01';
+      if (decayLabel) decayLabel.textContent = 'Length';
+    } else {
+      decayInput.min = '0.2';
+      decayInput.max = '4';
+      decayInput.step = '0.1';
+      if (decayLabel) decayLabel.textContent = 'Release';
+    }
+    if (env && ECAudio.Environments.getParam) {
+      var decayVal = ECAudio.Environments.getParam(env, 'decay');
+      var decayFmt = document.getElementById('sp-decay-val');
+      if (decayFmt && decayVal != null) {
+        decayFmt.textContent = isDrum
+          ? Math.round(decayVal * 1000) + 'ms'
+          : decayVal.toFixed(1) + 's';
+      }
+    }
+  }
+  if (ECAudio.Environments && ECAudio.Environments.syncBar) ECAudio.Environments.syncBar();
+  if (typeof syncSoundPanelUI === 'function') syncSoundPanelUI();
 }
 
 function syncMarkerStep(marker) {
   if (!marker || !ECAudio.Theory) return;
+  if (marker.envId && ECAudio.BeatKaoss) {
+    var nx = marker.normX != null ? marker.normX : 0.5;
+    var phaseFromX = ECAudio.BeatKaoss.beatPhaseFromX(nx);
+    if (marker.beatPhase == null) {
+      marker.beatPhase = phaseFromX;
+    } else if (ECAudio.BeatKaoss.beatXFromPhase) {
+      var xFromPhase = ECAudio.BeatKaoss.beatXFromPhase(marker.beatPhase);
+      if (Math.abs(xFromPhase - nx) > 0.035) marker.beatPhase = phaseFromX;
+    }
+    marker.step = Math.max(0, Math.min(beatStepCount() - 1, Math.round(marker.beatPhase)));
+    if (marker.toneNorm == null) marker.toneNorm = marker.normX;
+    return;
+  }
   if (marker.step == null) {
     marker.step = ECAudio.Theory.stepFromNormX(marker.normX);
   }
@@ -487,6 +746,12 @@ function syncMarkerStep(marker) {
 
 function syncMarkerLane(marker) {
   if (!marker || !marker.zone) return;
+  if (marker.envId && ECAudio.Environments && ECAudio.Environments.pitchRow) {
+    var pr = ECAudio.Environments.pitchRow(marker.envId);
+    marker.laneIndex = pr;
+    marker.rowIndex = pr;
+    return;
+  }
   if (marker.zone.classList && marker.zone.classList.contains('beat-lane')) {
     var li = marker.zone.dataset.laneIndex != null ? parseInt(marker.zone.dataset.laneIndex, 10) : 0;
     marker.laneIndex = li;
@@ -502,24 +767,55 @@ function cycleMarkerRole() {
   return false;
 }
 
-function cycleMarkerPreset(id) {
+function markersInEnvSorted(envId) {
+  var list = ECAudio.Environments && ECAudio.Environments.markersIn
+    ? ECAudio.Environments.markersIn(envId) : [];
+  return list.slice().sort(function(a, b) {
+    return (a.step | 0) - (b.step | 0);
+  });
+}
+
+function handleDotTap(id) {
   var marker = findMarker(id);
-  if (!marker || !ECAudio.MarkerDrums || !ECAudio.MarkerDrums.nextPresetInCycle) return;
-  var lane = marker.laneIndex != null ? marker.laneIndex : marker.rowIndex;
-  var next = ECAudio.MarkerDrums.nextPresetInCycle(marker.presetId, lane);
-  applyPresetToMarker(marker, next);
-  if (ECAudio.MarkerDrums.isPercussion && ECAudio.MarkerDrums.isPercussion(next)) {
-    marker.normY = 0.5;
-    syncMarkerElPosition(marker);
-    persistMarkerData(marker);
+  if (!marker || !marker.envId) return;
+  var wasOverview = ECAudio.Environments && ECAudio.Environments.isOverview
+    ? ECAudio.Environments.isOverview() : false;
+  if (ECAudio.Environments && ECAudio.Environments.activate) {
+    ECAudio.Environments.activate(marker.envId);
   }
-  selectDot(id);
-  if (marker.voice && ECAudio.Browse.previewMarkerSound) {
-    ECAudio.Browse.previewMarkerSound(marker);
+  if (wasOverview || _selectedId !== id || !_layerSettingsOpen) {
+    selectDot(id);
+    return;
   }
+  var envDots = markersInEnvSorted(marker.envId);
+  if (envDots.length <= 1) {
+    selectDot(id);
+    return;
+  }
+  var idx = -1;
+  var i;
+  for (i = 0; i < envDots.length; i++) {
+    if (envDots[i].id === id) { idx = i; break; }
+  }
+  if (idx < 0) return;
+  var nextIdx = (idx + 1) % envDots.length;
+  if (nextIdx === 0) {
+    removeMarker(id);
+    if (envDots.length > 1) selectDot(envDots[1].id);
+    return;
+  }
+  selectDot(envDots[nextIdx].id);
+}
+
+function cycleMarkerPreset(id) {
+  handleDotTap(id);
 }
 
 function selectMarker(id) {
+  if (isBeatStudioActive() && id) {
+    selectDot(id);
+    return;
+  }
   _selectedId = id || null;
   document.querySelectorAll('.sound-marker').forEach(function(el) {
     el.classList.toggle('is-selected', !!id && el.dataset.markerId === id && _layerSettingsOpen === id);
@@ -529,27 +825,19 @@ function selectMarker(id) {
 }
 
 function persistMarkerData(marker) {
+  if (!marker) return;
   var data = ECAudio.State.markerData || [];
   var i;
+  var snap = serializeMarkerData(marker);
   for (i = 0; i < data.length; i++) {
     if (data[i].id === marker.id) {
-      data[i].normX = marker.normX;
-      data[i].normY = marker.normY;
-      data[i].step = marker.step;
-      data[i].toneNorm = marker.toneNorm;
-      data[i].density = markerDensity(marker);
-      data[i].sizeNorm = marker.sizeNorm;
-      data[i].levelMul = marker.levelMul;
-      data[i].role = marker.role;
-      data[i].rowIndex = marker.rowIndex;
-      data[i].laneIndex = marker.laneIndex;
-      data[i].secId = marker.secId;
-      if (marker.params) data[i].params = JSON.parse(JSON.stringify(marker.params));
-      if (marker.presetId != null) data[i].presetId = marker.presetId;
-      if (marker.pitchMul != null) data[i].pitchMul = marker.pitchMul;
-      break;
+      data[i] = snap;
+      saveMarkerStore();
+      return;
     }
   }
+  data.push(snap);
+  ECAudio.State.markerData = data;
   saveMarkerStore();
 }
 
@@ -560,9 +848,20 @@ function refreshMarkerVoice(marker) {
   marker.voice.normY = marker.normY;
   if (marker.rowIndex != null) marker.voice.rowIndex = marker.rowIndex;
   ECAudio.Browse.applyMarkerTone(marker.voice, marker);
-  if (ECAudio.Theory.browsePadPitch && ECAudio.Browse.setVoicePitch) {
-    var freq = ECAudio.Theory.browsePadPitch(markerLaneIndex(marker), marker.normY);
+  var beatArp = marker.envId && marker.voice.arpeggio && !marker.voice.isDrum;
+  if (!beatArp && ECAudio.Browse.setVoicePitch) {
+    var row = ECAudio.Theory.markerPitchRow
+      ? ECAudio.Theory.markerPitchRow(marker) : markerLaneIndex(marker);
+    var mul = ECAudio.Theory.markerEnvPitchMul
+      ? ECAudio.Theory.markerEnvPitchMul(marker) : 1;
+    var freq = marker.envId && ECAudio.BeatKaoss && ECAudio.BeatKaoss.beatKaossPitch
+      ? ECAudio.BeatKaoss.beatKaossPitch(row, marker.normY) * mul
+      : ECAudio.Theory.browsePadPitch(row, marker.normY) * mul;
     ECAudio.Browse.setVoicePitch(marker.voice, freq, ECAudio.State.ctx.currentTime, 0.04);
+  } else if (beatArp && marker.voice.padGain) {
+    var t = ECAudio.State.ctx.currentTime;
+    marker.voice.padGain.gain.cancelScheduledValues(t);
+    marker.voice.padGain.gain.setValueAtTime(0, t);
   }
   ECAudio.Browse.applyPinnedMarkerLevel(marker.voice, marker);
 }
@@ -573,7 +872,13 @@ function updateMarker(id, patch) {
   if (patch.step != null) marker.step = patch.step;
   if (patch.normX != null) {
     marker.normX = patch.normX;
-    if (ECAudio.Theory.stepFromNormX) marker.step = ECAudio.Theory.stepFromNormX(patch.normX);
+    if (marker.envId && ECAudio.BeatKaoss && ECAudio.BeatKaoss.beatPhaseFromX) {
+      marker.beatPhase = ECAudio.BeatKaoss.beatPhaseFromX(marker.normX);
+      marker.step = Math.max(0, Math.min(beatStepCount() - 1, Math.round(marker.beatPhase)));
+      if (patch.toneNorm == null) marker.toneNorm = marker.normX;
+    } else if (ECAudio.Theory.stepFromNormX) {
+      marker.step = ECAudio.Theory.stepFromNormX(patch.normX);
+    }
   }
   if (patch.toneNorm != null) marker.toneNorm = patch.toneNorm;
   if (patch.normY != null) marker.normY = patch.normY;
@@ -581,8 +886,13 @@ function updateMarker(id, patch) {
   if (patch.sizeNorm != null) marker.sizeNorm = patch.sizeNorm;
   if (patch.params != null) marker.params = patch.params;
   if (patch.levelMul != null) marker.levelMul = patch.levelMul;
+  if (patch.normZ != null) marker.normZ = Math.max(0, Math.min(1, patch.normZ));
   if (patch.role != null) marker.role = normalizeRole(patch.role);
   if (patch.density != null) marker.density = normalizeMarkerDensity(patch.density);
+  if (patch.gravityMode != null) marker.gravityMode = patch.gravityMode;
+  if (patch.gravityDensity != null) {
+    marker.gravityDensity = Math.max(0, Math.min(100, patch.gravityDensity));
+  }
   persistMarkerData(marker);
   if (patch.density != null && marker.voice && ECAudio.Browse && ECAudio.Browse.armPinnedArp) {
     ECAudio.Browse.armPinnedArp(marker);
@@ -598,10 +908,54 @@ function updateMarker(id, patch) {
   refreshMarkerVoice(marker);
   syncMarkerEditor();
   syncLayerPreview(marker);
+  if (patch.normX != null || patch.normY != null || patch.normZ != null ||
+      patch.gravityMode != null || patch.gravityDensity != null) {
+    if (ECAudio.BeatBonds && ECAudio.BeatBonds.schedule) ECAudio.BeatBonds.schedule();
+    if (ECAudio.BeatView3d && ECAudio.BeatView3d.schedule) ECAudio.BeatView3d.schedule();
+    if (ECAudio.BeatSeq && ECAudio.BeatSeq.refreshAllPatterns) {
+      ECAudio.BeatSeq.refreshAllPatterns();
+    }
+  }
+  if (ECAudio.BeatSeq && ECAudio.BeatSeq.syncGravityUI && _layerSettingsOpen === id) {
+    ECAudio.BeatSeq.syncGravityUI(marker);
+  }
+  if ((patch.normX != null || patch.normY != null || patch.normZ != null) &&
+      ECAudio.BeatInfluence && ECAudio.BeatInfluence.syncUI && _layerSettingsOpen === id) {
+    ECAudio.BeatInfluence.syncUI(marker);
+  }
 }
 
 function fillMarkerEditorFields(sel) {
-  if (!sel) return;
+  var panel = document.getElementById('studio-panel');
+  if (panel) panel.classList.toggle('sl-no-dot-selected', !sel);
+  if (!sel) {
+    var env = ECAudio.Environments && ECAudio.Environments.getActive
+      ? ECAudio.Environments.getActive() : null;
+    var titleEl = document.getElementById('sl-layer-title');
+    var noteEl = document.getElementById('sl-loop-note');
+    if (titleEl) titleEl.textContent = '—';
+    if (noteEl) {
+      var overview = ECAudio.Environments && ECAudio.Environments.isOverview
+        ? ECAudio.Environments.isOverview() : false;
+      if (overview) {
+        noteEl.textContent = 'Layer 0 — tap any dot to edit its layer · hold empty pad to place';
+      } else {
+        var hint = env && env.yHint ? env.yHint.label + ' register' : '';
+        noteEl.textContent = env
+          ? ('Hold pad to add ' + env.label + ' hits' + (hint ? ' · ' + hint : ''))
+          : '—';
+      }
+    }
+    syncDotPanelMode(null);
+    if (ECAudio.BeatSeq && ECAudio.BeatSeq.syncGravityUI) ECAudio.BeatSeq.syncGravityUI(null);
+    if (ECAudio.BeatInfluence && ECAudio.BeatInfluence.syncUI) ECAudio.BeatInfluence.syncUI(null);
+    var mapHintEmpty = document.getElementById('sl-spatial-map-hint');
+    if (mapHintEmpty) {
+      mapHintEmpty.textContent =
+        'Y = pentatonic pitch per layer · X = beat step · Z = presence + coupling strength';
+    }
+    return;
+  }
   var titleEl = document.getElementById('sl-layer-title');
   var noteEl = document.getElementById('sl-loop-note');
   var stepEl = document.getElementById('sl-loop-step');
@@ -613,8 +967,7 @@ function fillMarkerEditorFields(sel) {
   var summary = loopNoteLabel(sel);
 
   if (titleEl) {
-    var pl = markerPresetLabel(sel);
-    titleEl.textContent = pl ? ('Dot ' + markerDisplayName(sel) + ' · ' + pl) : ('Dot ' + markerDisplayName(sel));
+    titleEl.textContent = envLabel(sel) + ' · dot ' + markerDisplayName(sel);
   }
   syncDotPanelMode(sel);
   if (noteEl) noteEl.textContent = summary;
@@ -629,8 +982,27 @@ function fillMarkerEditorFields(sel) {
   if (sizeVal) sizeVal.textContent = Math.round((sel.sizeNorm != null ? sel.sizeNorm : 0.35) * 100) + '%';
   if (level && document.activeElement !== level) level.value = String(sel.levelMul != null ? sel.levelMul : 1);
   if (levelVal) levelVal.textContent = Math.round((sel.levelMul != null ? sel.levelMul : 1) * 100) + '%';
+  var presence = document.getElementById('sl-loop-presence');
+  var presenceVal = document.getElementById('sl-loop-presence-val');
+  if (presence && document.activeElement !== presence) {
+    presence.value = String(markerNormZ(sel));
+  }
+  if (presenceVal) presenceVal.textContent = Math.round(markerNormZ(sel) * 100) + '%';
 
   if (typeof slSyncMarkerPad === 'function') slSyncMarkerPad(sel);
+  if (ECAudio.BeatSeq && ECAudio.BeatSeq.syncGravityUI) ECAudio.BeatSeq.syncGravityUI(sel);
+  if (ECAudio.BeatInfluence && ECAudio.BeatInfluence.syncUI) ECAudio.BeatInfluence.syncUI(sel);
+  var mapHint = document.getElementById('sl-spatial-map-hint');
+  if (mapHint) {
+    var row = ECAudio.Theory && ECAudio.Theory.markerPitchRow
+      ? ECAudio.Theory.markerPitchRow(sel) : (sel.rowIndex | 0);
+    var note = ECAudio.BeatKaoss && ECAudio.BeatKaoss.noteLabel
+      ? ECAudio.BeatKaoss.noteLabel(row, sel.normY) : '';
+    mapHint.textContent = note
+      ? ('Playing ' + note + ' · step ' + ((sel.step | 0) + 1) + '/16 · presence ' +
+        Math.round(markerNormZ(sel) * 100) + '% — auto-snaps to scale & nearby spheres')
+      : ('Y = pentatonic pitch per layer · X = beat step · Z = presence + coupling strength');
+  }
   syncLayerPreview(sel);
   syncInstructions();
 }
@@ -668,23 +1040,30 @@ function syncInstructions() {
   var n = (ECAudio.State.markers || []).length;
   var sel = _layerSettingsOpen ? findMarker(_layerSettingsOpen) : null;
   if (sel) {
-    var pl = markerPresetLabel(sel);
-    el.innerHTML = '<p class="sl-instr-title">Dot ' + markerDisplayName(sel) +
-      (pl ? ' · ' + pl : '') + '</p>' +
+    el.innerHTML = '<p class="sl-instr-title">' + envLabel(sel) + ' · dot ' + markerDisplayName(sel) + '</p>' +
       '<p class="sl-instr-body">' + loopNoteLabel(sel) + '</p>' +
-      '<p class="sl-instr-hint">' + (pl ? '' : 'Pick an instrument in the panel. ') +
-      'Hold <strong>Solo</strong> to isolate this dot.</p>';
+      '<p class="sl-instr-hint">Knobs tune the whole <strong>' + envLabel(sel) +
+      '</strong> layer. Tap again to cycle dots · <kbd>Delete</kbd> removes.</p>';
     return;
   }
+  var env = ECAudio.Environments && ECAudio.Environments.getActive
+    ? ECAudio.Environments.getActive() : null;
+  var overview = ECAudio.Environments && ECAudio.Environments.isOverview
+    ? ECAudio.Environments.isOverview() : false;
   if (!n) {
-    el.innerHTML = '<p class="sl-instr-title">Loop layers</p>' +
-      '<p class="sl-instr-body">Kick/Hat/Clap = drums. Bass/Lead/Soft = <strong>synth</strong> (↕ pitch, ↔ tone, scroll = pulse).</p>' +
-      '<p class="sl-instr-hint"><strong>Tap dot</strong> = cycle · <strong>dbl-click</strong> = remove · drums = one step, synth = repeating pattern</p>';
+    el.innerHTML = '<p class="sl-instr-title">Layer 0 — beat space</p>' +
+      '<p class="sl-instr-body">All layers visible. <strong>Tap a dot</strong> to open its environment · <strong>tap empty pad</strong> returns here.</p>' +
+      '<p class="sl-instr-hint">Hold pad to place a hit · ↔ micro-timing · ↕ pitch & tone</p>';
     return;
   }
-  el.innerHTML = '<p class="sl-instr-title">' + n + ' dot' + (n === 1 ? '' : 's') + ' placed</p>' +
-    '<p class="sl-instr-body"><strong>Tap a dot</strong> on a lane to select it. Drag ↔ step · ↕ pitch on synth rows.</p>' +
-    '<p class="sl-instr-hint">Use <strong>Clear all dots</strong> below to reset the loop</p>';
+  el.innerHTML = '<p class="sl-instr-title">' + n + ' dot' + (n === 1 ? '' : 's') +
+    (overview ? ' · layer 0' : (env ? ' · ' + env.label + ' active' : '')) + '</p>' +
+    '<p class="sl-instr-body">' + (overview
+      ? 'Every dot is selectable. Lines link dots on the same beat or consonant pitch.'
+      : 'Drag ↔ move beat · ↕ change note/tone. Bonds show ties to nearby layers.') + '</p>' +
+    '<p class="sl-instr-hint">' + (overview
+      ? '<strong>Tap dot</strong> = open layer · dashed = same beat · solid = harmony · scroll dot = presence (Z)'
+      : '<strong>Tap dot</strong> = select · scroll = presence · stronger dots pull harder') + '</p>';
 }
 
 function syncMarkerEditor() {
@@ -698,9 +1077,15 @@ function syncMarkerEditor() {
 
   if (!markers.length) {
     if (list) { list.hidden = true; list.innerHTML = ''; }
-    layerBlock.hidden = true;
-    if (empty) empty.hidden = false;
-    syncLayerPreview(null);
+    var studioActive = isBeatStudioActive();
+    layerBlock.hidden = !studioActive;
+    if (empty) empty.hidden = studioActive;
+    if (studioActive) {
+      syncDotPanelMode(null);
+      fillMarkerEditorFields(null);
+    } else {
+      syncLayerPreview(null);
+    }
     clearDotSolo();
     _layerSettingsOpen = null;
     _selectedId = null;
@@ -748,9 +1133,20 @@ function markerStepFromX(normX) {
     ? ECAudio.Theory.stepFromNormX(normX) : 0;
 }
 
-function tooClose(zone, normX, normY, laneIndex) {
+function tooClose(zone, normX, normY, laneIndex, envId, excludeId) {
+  var snapY = normY;
+  if (zone && zone.classList && zone.classList.contains('beat-pad')) {
+    var step = markerStepFromX(normX);
+    return (ECAudio.State.markers || []).some(function(m) {
+      if (excludeId && m.id === excludeId) return false;
+      if (envId && m.envId !== envId) return false;
+      var ms = m.step != null ? m.step : markerStepFromX(m.normX);
+      if (ms !== step) return false;
+      return Math.abs(m.normY - normY) < 0.035;
+    });
+  }
   var step = markerStepFromX(normX);
-  var snapY = snapNormY(
+  snapY = snapNormY(
     zone && zone.closest('.cv-section') ? canonicalSectionId(zone.closest('.cv-section').id) : '',
     normY
   );
@@ -763,7 +1159,23 @@ function tooClose(zone, normX, normY, laneIndex) {
   });
 }
 
-function resolveMarkerPos(zone, normX, normY, laneIndex) {
+function resolveMarkerPos(zone, normX, normY, laneIndex, envId) {
+  if (zone && zone.classList && zone.classList.contains('beat-pad') &&
+      ECAudio.BeatKaoss && ECAudio.BeatKaoss.mapPlacement) {
+    var mapped = ECAudio.BeatKaoss.mapPlacement(normX, normY, envId, null);
+    var i;
+    for (i = 0; i < 6 && tooClose(zone, mapped.normX, mapped.normY, laneIndex, envId); i++) {
+      mapped.normX = Math.min(0.96, mapped.normX + 0.024);
+      mapped = ECAudio.BeatKaoss.mapPlacement(mapped.normX, mapped.normY, envId, null);
+    }
+    return {
+      x: mapped.normX,
+      y: mapped.normY,
+      step: mapped.step,
+      beatPhase: mapped.beatPhase,
+      toneNorm: mapped.toneNorm
+    };
+  }
   var step = markerStepFromX(normX);
   var x = ECAudio.Theory.normXFromStep ? ECAudio.Theory.normXFromStep(step) : normX;
   var y = normY;
@@ -807,13 +1219,16 @@ function loadMarkerStore() {
     var raw = sessionStorage.getItem(MARKER_STORE_KEY);
     if (!raw) return;
     var data = JSON.parse(raw);
-    if (Array.isArray(data)) ECAudio.State.markerData = data;
+    if (Array.isArray(data)) {
+      ECAudio.State.markerData = data.map(migrateMarkerStoreEntry);
+    }
   } catch (e) { /* ignore */ }
 }
 
 function ensureMarkerLayer(zone) {
   if (!zone) return null;
-  if (zone.classList && zone.classList.contains('beat-lane') && ECAudio.BeatStudio) {
+  if (zone.classList && (zone.classList.contains('beat-lane') ||
+      zone.classList.contains('beat-pad')) && ECAudio.BeatStudio) {
     return ECAudio.BeatStudio.overlayForLane(zone);
   }
   if (zone.tagName === 'TR') {
@@ -833,9 +1248,11 @@ function ensureMarkerLayer(zone) {
 
 function syncMarkerElPosition(marker) {
   if (!marker || !marker.el || !marker.zone) return;
-  if (marker.zone.classList && marker.zone.classList.contains('beat-lane') &&
-      ECAudio.BeatStudio && ECAudio.BeatStudio.laneOverlayPoint) {
-    var bpt = ECAudio.BeatStudio.laneOverlayPoint(marker.zone, marker.normX, marker.normY);
+  if (marker.zone.classList && (marker.zone.classList.contains('beat-lane') ||
+      marker.zone.classList.contains('beat-pad')) && ECAudio.BeatStudio) {
+    var bpt = ECAudio.BeatStudio.padOverlayPoint
+      ? ECAudio.BeatStudio.padOverlayPoint(marker.normX, marker.normY)
+      : ECAudio.BeatStudio.laneOverlayPoint(marker.zone, marker.normX, marker.normY);
     if (!bpt) return;
     marker.el.style.left = bpt.left + 'px';
     marker.el.style.top = bpt.top + 'px';
@@ -852,8 +1269,28 @@ function syncMarkerElPosition(marker) {
   marker.el.style.top = (marker.normY * 100) + '%';
 }
 
+function syncMarkerPresence(marker) {
+  if (!marker) return;
+  if (marker.el) {
+    applyMarkerVisual(marker);
+    syncMarkerLabel(marker);
+  }
+  if (_layerSettingsOpen === marker.id) {
+    var presence = document.getElementById('sl-loop-presence');
+    var presenceVal = document.getElementById('sl-loop-presence-val');
+    var z = markerNormZ(marker);
+    if (presence && document.activeElement !== presence) presence.value = String(z);
+    if (presenceVal) presenceVal.textContent = Math.round(z * 100) + '%';
+  }
+}
+
 function syncAllMarkerPositions() {
-  (ECAudio.State.markers || []).forEach(syncMarkerElPosition);
+  (ECAudio.State.markers || []).forEach(function(m) {
+    syncMarkerElPosition(m);
+    syncMarkerPresence(m);
+  });
+  if (ECAudio.BeatBonds && ECAudio.BeatBonds.schedule) ECAudio.BeatBonds.schedule();
+  if (ECAudio.BeatView3d && ECAudio.BeatView3d.schedule) ECAudio.BeatView3d.schedule();
 }
 
 function ensureBeatSectionsVisible() {
@@ -926,10 +1363,10 @@ function renderMarkerEl(marker) {
   el.className = 'sound-marker';
   el.type = 'button';
   el.dataset.markerId = marker.id;
-  el.setAttribute('aria-label', 'Dot ' + markerDisplayName(marker) + ' — drag step, tap cycle, double-click remove');
+  el.setAttribute('aria-label', envLabel(marker) + ' dot ' + markerDisplayName(marker) +
+    ' — drag time and pitch, tap to cycle, delete to remove');
   if (marker.id === _selectedId) el.classList.add('is-selected');
   applyMarkerSize(el, marker.sizeNorm != null ? marker.sizeNorm : 0.35);
-  applyMarkerVisual(marker);
   syncMarkerStep(marker);
   el.dataset.step = String(marker.step);
   var chip = document.createElement('span');
@@ -939,16 +1376,22 @@ function renderMarkerEl(marker) {
     '<span class="sound-marker-meta"></span>' +
     '<span class="sound-marker-note"></span>';
   el.appendChild(chip);
+  marker.el = el;
+  applyMarkerVisual(marker);
   syncMarkerLabel(marker);
   el.addEventListener('wheel', function(e) {
     if (soundEnabled) return;
     e.preventDefault();
     var mk = findMarker(el.dataset.markerId);
-    if (!mk || markerIsPercussion(mk)) return;
+    if (!mk) return;
+    if (isBeatStudioActive()) {
+      adjustMarkerPresence(mk.id, e.deltaY > 0 ? -1 : 1);
+      return;
+    }
+    if (markerIsPercussion(mk)) return;
     cycleMarkerDensity(mk.id, e.deltaY > 0 ? 1 : -1);
   }, { passive: false });
   layer.appendChild(el);
-  marker.el = el;
   syncMarkerElPosition(marker);
   refreshMarkerCount();
 }
@@ -965,9 +1408,16 @@ function refreshBeatRulerMeta() {
   var n = (ECAudio.State.markers || []).length;
   var layerCount = ECAudio.MarkerDrums && ECAudio.MarkerDrums.BEAT_LAYER_COUNT
     ? ECAudio.MarkerDrums.BEAT_LAYER_COUNT : 6;
+  var grooveDots = 0;
+  (ECAudio.State.markers || []).forEach(function(m) {
+    if (!ECAudio.BeatSeq || !ECAudio.BeatSeq.patternForMarker) return;
+    var info = ECAudio.BeatSeq.patternForMarker(m);
+    if (info && info.hits > 1) grooveDots++;
+  });
+  var seqNote = grooveDots ? ' · ' + grooveDots + ' groove' : '';
   meta.textContent = bpm + ' bpm · ' + steps + ' steps · ' + layerCount +
     ' layers (Kick · Hat · Bass · Clap · Lead · Soft)' +
-    (n ? ' · ' + n + ' hit' + (n === 1 ? '' : 's') : '');
+    (n ? ' · ' + n + ' hit' + (n === 1 ? '' : 's') : '') + seqNote;
 }
 
 function buildBeatRuler(transport) {
@@ -1094,6 +1544,7 @@ function onBeatStudioChange(active) {
 }
 
 function parkComposition() {
+  if ((ECAudio.State.markers || []).length) syncMarkerDataFromLive();
   (ECAudio.State.markers || []).forEach(function(m) {
     if (m.voice && ECAudio.Browse && ECAudio.Browse.stopPinnedVoice) {
       ECAudio.Browse.stopPinnedVoice(m.voice);
@@ -1110,25 +1561,60 @@ function parkComposition() {
 }
 
 function unparkComposition() {
-  var saved = ECAudio.State.markerData || [];
+  loadMarkerStore();
+  var saved = (ECAudio.State.markerData || []).map(migrateMarkerStoreEntry);
   var live = ECAudio.State.markers || [];
   if (!live.length && saved.length) {
     restoreMarkers();
     return;
   }
-  live.forEach(function(m) {
-    if (!m.el && m.zone && m.zone.isConnected) renderMarkerEl(m);
+  if (!live.length) return;
+
+  var pad = ECAudio.BeatStudio && ECAudio.BeatStudio.padZone
+    ? ECAudio.BeatStudio.padZone() : null;
+  var beatSec = ECAudio.BEAT_STUDIO_SEC_ID || 'beat-studio';
+
+  live.forEach(function(m, i) {
+    applySavedMarkerFields(m, findSavedMarker(m, saved, i));
+    if (pad && (!m.zone || !m.zone.isConnected || m.secId === beatSec)) {
+      m.zone = pad;
+      m.secId = beatSec;
+    }
+    syncMarkerStep(m);
+    syncMarkerLane(m);
+    if (!m.el) renderMarkerEl(m);
+    else {
+      applyMarkerVisual(m);
+      syncMarkerLabel(m);
+      syncMarkerElPosition(m);
+    }
     if (!m.voice) startMarkerVoice(m);
   });
-  if (live.length && ECAudio.Browse && ECAudio.Browse.restartLoopTransport) {
-    ECAudio.Browse.restartLoopTransport();
+
+  if (pad) pad.classList.add('has-markers');
+  live.forEach(function(m) {
+    applyMarkerVisual(m);
+    syncMarkerLabel(m);
+  });
+  if (ECAudio.Environments && ECAudio.Environments.syncDotVisibility) {
+    ECAudio.Environments.syncDotVisibility();
   }
+  syncMarkerDataFromLive();
+  if (ECAudio.Browse && ECAudio.Browse.restartLoopTransport) {
+    ECAudio.Browse.restartLoopTransport();
+  } else if (ECAudio.Browse && ECAudio.Browse.ensureLoopTransport) {
+    ECAudio.Browse.ensureLoopTransport();
+  }
+  refreshMarkerCount();
+  syncMarkerEditor();
+  if (ECAudio.BeatBonds && ECAudio.BeatBonds.schedule) ECAudio.BeatBonds.schedule();
+  if (ECAudio.BeatView3d && ECAudio.BeatView3d.schedule) ECAudio.BeatView3d.schedule();
+  if (ECAudio.BeatView3d && ECAudio.BeatView3d.resume) ECAudio.BeatView3d.resume();
 }
 
 function initMarkersOnLoad() {
-  try { sessionStorage.removeItem(MARKER_STORE_KEY); } catch (e) { /* ignore */ }
+  loadMarkerStore();
   ECAudio.State.markers = [];
-  ECAudio.State.markerData = [];
   parkComposition();
   document.querySelectorAll('.influence-zone.has-markers').forEach(function(z) {
     z.classList.remove('has-markers');
@@ -1210,33 +1696,40 @@ function startMarkerVoice(marker) {
   }
 }
 
-function addMarker(zone, secId, normX, normY, existingId, sizeNorm, rowIndex, initialRole, initialStep, initialTone) {
+function addMarker(zone, secId, normX, normY, existingId, sizeNorm, rowIndex, initialRole, initialStep, initialTone, initialNormZ) {
   if (soundEnabled || !zone || !secId) return null;
-  var lane = ECAudio.Zones && ECAudio.Zones.globalRowIndex
-    ? ECAudio.Zones.globalRowIndex(zone) : rowIndex;
-  var lanePreset = ECAudio.MarkerDrums && ECAudio.MarkerDrums.defaultPresetForLane
-    ? ECAudio.MarkerDrums.defaultPresetForLane(lane) : 'kick';
-  var melodicLane = ECAudio.MarkerDrums && ECAudio.MarkerDrums.isMelodicLane
-    ? ECAudio.MarkerDrums.isMelodicLane(lane) : false;
-  var placeToneX = normX;
-  var snapY = melodicLane ? snapNormY(secId, normY) : 0.5;
-  var pos = resolveMarkerPos(zone, normX, snapY, lane);
+  var env = ECAudio.Environments && ECAudio.Environments.placementEnv
+    ? ECAudio.Environments.placementEnv()
+    : (ECAudio.Environments && ECAudio.Environments.getActive
+      ? ECAudio.Environments.getActive() : null);
+  if (!env) return null;
+  if (ECAudio.Environments && ECAudio.Environments.activate && env.type) {
+    ECAudio.Environments.activate(env.type);
+  }
+
+  var pitchRow = ECAudio.Environments.pitchRowForType
+    ? ECAudio.Environments.pitchRowForType(env.type) : 0;
+  var pos = resolveMarkerPos(zone, normX, normY, pitchRow, env.id);
   var norm = sizeNorm != null ? sizeNorm : 0.35;
-  var count = (ECAudio.State.markers || []).length;
   var marker = {
     id: existingId || markerId(),
+    envId: env.id,
     secId: secId,
     normX: pos.x,
     normY: pos.y,
+    beatPhase: pos.beatPhase != null ? pos.beatPhase : null,
     step: initialStep != null ? initialStep : pos.step,
-    toneNorm: initialTone != null ? initialTone : (melodicLane ? placeToneX : 0.5),
-    density: defaultDensityForRole(initialRole || defaultRoleForCount(count)),
-    rowIndex: rowIndex,
-    laneIndex: null,
+    toneNorm: initialTone != null ? initialTone : (pos.toneNorm != null ? pos.toneNorm : pos.x),
+    density: 16,
+    rowIndex: pitchRow,
+    laneIndex: pitchRow,
     sizeNorm: norm,
     levelMul: 1,
-    params: defaultMarkerParams(),
-    role: normalizeRole(initialRole) || defaultRoleForCount(count),
+    normZ: initialNormZ != null ? initialNormZ
+      : (ECAudio.BeatPresence ? ECAudio.BeatPresence.DEFAULT : 0.55),
+    presetId: env.type,
+    pitchMul: env.pitchMul != null ? env.pitchMul : 1,
+    role: normalizeRole(initialRole) || env.type,
     zone: zone,
     el: null,
     voice: null
@@ -1248,36 +1741,37 @@ function addMarker(zone, secId, normX, normY, existingId, sizeNorm, rowIndex, in
 
   ECAudio.State.markers.push(marker);
   if (!existingId) {
-    ECAudio.State.markerData.push({
-      id: marker.id, secId: secId, normX: pos.x, normY: pos.y,
-      rowIndex: rowIndex, laneIndex: marker.laneIndex, step: marker.step,
-      toneNorm: marker.toneNorm, density: markerDensity(marker),
-      sizeNorm: norm, levelMul: 1, role: marker.role,
-      params: JSON.parse(JSON.stringify(marker.params)),
-      presetId: marker.presetId || null,
-      pitchMul: marker.pitchMul != null ? marker.pitchMul : 1
-    });
-    saveMarkerStore();
+    syncMarkerDataFromLive();
     if (ECAudio.Browse.stopPreview) ECAudio.Browse.stopPreview();
   }
-  syncMarkerLane(marker);
   renderMarkerEl(marker);
-  if (!existingId && !marker.presetId && ECAudio.MarkerDrums && applyPresetToMarker) {
-    var lanePreset = ECAudio.MarkerDrums.defaultPresetForLane(lane);
-    applyPresetToMarker(marker, lanePreset);
-    if (ECAudio.MarkerDrums.isPercussion && ECAudio.MarkerDrums.isPercussion(lanePreset)) {
-      marker.normY = 0.5;
-    } else {
-      marker.toneNorm = placeToneX;
-    }
-    syncMarkerStep(marker);
-    syncMarkerElPosition(marker);
-  }
   ECAudio.Browse.rebalancePinnedVoices();
   startMarkerVoice(marker);
   zone.classList.add('has-markers');
-  renumberMarkers();
+  renumberMarkers(marker.id);
+  selectDot(marker.id);
+  if (ECAudio.BeatView3d && ECAudio.BeatView3d.schedule) ECAudio.BeatView3d.schedule();
+  _placeSelectGraceUntil = Date.now() + 750;
   syncMarkerEditor();
+  if (ECAudio.Browse.ensureLoopTransport) ECAudio.Browse.ensureLoopTransport();
+  if (ECAudio.BeatSeq && ECAudio.BeatSeq.refreshAllPatterns) {
+    ECAudio.BeatSeq.refreshAllPatterns();
+  }
+  if (!existingId && ECAudio.BeatSpatial && ECAudio.BeatSpatial.applyField) {
+    var autoHarm = !ECAudio.BeatInfluence || !ECAudio.BeatInfluence.autoHarmonizeOn ||
+      ECAudio.BeatInfluence.autoHarmonizeOn(marker);
+    if (autoHarm) {
+      requestAnimationFrame(function() {
+        ECAudio.BeatSpatial.applyField(marker.id, { pullScale: 0.72 });
+        if (ECAudio.BeatSeq && ECAudio.BeatSeq.refreshAllPatterns) {
+          ECAudio.BeatSeq.refreshAllPatterns();
+        }
+        if (ECAudio.BeatSeq && ECAudio.BeatSeq.syncGravityUI) {
+          ECAudio.BeatSeq.syncGravityUI(findMarker(marker.id));
+        }
+      });
+    }
+  }
   if (!existingId && ECAudio.BeatGuide) {
     ECAudio.BeatGuide.fire('dot_placed', { rect: marker.el ? marker.el.getBoundingClientRect() : null });
   }
@@ -1314,6 +1808,11 @@ function removeMarker(id) {
     ECAudio.Browse.stopLoopTransport();
   }
   syncMarkerEditor();
+  if (ECAudio.BeatBonds && ECAudio.BeatBonds.schedule) ECAudio.BeatBonds.schedule();
+  if (ECAudio.BeatView3d && ECAudio.BeatView3d.sync) ECAudio.BeatView3d.sync();
+  if (ECAudio.BeatSeq && ECAudio.BeatSeq.refreshAllPatterns) {
+    ECAudio.BeatSeq.refreshAllPatterns();
+  }
 }
 
 function clearAllMarkers() {
@@ -1335,6 +1834,11 @@ function clearAllMarkers() {
   if (ECAudio.Browse.stopLoopTransport) ECAudio.Browse.stopLoopTransport();
   syncBeatOverlayMode();
   syncMarkerEditor();
+  if (ECAudio.BeatBonds && ECAudio.BeatBonds.sync) ECAudio.BeatBonds.sync();
+  if (ECAudio.BeatView3d && ECAudio.BeatView3d.sync) ECAudio.BeatView3d.sync();
+  if (ECAudio.BeatSeq && ECAudio.BeatSeq.refreshAllPatterns) {
+    ECAudio.BeatSeq.refreshAllPatterns();
+  }
 }
 
 function bumpMarkerSeq(saved) {
@@ -1349,7 +1853,9 @@ function isPinBlocked(clientX, clientY) {
   var el = document.elementFromPoint(clientX, clientY);
   if (!el) return true;
   return !!el.closest(
-    '#toolbar, #hover-panel, #studio-panel, #beat-guide, .sec-toggle, .sec-head, a, .tb-btn, button:not(.sound-marker), input, select, textarea'
+    '#toolbar, #hover-panel, #studio-panel, #beat-guide, #beat-view3d, #beat-view3d-canvas, ' +
+    '.beat-env-bar, .sec-toggle, .sec-head, a, .tb-btn, ' +
+    'button:not(.sound-marker), input, select, textarea'
   );
 }
 
@@ -1362,12 +1868,21 @@ function resolvePinTarget(clientX, clientY) {
   if (!hit || !hit.zone) return null;
 
   var norm = ECAudio.Browse.zoneNorm(hit.zone, clientX, clientY, hit);
-  if (ECAudio.Theory && ECAudio.Theory.padSnapRowNormY) {
+  var env = ECAudio.Environments && ECAudio.Environments.placementEnv
+    ? ECAudio.Environments.placementEnv()
+    : (ECAudio.Environments && ECAudio.Environments.getActive
+      ? ECAudio.Environments.getActive() : null);
+  if (hit.zone && hit.zone.classList && hit.zone.classList.contains('beat-pad') &&
+      ECAudio.BeatKaoss && ECAudio.BeatKaoss.mapPlacement && env) {
+    var mapped = ECAudio.BeatKaoss.mapPlacement(norm.x, norm.y, env.id, null);
+    norm.x = mapped.normX;
+    norm.y = mapped.normY;
+  } else if (ECAudio.Theory && ECAudio.Theory.padSnapRowNormY) {
     norm.y = ECAudio.Theory.padSnapRowNormY(norm.y);
-  }
-  if (ECAudio.Theory.stepFromNormX && ECAudio.Theory.normXFromStep) {
-    var st = ECAudio.Theory.stepFromNormX(norm.x);
-    norm.x = ECAudio.Theory.normXFromStep(st);
+    if (ECAudio.Theory.stepFromNormX && ECAudio.Theory.normXFromStep) {
+      var st = ECAudio.Theory.stepFromNormX(norm.x);
+      norm.x = ECAudio.Theory.normXFromStep(st);
+    }
   }
   var lane = hit.laneIndex != null ? hit.laneIndex : hit.rowIndex;
   return {
@@ -1412,9 +1927,11 @@ function tickPreviewGrow() {
 
 function positionPreviewEl(preview, target) {
   if (!preview || !target || !target.zone) return;
-  if (target.zone.classList && target.zone.classList.contains('beat-lane') &&
-      ECAudio.BeatStudio && ECAudio.BeatStudio.laneOverlayPoint) {
-    var bpt = ECAudio.BeatStudio.laneOverlayPoint(target.zone, target.normX, target.normY);
+  if (target.zone.classList && (target.zone.classList.contains('beat-lane') ||
+      target.zone.classList.contains('beat-pad')) && ECAudio.BeatStudio) {
+    var bpt = ECAudio.BeatStudio.padOverlayPoint
+      ? ECAudio.BeatStudio.padOverlayPoint(target.normX, target.normY)
+      : ECAudio.BeatStudio.laneOverlayPoint(target.zone, target.normX, target.normY);
     if (!bpt) return;
     preview.style.left = bpt.left + 'px';
     preview.style.top = bpt.top + 'px';
@@ -1440,7 +1957,29 @@ function updatePressPreview(sizeNorm) {
     _press.preview.className = 'sound-marker-preview';
     layer.appendChild(_press.preview);
   }
-  positionPreviewEl(_press.preview, _press.target);
+  var previewTarget = _press.target;
+  if (isBeatStudioActive() && _press.target && ECAudio.BeatMix) {
+    var env = ECAudio.Environments && ECAudio.Environments.placementEnv
+      ? ECAudio.Environments.placementEnv()
+      : (ECAudio.Environments && ECAudio.Environments.getActive
+        ? ECAudio.Environments.getActive() : null);
+    if (env && ECAudio.BeatKaoss && ECAudio.BeatKaoss.mapPlacement) {
+      var mapped = ECAudio.BeatKaoss.mapPlacement(
+        _press.target.normX, _press.target.normY, env.id, null, { dragging: true }
+      );
+      previewTarget = Object.assign({}, _press.target, {
+        normX: mapped.normX,
+        normY: mapped.normY
+      });
+      if (ECAudio.BeatMix.placementWouldClash) {
+        var clash = ECAudio.BeatMix.placementWouldClash(mapped, env.id, null);
+        _press.preview.classList.toggle('is-clash-preview', !!clash.clash);
+        _press.preview.classList.toggle('is-safe-preview', !clash.clash);
+        _press.preview.classList.toggle('is-nudged-preview', !!mapped._placementDeClashed);
+      }
+    }
+  }
+  positionPreviewEl(_press.preview, previewTarget);
   applyMarkerSize(_press.preview, sizeNorm);
 }
 
@@ -1461,6 +2000,7 @@ function onPointerDown(clientX, clientY, pointerId) {
 
   var now = Date.now();
   var target = document.elementFromPoint(clientX, clientY);
+  if (target && target.closest('#beat-view3d, #beat-view3d-canvas')) return;
   var markerEl = target && target.closest('.sound-marker');
   if (markerEl) {
     var mk = findMarker(markerEl.dataset.markerId);
@@ -1491,30 +2031,38 @@ function dragMarkerTo(clientX, clientY) {
   var hit = ECAudio.Browse.findZoneAt(clientX, clientY);
   if (!hit || !hit.zone) return;
   var norm = ECAudio.Browse.zoneNorm(hit.zone, clientX, clientY, hit);
-  var lane = marker.laneIndex != null ? marker.laneIndex : marker.rowIndex;
-  var laneMelodic = ECAudio.MarkerDrums && ECAudio.MarkerDrums.isMelodicLane
-    ? ECAudio.MarkerDrums.isMelodicLane(lane) : false;
-  var melodic = markerIsSynth(marker) || laneMelodic;
   var lock = _press && _press.axisLocked;
 
-  if (lock !== 'y') {
-    marker.step = markerStepFromX(norm.x);
-    syncMarkerStep(marker);
-    if (melodic) marker.toneNorm = norm.x;
-  }
-
-  if (lock !== 'x') {
-    if (melodic) {
+  if (marker.envId && ECAudio.BeatKaoss && ECAudio.BeatKaoss.mapPlacement) {
+    var dragMap = ECAudio.BeatKaoss.mapPlacement(
+      lock === 'y' ? marker.normX : norm.x,
+      lock === 'x' ? marker.normY : norm.y,
+      marker.envId,
+      marker.id,
+      { dragging: true }
+    );
+    if (lock !== 'y') {
+      marker.normX = dragMap.normX;
+      marker.beatPhase = dragMap.beatPhase;
+      marker.step = dragMap.step;
+      marker.toneNorm = dragMap.toneNorm;
+    }
+    if (lock !== 'x') marker.normY = dragMap.normY;
+  } else {
+    if (lock !== 'y') {
+      marker.step = markerStepFromX(norm.x);
+      syncMarkerStep(marker);
+      marker.toneNorm = norm.x;
+    }
+    if (lock !== 'x') {
       if (ECAudio.Theory && ECAudio.Theory.padSnapRowNormY) {
         marker.normY = ECAudio.Theory.padSnapRowNormY(norm.y);
       } else {
         marker.normY = norm.y;
       }
-    } else {
-      marker.normY = 0.5;
+    } else if (_press.startNormY != null) {
+      marker.normY = _press.startNormY;
     }
-  } else if (_press.startNormY != null) {
-    marker.normY = _press.startNormY;
   }
 
   attachMarkerToZone(marker, hit.zone, hit.secId, hit.rowIndex);
@@ -1522,6 +2070,8 @@ function dragMarkerTo(clientX, clientY) {
   syncMarkerLabel(marker);
   refreshMarkerVoice(marker);
   persistMarkerData(marker);
+  if (ECAudio.BeatBonds && ECAudio.BeatBonds.schedule) ECAudio.BeatBonds.schedule();
+  if (ECAudio.BeatView3d && ECAudio.BeatView3d.schedule) ECAudio.BeatView3d.schedule();
   if (_press && !_press.axisLocked) {
     var ds = Math.abs((marker.step | 0) - (_press.startStep | 0));
     var dy = Math.abs(marker.normY - (_press.startNormY != null ? _press.startNormY : marker.normY));
@@ -1533,6 +2083,48 @@ function dragMarkerTo(clientX, clientY) {
         });
       }
     }
+  }
+  if (ECAudio.BeatSeq && ECAudio.BeatSeq.invalidatePattern) {
+    ECAudio.BeatSeq.invalidatePattern(marker.id);
+  }
+  syncMarkerEditor();
+}
+
+function finishMarkerDrag(marker) {
+  if (!marker) return;
+  if (marker.envId && ECAudio.BeatKaoss && ECAudio.BeatKaoss.mapPlacement) {
+    var settled = ECAudio.BeatKaoss.mapPlacement(
+      marker.normX, marker.normY, marker.envId, marker.id, { settle: true }
+    );
+    marker.normX = settled.normX;
+    marker.normY = settled.normY;
+    marker.beatPhase = settled.beatPhase;
+    marker.step = settled.step;
+    marker.toneNorm = settled.toneNorm;
+  }
+  syncMarkerStep(marker);
+  persistMarkerData(marker);
+  refreshMarkerVoice(marker);
+  if (ECAudio.BeatSeq && ECAudio.BeatSeq.cancelScheduledRefresh) {
+    ECAudio.BeatSeq.cancelScheduledRefresh();
+  }
+  if (ECAudio.BeatSeq && ECAudio.BeatSeq.refreshAllPatternsNow) {
+    ECAudio.BeatSeq.refreshAllPatternsNow();
+  } else if (ECAudio.BeatSeq && ECAudio.BeatSeq.refreshAllPatterns) {
+    ECAudio.BeatSeq.refreshAllPatterns();
+  }
+  var autoHarm = !ECAudio.BeatInfluence || !ECAudio.BeatInfluence.autoHarmonizeOn ||
+    ECAudio.BeatInfluence.autoHarmonizeOn(marker);
+  if (autoHarm && ECAudio.BeatSpatial && ECAudio.BeatSpatial.applyField) {
+    ECAudio.BeatSpatial.applyField(marker.id, { beatLock: true, pullScale: 0.55 });
+  }
+  if (ECAudio.BeatBonds && ECAudio.BeatBonds.schedule) ECAudio.BeatBonds.schedule();
+  if (ECAudio.BeatView3d && ECAudio.BeatView3d.schedule) ECAudio.BeatView3d.schedule();
+  if (ECAudio.BeatSeq && ECAudio.BeatSeq.syncGravityUI) {
+    ECAudio.BeatSeq.syncGravityUI(marker);
+  }
+  if (ECAudio.BeatInfluence && ECAudio.BeatInfluence.syncUI) {
+    ECAudio.BeatInfluence.syncUI(marker);
   }
   syncMarkerEditor();
 }
@@ -1570,9 +2162,9 @@ function onPointerUp(clientX, clientY, pointerId) {
 
   if (press.mode === 'marker-drag' && press.marker) {
     if (press.dragged) {
-      persistMarkerData(press.marker);
+      finishMarkerDrag(press.marker);
     } else {
-      cycleMarkerPreset(press.marker.id);
+      handleDotTap(press.marker.id);
     }
     return;
   }
@@ -1588,15 +2180,22 @@ function onPointerUp(clientX, clientY, pointerId) {
   var isQuick = hold <= QUICK_TAP_MS;
 
   if (isQuick) {
+    if (Date.now() < _placeSelectGraceUntil) return;
     _lastQuickTap = { t: now, x: clientX, y: clientY };
-  } else {
-    _lastQuickTap = null;
+    if (ECAudio.Environments && ECAudio.Environments.activateOverview) {
+      ECAudio.Environments.activateOverview();
+    }
+    closeLayerSettings();
+    return;
   }
 
-  var sizeNorm = isQuick ? sizeNormFromHold(HOLD_MIN_MS) : sizeNormFromHold(hold);
+  _lastQuickTap = null;
+  var sizeNorm = sizeNormFromHold(hold);
+  var normZ = ECAudio.BeatPresence && ECAudio.BeatPresence.normZFromHold
+    ? ECAudio.BeatPresence.normZFromHold(hold) : 0.55;
   addMarker(
     press.target.zone, press.target.secId, press.target.normX, press.target.normY,
-    null, sizeNorm, press.target.rowIndex
+    null, sizeNorm, press.target.rowIndex, null, null, null, normZ
   );
 }
 
@@ -1607,9 +2206,65 @@ function findRowByIndex(sec, rowIndex) {
   return rows[rowIndex];
 }
 
+function restoreMarkerFromData(d) {
+  if (!d) return null;
+  d = migrateMarkerStoreEntry(JSON.parse(JSON.stringify(d)));
+  var beatSec = ECAudio.BEAT_STUDIO_SEC_ID || 'beat-studio';
+  var secId = d.secId === beatSec ? beatSec : canonicalSectionId(d.secId);
+  var zone = null;
+
+  if (secId === beatSec && ECAudio.BeatStudio && ECAudio.BeatStudio.padZone) {
+    zone = ECAudio.BeatStudio.padZone();
+  } else {
+    var sec = document.getElementById(secId) || document.getElementById(d.secId);
+    if (!sec) return null;
+    zone = findRowByIndex(sec, d.rowIndex);
+  }
+  if (!zone) return null;
+
+  var envId = d.envId || envIdFromSaved(d);
+  var presetId = d.presetId || envId.replace(/^env-/, '');
+  var pitchRow = ECAudio.Environments && ECAudio.Environments.pitchRowForType
+    ? ECAudio.Environments.pitchRowForType(presetId) : (d.rowIndex | 0);
+
+  var marker = {
+    id: d.id || markerId(),
+    envId: envId,
+    secId: secId,
+    normX: d.normX != null ? d.normX : 0.5,
+    normY: d.normY != null ? d.normY : 0.5,
+    beatPhase: d.beatPhase,
+    step: d.step,
+    toneNorm: d.toneNorm != null ? d.toneNorm : d.normX,
+    density: d.density != null ? normalizeMarkerDensity(d.density) : 16,
+    rowIndex: d.rowIndex != null ? d.rowIndex : pitchRow,
+    laneIndex: d.laneIndex != null ? d.laneIndex : pitchRow,
+    sizeNorm: d.sizeNorm != null ? d.sizeNorm : 0.35,
+    levelMul: d.levelMul != null ? d.levelMul : 1,
+    normZ: d.normZ != null ? d.normZ : (ECAudio.BeatPresence ? ECAudio.BeatPresence.DEFAULT : 0.55),
+    presetId: presetId,
+    pitchMul: d.pitchMul != null ? d.pitchMul : 1,
+    role: d.role || presetId,
+    gravityMode: d.gravityMode || 'auto',
+    gravityDensity: d.gravityDensity != null ? d.gravityDensity : 28,
+    zone: zone,
+    el: null,
+    voice: null
+  };
+  syncMarkerStep(marker);
+  syncMarkerLane(marker);
+
+  if (!ECAudio.State.markers) ECAudio.State.markers = [];
+  ECAudio.State.markers.push(marker);
+  renderMarkerEl(marker);
+  startMarkerVoice(marker);
+  zone.classList.add('has-markers');
+  return marker;
+}
+
 function restoreMarkers() {
   loadMarkerStore();
-  var saved = (ECAudio.State.markerData || []).slice();
+  var saved = (ECAudio.State.markerData || []).slice().map(migrateMarkerStoreEntry);
   bumpMarkerSeq(saved);
   (ECAudio.State.markers || []).slice().forEach(function(m) {
     if (m.voice) ECAudio.Browse.stopPinnedVoice(m.voice);
@@ -1622,37 +2277,17 @@ function restoreMarkers() {
   }
   expandSectionsForMarkerData(saved);
   saved.forEach(function(d) {
-    var beatSec = ECAudio.BEAT_STUDIO_SEC_ID || 'beat-studio';
-    var secId = d.secId === beatSec ? beatSec : canonicalSectionId(d.secId);
-    var zone = null;
-    if (secId === beatSec && ECAudio.BeatStudio && ECAudio.BeatStudio.laneByIndex) {
-      zone = ECAudio.BeatStudio.laneByIndex(d.rowIndex);
-    } else {
-      var sec = document.getElementById(secId) || document.getElementById(d.secId);
-      if (!sec) return;
-      zone = findRowByIndex(sec, d.rowIndex);
-    }
-    if (zone) {
-      var m = addMarker(
-        zone, secId, d.normX, d.normY, d.id,
-        d.sizeNorm != null ? d.sizeNorm : 0.35, d.rowIndex, d.role, d.step, d.toneNorm
-      );
-      if (m) {
-        if (d.levelMul != null) m.levelMul = d.levelMul;
-        if (d.laneIndex != null) m.laneIndex = d.laneIndex;
-        if (d.density != null) m.density = normalizeMarkerDensity(d.density);
-        if (d.params) m.params = Object.assign(defaultMarkerParams(), d.params);
-        else ensureMarkerParams(m);
-        if (d.presetId) m.presetId = d.presetId;
-        if (d.pitchMul != null) m.pitchMul = d.pitchMul;
-        syncMarkerStep(m);
-        syncMarkerLabel(m);
-        syncMarkerLane(m);
-        refreshMarkerVoice(m);
-      }
-    }
+    restoreMarkerFromData(d);
   });
+  ECAudio.State.markerData = saved.map(serializeMarkerData).filter(Boolean);
+  saveMarkerStore();
   renumberMarkers();
+  if (ECAudio.Environments && ECAudio.Environments.syncDotVisibility) {
+    ECAudio.Environments.syncDotVisibility();
+  }
+  if (ECAudio.Browse && ECAudio.Browse.ensureLoopTransport) {
+    ECAudio.Browse.ensureLoopTransport();
+  }
   syncLoopEditor();
   scheduleMarkerRelayout();
 }
@@ -1716,6 +2351,9 @@ function bindMarkerFieldPair(ids, field, parser) {
       patch[field] = parser ? parser(el.value) : parseFloat(el.value);
       updateMarker(sel.id, patch);
       fillMarkerEditorFields(getSelected());
+      if (field === 'normZ' && ECAudio.BeatInfluence && ECAudio.BeatInfluence.onSettingsChanged) {
+        ECAudio.BeatInfluence.onSettingsChanged();
+      }
       if (ECAudio.SoundVisual && ECAudio.SoundVisual.refreshStatic) {
         ECAudio.SoundVisual.refreshStatic();
       }
@@ -1729,6 +2367,21 @@ function initLoopEditorPanel() {
 
   bindMarkerFieldPair(['sl-loop-size'], 'sizeNorm');
   bindMarkerFieldPair(['sl-loop-level'], 'levelMul');
+  bindMarkerFieldPair(['sl-loop-presence'], 'normZ');
+  bindMarkerFieldPair(['sl-gravity-density'], 'gravityDensity');
+
+  var modeSeg = document.getElementById('sl-gravity-mode-seg');
+  if (modeSeg) {
+    modeSeg.querySelectorAll('.sp-seg-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var sel = _layerSettingsOpen ? findMarker(_layerSettingsOpen) : null;
+        if (!sel) return;
+        var mode = btn.getAttribute('data-val') || 'auto';
+        updateMarker(sel.id, { gravityMode: mode });
+        fillMarkerEditorFields(sel);
+      });
+    });
+  }
 
   document.querySelectorAll('[data-loop-density] .sp-seg-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
@@ -1789,11 +2442,13 @@ ECAudio.Markers = {
   update: updateMarker, select: selectMarker, getSelected: getSelected,
   openLayerSettings: openLayerSettings, selectDot: selectDot, closeLayerSettings: closeLayerSettings,
   setDotSolo: setDotSolo, clearDotSolo: clearDotSolo, shouldPlayInMix: shouldPlayInMix, soloDotId: soloDotId,
+  resolveSoloMarker: resolveSoloMarker,
   layerSettingsOpen: function() { return _layerSettingsOpen; },
   cycleRole: cycleMarkerRole, cyclePreset: cycleMarkerPreset, roleLabel: roleLabel,
   updateBeatRuler: updateBeatRuler,
   restore: restoreMarkers, initOnLoad: initMarkersOnLoad,
   syncPositions: syncAllMarkerPositions,
+  syncPresence: syncMarkerPresence,
   scheduleRelayout: scheduleMarkerRelayout,
   getMarkerParam: getMarkerParam, setMarkerParam: setMarkerParam,
   ensureMarkerParams: ensureMarkerParams, defaultMarkerParams: defaultMarkerParams,
@@ -1801,8 +2456,10 @@ ECAudio.Markers = {
   syncBeatOverlay: syncBeatOverlayMode, isPanelOpen: isPanelOpen,
   isBeatStudioActive: isBeatStudioActive, onBeatStudioChange: onBeatStudioChange,
   syncLoopEditor: syncLoopEditor, syncMarkerEditor: syncMarkerEditor,
+  syncMarkerDataFromLive: syncMarkerDataFromLive, refreshMarkerVoice: refreshMarkerVoice,
   markerDensity: markerDensity, formatDensity: formatDensity,
   onPointerDown: onPointerDown, onPointerMove: onPointerMove, onPointerUp: onPointerUp,
   refreshTimbre: refreshMarkerTimbre, restartVoices: restartMarkerVoices,
-  restartMarkerVoice: restartMarkerVoice, applyPresetToMarker: applyPresetToMarker
+  restartMarkerVoice: restartMarkerVoice, applyPresetToMarker: applyPresetToMarker,
+  syncMarkerLabel: syncMarkerLabel, handleDotTap: handleDotTap, envLabel: envLabel
 };

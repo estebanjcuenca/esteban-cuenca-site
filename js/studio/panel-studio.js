@@ -7,7 +7,8 @@ function syncStudioModeUI() {
   panel.setAttribute('data-active-mode', 'studio');
   var title = document.getElementById('sl-title');
   if (title) title.textContent = 'Beat Studio';
-  panel.classList.toggle('sl-has-layer', !!(panelParamMarker()));
+  panel.classList.toggle('sl-has-layer', !!(panelParamMarker()) ||
+    (typeof isBeatStudioActive === 'function' && isBeatStudioActive()));
   if (typeof syncSoundLabMode === 'function') syncSoundLabMode();
 }
 
@@ -16,6 +17,11 @@ function syncStudioPanelUI() {
   if (!panel) return;
   syncStudioModeUI();
   syncPanelParamUI(panel);
+  if (ECAudio.BeatScale && ECAudio.BeatScale.syncUI) ECAudio.BeatScale.syncUI();
+  if (ECAudio.BeatInfluence && ECAudio.BeatInfluence.syncUI) {
+    var mk = ECAudio.Markers && ECAudio.Markers.getSelected ? ECAudio.Markers.getSelected() : null;
+    ECAudio.BeatInfluence.syncUI(mk);
+  }
   if (ECAudio.Markers && ECAudio.Markers.syncInstructions) ECAudio.Markers.syncInstructions();
   if (ECAudio.Knobs && ECAudio.Knobs.sync) ECAudio.Knobs.sync(panel);
 }
@@ -46,17 +52,22 @@ function bindStudioPanelActions(panel) {
     };
     soloHold.addEventListener('pointerdown', function(e) {
       if (soundEnabled) return;
-      var sel = panelParamMarker();
-      if (!sel || !ECAudio.Markers.setDotSolo) return;
+      var sel = ECAudio.Markers.resolveSoloMarker
+        ? ECAudio.Markers.resolveSoloMarker()
+        : (ECAudio.Markers.getSelected && ECAudio.Markers.getSelected());
+      if (!sel || !sel.id || !ECAudio.Markers.setDotSolo) return;
       e.preventDefault();
-      soloHold.setPointerCapture(e.pointerId);
+      try { soloHold.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
       ECAudio.Markers.setDotSolo(sel.id);
     });
     soloHold.addEventListener('pointerup', function(e) {
-      if (soloHold.hasPointerCapture(e.pointerId)) soloHold.releasePointerCapture(e.pointerId);
+      try {
+        if (soloHold.hasPointerCapture(e.pointerId)) soloHold.releasePointerCapture(e.pointerId);
+      } catch (err) { /* ignore */ }
       endSolo();
     });
     soloHold.addEventListener('pointercancel', endSolo);
+    soloHold.addEventListener('lostpointercapture', endSolo);
   }
 
   panel.addEventListener('click', function(e) {
@@ -70,7 +81,11 @@ function bindStudioPanelActions(panel) {
       }
       if (act === 'test' && !soundEnabled) {
         var previewMk = panelParamMarker();
-        if (previewMk && ECAudio.Browse && ECAudio.Browse.previewMarkerSound) {
+        if (previewMk && previewMk._envProxy && previewMk.envId && ECAudio.Environments) {
+          var envDots = ECAudio.Environments.markersIn(previewMk.envId);
+          if (envDots.length) previewMk = envDots[0];
+        }
+        if (previewMk && previewMk.id && ECAudio.Browse && ECAudio.Browse.previewMarkerSound) {
           ECAudio.Browse.previewMarkerSound(previewMk);
         } else {
           Sound.test();
@@ -89,18 +104,31 @@ function bindStudioPanelActions(panel) {
         }
         return;
       }
-      if (act === 'reset-browse' && !soundEnabled && ECAudio.Markers) {
-        var m = panelParamMarker();
-        if (m && ECAudio.Markers.defaultMarkerParams && ECAudio.Markers.setMarkerParam) {
-          var defs = ECAudio.Markers.defaultMarkerParams();
-          Object.keys(defs).forEach(function(k) {
-            ECAudio.Markers.setMarkerParam(m, k, defs[k]);
-          });
+      if (act === 'preview-env' && !soundEnabled && ECAudio.Environments) {
+        var previewEnv = ECAudio.Environments.panelEnv
+          ? ECAudio.Environments.panelEnv() : null;
+        if (previewEnv && ECAudio.Environments.previewSound) {
+          ECAudio.Environments.previewSound(previewEnv.id);
+        }
+        return;
+      }
+      if (act === 'reset-browse' && !soundEnabled) {
+        var env = ECAudio.Environments && ECAudio.Environments.panelEnv
+          ? ECAudio.Environments.panelEnv() : null;
+        if (env && ECAudio.Environments.reset) {
+          ECAudio.Environments.reset(env.id);
         } else if (ECAudio.BrowseSound) {
           ECAudio.BrowseSound.resetPanelDefaults();
         }
         syncSoundPanelUI();
         if (typeof slRefreshLivePad === 'function') slRefreshLivePad();
+        return;
+      }
+      if (act === 'env-pick' && !soundEnabled && ECAudio.Environments) {
+        var envType = action.getAttribute('data-env');
+        if (envType) ECAudio.Environments.activate(envType);
+        syncSoundPanelUI();
+        if (ECAudio.Markers && ECAudio.Markers.syncMarkerEditor) ECAudio.Markers.syncMarkerEditor();
         return;
       }
       if (act === 'preset' && !soundEnabled) {

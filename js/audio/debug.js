@@ -117,9 +117,22 @@ function runSoundDiagnostics() {
   return issues;
 }
 
+function perfMark(label) {
+  if (!debugEnabled() || typeof performance === 'undefined') {
+    return function() { /* noop */ };
+  }
+  var t0 = performance.now();
+  return function(extra) {
+    var ms = performance.now() - t0;
+    if (extra != null) debugLog('perf', label, ms.toFixed(2) + 'ms', extra);
+    else debugLog('perf', label, ms.toFixed(2) + 'ms');
+  };
+}
+
 ECAudio.DEBUG = debugEnabled();
 ECAudio.debugLog = debugLog;
 ECAudio.debugWarn = debugWarn;
 ECAudio.debugError = debugError;
+ECAudio.perf = { mark: perfMark };
 ECAudio.runSoundDiagnostics = runSoundDiagnostics;
 ECAudio.checkTableIntegrity = checkTableIntegrity;

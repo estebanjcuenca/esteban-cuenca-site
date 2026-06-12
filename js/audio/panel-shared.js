@@ -26,20 +26,54 @@ function isGlobalOnlyParam(param) {
   return ECAudio.GLOBAL_ONLY_PARAMS && ECAudio.GLOBAL_ONLY_PARAMS.indexOf(param) >= 0;
 }
 
+function panelEnvProxy() {
+  if (!ECAudio.Environments || !ECAudio.Environments.panelEnv) return null;
+  var env = ECAudio.Environments.panelEnv();
+  if (!env) return null;
+  return {
+    envId: env.id,
+    presetId: env.type,
+    id: null,
+    _envProxy: true
+  };
+}
+
 function panelParamMarker() {
-  if (soundEnabled || !ECAudio.Markers || !ECAudio.Markers.layerSettingsOpen) return null;
+  if (soundEnabled) return null;
+  if (typeof isBeatStudioActive === 'function' && isBeatStudioActive()) {
+    if (ECAudio.Markers && ECAudio.Markers.getSelected) {
+      var mk = ECAudio.Markers.getSelected();
+      if (mk) return mk;
+    }
+    var envMk = panelEnvProxy();
+    if (envMk) return envMk;
+    return null;
+  }
+  if (!ECAudio.Markers || !ECAudio.Markers.layerSettingsOpen) return null;
   if (!ECAudio.Markers.layerSettingsOpen()) return null;
   return ECAudio.Markers.getSelected ? ECAudio.Markers.getSelected() : null;
 }
 
 function readPanelParam(param, scope) {
+  if (scope === 'env') {
+    var envMk = panelEnvProxy();
+    if (envMk && ECAudio.Environments.getParam) {
+      return ECAudio.Environments.getParam(ECAudio.Environments.get(envMk.envId), param);
+    }
+  }
   if (param === 'wave' && scope === 'global') return Sound.params.wave;
-  if (param === 'wave' && scope === 'dot') {
-    var mk = panelParamMarker();
-    if (mk && ECAudio.Markers.getMarkerParam) return ECAudio.Markers.getMarkerParam(mk, 'wave');
+  if (param === 'wave' && (scope === 'dot' || scope === 'env')) {
+    var mkWave = scope === 'env' ? panelEnvProxy() : panelParamMarker();
+    if (mkWave && mkWave._envProxy && mkWave.envId && ECAudio.Environments) {
+      return ECAudio.Environments.getParam(ECAudio.Environments.get(mkWave.envId), 'wave');
+    }
+    if (mkWave && ECAudio.Markers.getMarkerParam) return ECAudio.Markers.getMarkerParam(mkWave, 'wave');
     return Sound.params.wave;
   }
   var marker = panelParamMarker();
+  if (marker && marker._envProxy && marker.envId && ECAudio.Environments && !isGlobalOnlyParam(param)) {
+    return ECAudio.Environments.getParam(ECAudio.Environments.get(marker.envId), param);
+  }
   if (marker && !isGlobalOnlyParam(param) && ECAudio.Markers.getMarkerParam) {
     return ECAudio.Markers.getMarkerParam(marker, param);
   }
@@ -53,14 +87,36 @@ function isMarkerOnlyParam(param) {
 }
 
 function writePanelParam(param, val, scope) {
+  if (scope === 'env') {
+    var envMk = panelEnvProxy();
+    if (envMk && ECAudio.Environments.setParam) {
+      ECAudio.Environments.setParam(envMk.envId, param, val);
+      return 'marker';
+    }
+  }
   var marker = panelParamMarker();
   if (param === 'wave') {
+    if ((scope === 'dot' || scope === 'env') && marker && marker._envProxy && marker.envId && ECAudio.Environments) {
+      ECAudio.Environments.setParam(marker.envId, param, val);
+      return 'marker';
+    }
+    if (scope === 'env') {
+      var envWave = panelEnvProxy();
+      if (envWave && ECAudio.Environments.setParam) {
+        ECAudio.Environments.setParam(envWave.envId, param, val);
+        return 'marker';
+      }
+    }
     if (scope === 'dot' && marker && ECAudio.Markers.setMarkerParam) {
       ECAudio.Markers.setMarkerParam(marker, param, val);
       return 'marker';
     }
     Sound.params.wave = val;
     return 'global';
+  }
+  if (marker && marker._envProxy && marker.envId && ECAudio.Environments && !isGlobalOnlyParam(param)) {
+    ECAudio.Environments.setParam(marker.envId, param, val);
+    return 'marker';
   }
   if (isMarkerOnlyParam(param)) {
     if (!marker || !ECAudio.Markers.setMarkerParam) return 'none';
@@ -102,6 +158,15 @@ function refreshBrowseVoices(param) {
   }
   var marker = (typeof isBeatStudioActive === 'function' && isBeatStudioActive())
     ? panelParamMarker() : null;
+  if (marker && marker._envProxy && marker.envId && ECAudio.Environments) {
+    if (MARKER_RESTART_PARAMS.indexOf(param) >= 0 && ECAudio.Environments.restartVoices) {
+      ECAudio.Environments.restartVoices(marker.envId);
+    } else if (ECAudio.Environments.restartVoices) {
+      ECAudio.Environments.restartVoices(marker.envId);
+    }
+    if (typeof slRefreshLivePad === 'function') slRefreshLivePad();
+    return;
+  }
   if (marker) {
     if (MARKER_RESTART_PARAMS.indexOf(param) >= 0 && param !== 'wave' &&
         ECAudio.Markers.restartMarkerVoice) {
@@ -139,7 +204,8 @@ function syncPanelParamUI(panel) {
   });
   panel.querySelectorAll('input.sp-range[data-param]').forEach(function(input) {
     var param = input.getAttribute('data-param');
-    var val = readPanelParam(param);
+    var scope = input.getAttribute('data-scope') || '';
+    var val = readPanelParam(param, scope);
     if (val === undefined) return;
     input.value = String(val);
     updateSoundParamLabel(param, val);
@@ -161,7 +227,8 @@ function handlePanelSegClick(btn, allowMarker) {
   var raw = btn.getAttribute('data-val');
   var param = seg.getAttribute('data-param');
   var scope = seg.getAttribute('data-scope') || '';
-  if (allowMarker && isMarkerOnlyParam(param) && !panelParamMarker()) return;
+  if (allowMarker && scope === 'env' && !panelEnvProxy()) return;
+  if (allowMarker && isMarkerOnlyParam(param) && scope !== 'env' && !panelParamMarker()) return;
   if (allowMarker && param === 'wave' && scope === 'dot' && !panelParamMarker()) return;
   var val;
   if (ECAudio.SOUND_BOOL_PARAMS.indexOf(param) >= 0) val = raw === '1';
@@ -197,9 +264,10 @@ function handlePanelSegClick(btn, allowMarker) {
 
 function handlePanelInput(el, allowMarker) {
   var param = el.getAttribute('data-param');
-  if (allowMarker && isMarkerOnlyParam(param) && !panelParamMarker()) return;
-  var val = parseFloat(el.value);
   var scope = el.getAttribute('data-scope') || '';
+  if (allowMarker && scope === 'env' && !panelEnvProxy()) return;
+  if (allowMarker && isMarkerOnlyParam(param) && scope !== 'env' && !panelParamMarker()) return;
+  var val = parseFloat(el.value);
   if (writePanelParam(param, val, scope) === 'none') return;
   updateSoundParamLabel(param, val);
   if (param === 'reverbAmt' && typeof Sound.setReverbAmt === 'function') {

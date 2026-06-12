@@ -12,55 +12,54 @@ ECAudio.MARKER_PRESET_KEYS = [
 ECAudio.SoundPresets = {
   'kick': {
     label: 'Kick',
-    hint: 'Real kick drum — drag ↔ for timing. Color = red. Default: every beat.',
+    hint: 'MPC-style kick — click + body + sub. Tone = tune · Snap = click.',
     drum: true,
-    defaultDensity: 4,
-    pitchMul: 1,
-    wave: 'sine', gain: 0.28, attack: 0.006, decay: 0.22,
-    browseTone: 0.12, browseHarmonics: 0.08, browseFilterMin: 55, browseFilterMax: 260,
-    browseFilterQ: 0.85, browseSubMix: 0.14, browseSpace: 0.02, browseLfoRate: 0,
-    browseLfoDepth: 0
+    pitchMul: 0.52,
+    wave: 'sine', gain: 0.34, attack: 0.003, decay: 0.28,
+    browseTone: 0.1, browseHarmonics: 0.22, browseDrive: 0.45,
+    browseFilterMin: 42, browseFilterMax: 160, browseFilterQ: 1.05,
+    browseSubMix: 0.2, browseSpace: 0.02, browseLfoRate: 0,
+    browseLfoDepth: 0, detune: -8
   },
   'hat': {
     label: 'Hat',
-    hint: 'Real hi-hat — drag ↔ for timing. Color = cyan. Default: offbeats (⅛ bar).',
+    hint: '909 hi-hat — noise bandpass. Pattern vel 2 = open hat.',
     drum: true,
-    defaultDensity: 2,
-    pitchMul: 1,
-    wave: 'square', gain: 0.09, attack: 0.003, decay: 0.06,
-    browseTone: 0.92, browseHarmonics: 0.55, browseFilterMin: 3800, browseFilterMax: 14000,
-    browseFilterQ: 0.35, browseSubMix: 0.001, browseSpace: 0.03, browseLfoRate: 0,
-    browseLfoDepth: 0
+    pitchMul: 1.35,
+    wave: 'square', gain: 0.12, attack: 0.002, decay: 0.06,
+    browseTone: 0.72, browseHarmonics: 0.55, browseDrive: 0.3,
+    browseFilterMin: 6800, browseFilterMax: 13000,
+    browseFilterQ: 0.35, browseSubMix: 0, browseSpace: 0.03, browseLfoRate: 0,
+    browseLfoDepth: 0, detune: 10
   },
   'bass': {
     label: 'Bass',
-    hint: 'Synth bass — ↕ pitch · scroll/pulse for pattern · full oscillator',
-    defaultDensity: 4,
-    pitchMul: 1,
-    wave: 'triangle', gain: 0.18, attack: 0.06, decay: 1.4,
-    browseTone: 0.28, browseHarmonics: 0.52, browseFilterMin: 120, browseFilterMax: 920,
-    browseFilterQ: 0.72, browseSubMix: 0.08, browseSpace: 0.1, browseLfoRate: 0.12,
-    browseLfoDepth: 0.22, browseLfoTarget: 'filter'
+    hint: 'Mono sub bass — ↕ melody · dry minimal low end.',
+    pitchMul: 0.8,
+    wave: 'sine', gain: 0.2, attack: 0.012, decay: 2.1,
+    browseTone: 0.08, browseHarmonics: 0.14, browseDrive: 0.18,
+    browseFilterMin: 36, browseFilterMax: 280,
+    browseFilterQ: 0.95, browseSubMix: 0.22, browseSpace: 0.03,
+    browseLfoRate: 0, browseLfoDepth: 0, browseLfoTarget: 'filter', detune: -8
   },
   'clap': {
     label: 'Clap',
-    hint: 'Real clap burst — drag ↔ for timing. Color = amber.',
+    hint: 'Layered 909 clap — snap = layer density · short room.',
     drum: true,
-    defaultDensity: 4,
-    pitchMul: 1,
-    wave: 'sawtooth', gain: 0.14, attack: 0.004, decay: 0.11,
-    browseTone: 0.58, browseHarmonics: 0.62, browseFilterMin: 520, browseFilterMax: 5200,
-    browseFilterQ: 0.6, browseSubMix: 0.003, browseSpace: 0.09, browseLfoRate: 0,
-    browseLfoDepth: 0
+    pitchMul: 1.05,
+    wave: 'sawtooth', gain: 0.15, attack: 0.003, decay: 0.1,
+    browseTone: 0.52, browseHarmonics: 0.65, browseDrive: 0.48,
+    browseFilterMin: 480, browseFilterMax: 3800,
+    browseFilterQ: 0.62, browseSubMix: 0.004, browseSpace: 0.06, browseLfoRate: 0,
+    browseLfoDepth: 0, detune: 4
   },
   'bright': {
     label: 'Bright lead',
-    hint: 'Saw lead synth — ↕ melody · ↔ timbre · pulse for organic repeats',
-    defaultDensity: 4,
+    hint: 'Dry filtered stab — short release · ↕ melody.',
     pitchMul: 1,
-    wave: 'sawtooth', browseHarmonics: 0.48, gain: 0.1, attack: 0.08, decay: 1.6,
-    browseTone: 0.68, browseSpace: 0.1, browseFilterMin: 520, browseFilterMax: 5200,
-    browseFilterQ: 0.72, browseLfoRate: 0.2, browseLfoDepth: 0.35, browseLfoTarget: 'filter'
+    wave: 'sawtooth', browseHarmonics: 0.32, gain: 0.1, attack: 0.008, decay: 0.55,
+    browseTone: 0.68, browseSpace: 0.05, browseFilterMin: 420, browseFilterMax: 5200,
+    browseFilterQ: 0.85, browseLfoRate: 0, browseLfoDepth: 0, browseLfoTarget: 'filter'
   },
   'soft-pad': {
     label: 'Soft pad',
@@ -86,12 +85,11 @@ ECAudio.SoundPresets = {
   },
   'minimal': {
     label: 'Minimal',
-    hint: 'Soft triangle synth — slow pulse · warm filter motion',
-    defaultDensity: 8,
+    hint: 'Soft texture pad — slow attack · gentle space.',
     pitchMul: 1,
-    wave: 'triangle', browseHarmonics: 0.58, gain: 0.09, attack: 0.16, decay: 2.0,
-    browseTone: 0.45, browseSpace: 0.14, browseFilterMin: 380, browseFilterMax: 2800,
-    browseFilterQ: 0.62, browseLfoRate: 0.28, browseLfoDepth: 0.38, browseLfoTarget: 'filter'
+    wave: 'triangle', browseHarmonics: 0.42, gain: 0.09, attack: 0.18, decay: 2.4,
+    browseTone: 0.38, browseSpace: 0.1, browseFilterMin: 280, browseFilterMax: 2200,
+    browseFilterQ: 0.58, browseLfoRate: 0.12, browseLfoDepth: 0.18, browseLfoTarget: 'filter'
   }
 };
 
@@ -102,6 +100,9 @@ function syncPresetUI(id, marker) {
   if (lab) {
     lab.querySelectorAll('.sl-preset-btn[data-scope="dot"]').forEach(function(b) {
       b.classList.toggle('active', b.getAttribute('data-preset') === presetId);
+    });
+    lab.querySelectorAll('.sl-preset-btn[data-env]').forEach(function(b) {
+      b.classList.toggle('active', b.getAttribute('data-env') === presetId);
     });
   }
   var hint = document.getElementById('sl-preset-hint');

@@ -165,42 +165,136 @@ function markerUsesSynthVoice(marker) {
     : (marker.presetId === 'bass' || marker.presetId === 'bright' || marker.presetId === 'minimal');
 }
 
-function markerBeatStep(marker, globalStep) {
+function markerPitchRow(marker) {
+  if (marker && marker.envId && ECAudio.Environments && ECAudio.Environments.pitchRow) {
+    return ECAudio.Environments.pitchRow(marker.envId);
+  }
+  return marker.laneIndex != null ? marker.laneIndex : (marker.rowIndex != null ? marker.rowIndex : 0);
+}
+
+function markerEnvPitchMul(marker) {
+  if (marker && marker.envId && ECAudio.Environments && ECAudio.Environments.get) {
+    var env = ECAudio.Environments.get(marker.envId);
+    if (env && env.pitchMul != null) return env.pitchMul;
+  }
+  return marker.pitchMul != null ? marker.pitchMul : 1;
+}
+
+function normYForMidi(rowIndex, targetMidi) {
+  var best = 0.5;
+  var bestD = Infinity;
+  var k;
+  for (k = 0; k <= 24; k++) {
+    var ny = k / 24;
+    var d = Math.abs(browsePadMidi(rowIndex, ny) - targetMidi);
+    if (d < bestD) {
+      bestD = d;
+      best = ny;
+    }
+  }
+  return padSnapRowNormY(best);
+}
+
+function harmonizeBeatNormY(normY, envId, excludeId) {
+  var y = padSnapRowNormY(normY);
+  if (!envId || !ECAudio.Environments || !ECAudio.Environments.markersIn) return y;
+  var others = ECAudio.Environments.markersIn(envId).filter(function(m) {
+    return m.id !== excludeId;
+  });
+  if (!others.length) return y;
+  var row = ECAudio.Environments.pitchRow(envId);
+  var midi = browsePadMidi(row, y);
+  var i;
+  for (i = 0; i < others.length; i++) {
+    if (Math.abs(others[i].normY - y) < 0.06) return others[i].normY;
+  }
+  var bestY = y;
+  var bestDist = 2.5;
+  for (i = 0; i < others.length; i++) {
+    var om = browsePadMidi(row, others[i].normY);
+    var intervals = [0, 7, -7, 12, -12, 5, -5, 4, -4];
+    var j;
+    for (j = 0; j < intervals.length; j++) {
+      var dist = Math.abs((om + intervals[j]) - midi);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestY = normYForMidi(row, om + intervals[j]);
+      }
+    }
+  }
+  return padSnapRowNormY(bestY);
+}
+
+function markerBeatStepCore(marker, globalStep) {
   if (!marker) return { hit: false };
   var steps = beatStepCount();
-  var phase = marker.step != null ? marker.step : stepFromNormX(marker.normX);
   var g = ((globalStep % steps) + steps) % steps;
+  var phase;
 
-  if (markerUsesStepGrid(marker)) {
-    if (g !== phase) return { hit: false };
+  if (marker.envId && ECAudio.BeatKaoss && ECAudio.BeatKaoss.markerHitsStep) {
+    if (!ECAudio.BeatKaoss.markerHitsStep(marker, g)) return { hit: false };
+    phase = marker.beatPhase != null
+      ? marker.beatPhase
+      : ECAudio.BeatKaoss.beatPhaseFromX(marker.normX);
   } else {
-    var d = markerDensityForBeat(marker);
-    var idx = ((g - phase) % steps + steps) % steps;
-    if ((idx % d) !== 0) return { hit: false };
+    phase = marker.step != null ? marker.step : stepFromNormX(marker.normX);
+    if (g !== phase) return { hit: false };
   }
 
-  var rowIndex = marker.laneIndex != null ? marker.laneIndex : marker.rowIndex;
-  var normY = marker.normY;
+  var rowIndex = markerPitchRow(marker);
+  var normY = marker.normY != null ? marker.normY : 0.5;
   var toneX = marker.toneNorm != null ? marker.toneNorm : marker.normX;
-  var pitchMul = marker.pitchMul != null ? marker.pitchMul : 1;
-  var rootPitch = browsePadPitch(rowIndex, normY);
-  var freq = Math.max(40, rootPitch * pitchMul);
-  var base = rootPitch;
+  var pitchMul = markerEnvPitchMul(marker);
+  var freq;
+  var base;
 
-  if (markerUsesSynthVoice(marker)) {
-    var arp = zoneArpStep(marker.secId, g, toneX, normY, rowIndex);
-    freq = Math.max(40, arp.freq * pitchMul);
-    base = arp.base * pitchMul;
+  if (marker.envId && ECAudio.BeatKaoss && ECAudio.BeatKaoss.beatKaossPitch) {
+    freq = Math.max(40, ECAudio.BeatKaoss.beatKaossPitch(rowIndex, normY) * pitchMul);
+    base = freq;
+  } else {
+    freq = Math.max(40, browsePadPitch(rowIndex, normY) * pitchMul);
+    base = browsePadPitch(rowIndex, normY);
+  }
+
+  if (marker.envId && ECAudio.Markers && ECAudio.Markers.getMarkerParam) {
+    var det = ECAudio.Markers.getMarkerParam(marker, 'detune');
+    if (det) freq = Math.max(40, freq * Math.pow(2, det / 1200));
+  } else if (markerUsesSynthVoice(marker)) {
+    var tone = kaossTone(toneX, normY);
+    freq = Math.max(40, freq * (0.9 + tone.filterHz / 14000));
+  }
+
+  var seqVel = 1;
+  if (ECAudio.BeatSeq && ECAudio.BeatSeq.patternForMarker) {
+    var seqInfo = ECAudio.BeatSeq.patternForMarker(marker);
+    if (seqInfo && seqInfo.pattern && seqInfo.pattern[g]) {
+      seqVel = seqInfo.pattern[g] === 2 ? 2 : 1;
+    }
   }
 
   return {
     hit: true,
     freq: freq,
     base: base,
-    vel: 1,
+    vel: seqVel,
     step: g,
-    phase: phase
+    phase: phase,
+    toneX: toneX
   };
+}
+
+function markerBeatStep(marker, globalStep) {
+  var steps = beatStepCount();
+  var g = ((globalStep % steps) + steps) % steps;
+  var out = markerBeatStepCore(marker, g);
+  if (!out.hit) return out;
+  if (ECAudio.BeatSpatial && ECAudio.BeatSpatial.modulateStep) {
+    out = ECAudio.BeatSpatial.modulateStep(marker, g, out);
+  }
+  if (ECAudio.BeatMix && ECAudio.BeatMix.applyToStep) {
+    out = ECAudio.BeatMix.applyToStep(marker, g, out);
+  }
+  return out;
 }
 
 
@@ -453,9 +547,17 @@ function kaossRatio() {
 
 
 function composeMarkerVoice(marker) {
-  var mp = marker && marker.params ? marker.params : null;
-  if (marker && ECAudio.Markers && ECAudio.Markers.ensureMarkerParams) {
+  if (marker && markerUsesSynthVoice(marker) && ECAudio.Machines && ECAudio.Machines.composeSpec) {
+    var machineSpec = ECAudio.Machines.composeSpec(marker);
+    if (machineSpec) return machineSpec;
+  }
+  var mp = null;
+  if (marker && marker.envId && ECAudio.Environments && ECAudio.Environments.envParams) {
+    mp = ECAudio.Environments.envParams(marker.envId);
+  } else if (marker && ECAudio.Markers && ECAudio.Markers.ensureMarkerParams) {
     mp = ECAudio.Markers.ensureMarkerParams(marker);
+  } else if (marker && marker.params) {
+    mp = marker.params;
   }
   var toneX = marker.toneNorm != null ? marker.toneNorm : marker.normX;
   var spec = ECAudio.BrowseSound.resolve({
@@ -468,14 +570,24 @@ function composeMarkerVoice(marker) {
   if (markerUsesSynthVoice(marker)) {
     var stepSec = loopStepMs() / 1000;
     var atk = mp && mp.attack != null ? mp.attack : spec.attack;
-    var dec = mp && mp.decay != null ? mp.decay : 1.1;
-    spec.beatAttack = Math.max(0.02, atk);
-    spec.beatDecay = Math.max(2.2, dec / Math.max(0.08, stepSec));
-    spec.beatPeak = 0.62 + (marker.sizeNorm != null ? marker.sizeNorm : 0.35) * 0.42;
-    spec.beatPunch = 0.7;
+    var dec = mp && mp.decay != null ? mp.decay : (spec.decay != null ? spec.decay : 1.1);
+    spec.attack = atk;
+    spec.decay = dec;
+    spec.beatAttack = Math.max(0.003, Math.min(0.22, atk));
+    spec.beatDecay = Math.max(0.4, Math.min(6.5, dec / Math.max(stepSec * 1.1, 0.04)));
+    spec.beatPeak = 0.92 + (marker.sizeNorm != null ? marker.sizeNorm : 0.35) * 0.28;
+    spec.beatPunch = 0.82 + (mp && mp.browseHarmonics != null ? mp.browseHarmonics : 0.45) * 0.35;
     spec.synthLayer = true;
   } else {
     spec = Object.assign({}, spec, markerBeatEnvelope(marker));
+  }
+  if (marker && ECAudio.BeatPresence && ECAudio.BeatPresence.presenceGain) {
+    var zg = ECAudio.BeatPresence.presenceGain(ECAudio.BeatPresence.normZ(marker));
+    if (spec.beatPeak != null) spec.beatPeak *= zg;
+    if (spec.beatPunch != null) spec.beatPunch *= zg;
+  }
+  if (marker && ECAudio.BeatSpatial && ECAudio.BeatSpatial.modulateSpec) {
+    spec = ECAudio.BeatSpatial.modulateSpec(marker, spec);
   }
   return spec;
 }
@@ -501,7 +613,8 @@ ECAudio.Theory = {
   getScaleTypeForSource: getScaleTypeForSource, getRoot: getRoot, getPartialIndex: getPartialIndex,
   rowFreq: rowFreq, noteFreq: noteFreq, stepMs: stepMs, beatMs: beatMs, loopStepMs: loopStepMs,
   beatStepCount: beatStepCount, stepFromNormX: stepFromNormX, normXFromStep: normXFromStep,
-  markerBeatStep: markerBeatStep, markerBeatEnvelope: markerBeatEnvelope,
+  markerBeatStep: markerBeatStep, markerBeatStepCore: markerBeatStepCore,
+  markerBeatEnvelope: markerBeatEnvelope,
   normalizeLoopRole: normalizeLoopRole,
   normalizeMarkerDensity: normalizeMarkerDensity,
   defaultDensityForRole: defaultDensityForRole,
@@ -522,5 +635,7 @@ ECAudio.Theory = {
   zoneDegreeMidi: zoneDegreeMidi, zonePitch: zonePitch, zoneNoteLabel: zoneNoteLabel,
   sectionMelodyInfo: sectionMelodyInfo, zoneArpStep: zoneArpStep,
   kaossPitch: kaossPitch, kaossRatio: kaossRatio, kaossTone: kaossTone,
-  markerPolyLevel: markerPolyLevel, composeMarkerVoice: composeMarkerVoice
+  markerPolyLevel: markerPolyLevel, composeMarkerVoice: composeMarkerVoice,
+  markerPitchRow: markerPitchRow, harmonizeBeatNormY: harmonizeBeatNormY,
+  normYForMidi: normYForMidi
 };

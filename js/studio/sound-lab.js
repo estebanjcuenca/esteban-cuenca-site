@@ -44,6 +44,7 @@ function slUpdateReadout(normX, keyNorm, marker) {
   var filtEl = document.getElementById('sl-ro-filter');
   var gainEl = document.getElementById('sl-ro-gain');
   var spaceEl = document.getElementById('sl-ro-space');
+  var mixEl = document.getElementById('sl-ro-mix');
   var idEl = document.getElementById('sl-ro-layer-id');
   if (!ECAudio.BrowseSound || !ECAudio.Theory) return;
   var rowNormY = slPadRowNormY(keyNorm);
@@ -68,6 +69,13 @@ function slUpdateReadout(normX, keyNorm, marker) {
   if (filtEl) filtEl.textContent = slFreqLabel(spec.filterHz);
   if (gainEl) gainEl.textContent = Math.round(spec.peakGain * 100) + '%';
   if (spaceEl) spaceEl.textContent = Math.round(spec.space * 100) + '%';
+  if (mixEl) {
+    if (marker && ECAudio.BeatMix && ECAudio.BeatMix.describeCollisions) {
+      mixEl.textContent = ECAudio.BeatMix.describeCollisions(marker);
+    } else {
+      mixEl.textContent = '—';
+    }
+  }
 }
 
 function slBindMarkerTarget(marker) {

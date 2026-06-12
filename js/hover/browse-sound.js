@@ -55,13 +55,30 @@ function filterBounds(markerParams) {
 }
 
 function padFilterHz(normX, tone, markerParams) {
+  return filterEnvelope(normX, tone, markerParams).filterHz;
+}
+
+function filterEnvelope(normX, tone, markerParams) {
   var b = filterBounds(markerParams);
-  var x = clamp01(normX);
-  var xWeight = clamp01(panelVal('browsePadX', ECAudio.BrowseSound.PAD_X, markerParams));
-  var xPos = x * xWeight + 0.5 * (1 - xWeight);
-  var hz = b.min + xPos * b.span;
-  hz += (tone - 0.5) * b.span * 0.28;
-  return Math.min(b.max, Math.max(b.min, hz));
+  var t = clamp01(tone);
+  var xPos;
+  if (markerParams) {
+    xPos = t;
+  } else {
+    var x = clamp01(normX);
+    var xWeight = clamp01(panelVal('browsePadX', ECAudio.BrowseSound.PAD_X, markerParams));
+    xPos = x * xWeight + 0.5 * (1 - xWeight);
+    xPos += (t - 0.5) * 0.22;
+  }
+  xPos = clamp01(xPos);
+  var center = b.min + xPos * b.span;
+  var sweep = b.span * (markerParams ? 0.48 : 0.3);
+  var bright = markerParams ? clamp01(panelVal('browseHarmonics', 0.45, markerParams)) : 0.45;
+  return {
+    filterHz: Math.min(b.max, Math.max(b.min, center)),
+    filterStartHz: Math.max(b.min * 0.85, center - sweep * (0.55 + t * 0.35)),
+    filterEndHz: Math.min(b.max * 1.05, center - sweep * (0.15 + bright * 0.55))
+  };
 }
 
 function lfoDepthAmount(target, markerParams) {
@@ -93,7 +110,7 @@ function driveCurve(amount) {
 function harmonicLevels(wave, markerParams) {
   var h = clamp01(panelVal('browseHarmonics', panelVal('browseDrive', ECAudio.BrowseSound.HARMONICS, markerParams), markerParams));
   var waveScale = { sine: 1, triangle: 0.48, sawtooth: 0.22, square: 0.28 }[wave || 'triangle'] || 0.65;
-  var s = h * waveScale;
+  var s = h * waveScale * (markerParams ? 1.35 : 1);
   return {
     h2: s * 0.4,
     h3: s * 0.21,
@@ -207,17 +224,22 @@ function resolve(spec) {
   var wave = panelVal('wave', ECAudio.BrowseSound.WAVE, mp);
   var harm = harmonicLevels(wave, mp);
 
+  var decay = panelVal('decay', ECAudio.BrowseSound.DECAY, mp);
+  var filt = filterEnvelope(normX, tone, mp);
   return {
     wave: wave,
-    filterHz: padFilterHz(normX, tone, mp),
+    filterHz: filt.filterHz,
+    filterStartHz: filt.filterStartHz,
+    filterEndHz: filt.filterEndHz,
     filterQ: filterQ,
     subMix: subMix,
     harmLevels: harm,
     drive: harm.drive,
-    space: Math.min(0.45, baseSpace * 0.55 + mods.space + normY * baseSpace * 0.25),
+    space: Math.min(0.55, baseSpace * (mp ? 0.92 : 0.55) + mods.space + normY * baseSpace * 0.2),
     peakGain: gain * mods.level * poly,
     mixLevel: mods.level * poly,
-    attack: Math.min(atk * mods.attack, 0.55),
+    attack: Math.min(atk * mods.attack, mp ? 0.65 : 0.55),
+    decay: decay,
     arpStepMs: ECAudio.Theory.stepMs() * mods.arpSpeed,
     detune: (panelVal('detune', 0, mp) || 0) + mods.shimmer,
     lfoRate: lfoRate,
@@ -269,6 +291,8 @@ function resetPanelDefaults() {
   applyEngine();
 }
 
+ECAudio.BrowseSound.filterBounds = filterBounds;
+ECAudio.BrowseSound.filterEnvelope = filterEnvelope;
 ECAudio.BrowseSound.panelTone = panelTone;
 ECAudio.BrowseSound.applyRoleMods = applyRoleMods;
 ECAudio.BrowseSound.resolve = resolve;

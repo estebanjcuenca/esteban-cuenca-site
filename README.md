@@ -222,13 +222,13 @@ Add `?debug=1` to the URL (or `localStorage ec-debug=1`). Console prints table i
 
 ## TODO
 
-- [ ] **Replace `https://yourdomain.com` placeholders** in OG tags and JSON-LD with the real URL once domain / GitHub Pages URL is known
+- [x] **Replace `https://yourdomain.com` placeholders** — `https://estebanjcuenca.github.io/esteban-cuenca-site/`
 - [x] Extract base64 photo to `photo.jpg` — done 2026-06-10
 - [x] Extract markdown content to `content.md` — done 2026-06-10
 - [x] Persist sound settings to localStorage — done (`ec-sound`, schema v9)
 - [ ] Mobile: sound panel should be a bottom sheet on small screens (currently side panel)
 - [ ] Mobile: toolbar has too many buttons at small breakpoints
-- [ ] Deploy to GitHub Pages
+- [x] Deploy to GitHub Pages — `https://estebanjcuenca.github.io/esteban-cuenca-site/`
 
 ## Deploy (GitHub Pages)
 

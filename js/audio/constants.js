@@ -25,8 +25,8 @@ ECAudio.BROWSE_PARAM_KEYS = [
 ECAudio.MUSIC_PARAM_KEYS = [
   'steps', 'quantizeNotes', 'scaleType', 'drumRack', 'bassFifth', 'sidechain',
   'noteLength', 'reverb', 'reverbAmt', 'kickGain', 'clapGain', 'bassGain',
-  'noteGain', 'swing', 'humanize', 'patterns', 'trackTypes', 'trackMutes',
-  'trackSolos', 'trackLocks'
+  'noteGain', 'swing', 'humanize', 'musicSeqEnabled', 'patterns', 'trackTypes',
+  'trackMutes', 'trackSolos', 'trackLocks'
 ];
 ECAudio.SHARED_PARAM_KEYS = [
   'wave', 'detune', 'bpm', 'filmRoot', 'commRoot', 'evRoot', 'eduRoot', 'roots',
@@ -95,7 +95,7 @@ ECAudio.SECTION_HARMONY = {
 };
 
 ECAudio.SOUND_BOOL_PARAMS = [
-  'humanize', 'quantizeNotes', 'bassFifth', 'sidechain', 'reverb'
+  'humanize', 'quantizeNotes', 'bassFifth', 'sidechain', 'reverb', 'musicSeqEnabled'
 ];
 
 ECAudio.soundFmt = {

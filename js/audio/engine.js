@@ -1,6 +1,54 @@
 /* eslint-disable no-var */
 window.ECAudio = window.ECAudio || {};
 
+function ensureDrumBus() {
+  ECAudio.Engine.boot();
+  if (ECAudio.State.drumBus) return ECAudio.State.drumBus;
+  var ctx = ECAudio.State.ctx;
+  ECAudio.State.drumBus = ctx.createGain();
+  ECAudio.State.drumBus.gain.value = 1;
+  var hp = ctx.createBiquadFilter();
+  hp.type = 'highpass';
+  hp.frequency.value = 28;
+  hp.Q.value = 0.7;
+  var comp = ctx.createDynamicsCompressor();
+  comp.threshold.value = -20;
+  comp.knee.value = 6;
+  comp.ratio.value = 2.8;
+  comp.attack.value = 0.003;
+  comp.release.value = 0.12;
+  ECAudio.State.drumBus.connect(hp);
+  hp.connect(comp);
+  comp.connect(ECAudio.State.browseToneIn);
+  return ECAudio.State.drumBus;
+}
+
+function drumOut() {
+  return ensureDrumBus();
+}
+
+function ensureMelodicBus() {
+  ECAudio.Engine.boot();
+  if (ECAudio.State.melodicBus) return ECAudio.State.melodicBus;
+  var ctx = ECAudio.State.ctx;
+  ECAudio.State.melodicBus = ctx.createGain();
+  ECAudio.State.melodicBus.gain.value = 1;
+  var comp = ctx.createDynamicsCompressor();
+  comp.threshold.value = -20;
+  comp.knee.value = 5;
+  comp.ratio.value = 2.6;
+  comp.attack.value = 0.004;
+  comp.release.value = 0.14;
+  ECAudio.State.melodicComp = comp;
+  ECAudio.State.melodicBus.connect(comp);
+  comp.connect(ECAudio.State.browseToneIn);
+  return ECAudio.State.melodicBus;
+}
+
+function melodicOut() {
+  return ensureMelodicBus();
+}
+
 function boot() {
   if (ECAudio.State.ctx) return;
   ECAudio.State.ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -134,6 +182,27 @@ function triggerSidechain(t) {
   g.linearRampToValueAtTime(1, t + atk + hold + rel);
 }
 
+function triggerBrowseSidechain(t, amount, sourceType, coupling) {
+  if (!ECAudio.State.browseBus || !ECAudio.State.ctx) return;
+  var amt = amount != null ? amount : 0.78;
+  var atk = sourceType === 'kick' ? 0.004 : 0.006;
+  var hold = sourceType === 'kick' ? 0.048 : 0.036;
+  var rel = sourceType === 'kick' ? 0.12 : 0.09;
+  var g = ECAudio.State.browseBus.gain;
+  g.cancelScheduledValues(t);
+  g.setValueAtTime(g.value, t);
+  g.linearRampToValueAtTime(amt, t + atk);
+  g.linearRampToValueAtTime(1, t + atk + hold + rel);
+  if (sourceType === 'kick' && ECAudio.State.melodicComp && coupling > 0.08) {
+    var comp = ECAudio.State.melodicComp;
+    var dip = -20 - coupling * 16;
+    comp.threshold.cancelScheduledValues(t);
+    comp.threshold.setValueAtTime(comp.threshold.value, t);
+    comp.threshold.linearRampToValueAtTime(dip, t + atk);
+    comp.threshold.linearRampToValueAtTime(-20, t + atk + hold + rel);
+  }
+}
+
 function bootAudio() {
   ECAudio.Engine.boot();
   if (!ECAudio.State.ctx) return Promise.resolve();
@@ -142,9 +211,12 @@ function bootAudio() {
 }
 
 ECAudio.Engine = {
-  boot: boot, out: out, browseOut: browseOut, musicOut: musicOut,
+  boot: boot, out: out, browseOut: browseOut, melodicOut: melodicOut, musicOut: musicOut,
+  drumOut: drumOut, ensureDrumBus: ensureDrumBus, ensureMelodicBus: ensureMelodicBus,
   ensureReverb: ensureReverb, setReverbAmt: setReverbAmt, setBrowseHp: setBrowseHp, wetSend: wetSend,
   midiFromFreq: midiFromFreq, freqFromMidi: freqFromMidi,
   resetMusicBus: resetMusicBus,   resetBrowseBus: resetBrowseBus, browseWetSend: browseWetSend,
-  triggerSidechain: triggerSidechain, bootAudio: bootAudio
+  triggerSidechain: triggerSidechain,
+  triggerBrowseSidechain: triggerBrowseSidechain,
+  bootAudio: bootAudio
 };

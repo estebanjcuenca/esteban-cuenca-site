@@ -32,6 +32,7 @@ ECAudio.params = {
   noteGain:    0.10,
   swing:       0.54,
   humanize:    false,
+  musicSeqEnabled: true,
   quantizeNotes: true,
   scaleType:   'pent',
   drumRack:    'kickClap',

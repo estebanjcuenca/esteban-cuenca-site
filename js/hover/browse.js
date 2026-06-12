@@ -130,9 +130,12 @@ function syncKaossVisual(zone, normX, normY) {
   zone.classList.add('influence-active');
   var overlay = null;
   var pt = null;
-  if (zone.classList && zone.classList.contains('beat-lane') && ECAudio.BeatStudio) {
+  if (zone.classList && (zone.classList.contains('beat-lane') || zone.classList.contains('beat-pad')) &&
+      ECAudio.BeatStudio) {
     overlay = ECAudio.BeatStudio.overlayForLane(zone);
-    pt = ECAudio.BeatStudio.laneOverlayPoint(zone, normX, normY);
+    pt = ECAudio.BeatStudio.laneOverlayPoint
+      ? ECAudio.BeatStudio.laneOverlayPoint(zone, normX, normY)
+      : ECAudio.BeatStudio.padOverlayPoint(normX, normY);
   } else if (zone.tagName === 'TR' && ECAudio.Zones && ECAudio.Zones.overlayForRow) {
     overlay = ECAudio.Zones.overlayForRow(zone);
     pt = ECAudio.Zones.rowOverlayPoint(zone, normX, normY);
@@ -400,6 +403,7 @@ function createHoldVoice(secId, normX, normY, forArp, zone, rowIndex) {
   var filter = ctx.createBiquadFilter();
   var filterBase = ctx.createConstantSource();
   var padGain = ctx.createGain();
+  var panner = ctx.createStereoPanner();
   var envGain = ctx.createGain();
   var harm = spec.harmLevels || { h2: 0, h3: 0, h4: 0, unison: 0, drive: 0 };
 
@@ -453,8 +457,11 @@ function createHoldVoice(secId, normX, normY, forArp, zone, rowIndex) {
   subOsc.connect(subGain);
   subGain.connect(filter);
   filter.connect(padGain);
-  padGain.connect(envGain);
-  envGain.connect(ECAudio.Engine.browseOut());
+  padGain.connect(panner);
+  panner.connect(envGain);
+  var toneOut = ECAudio.Engine.melodicOut
+    ? ECAudio.Engine.melodicOut() : ECAudio.Engine.browseOut();
+  envGain.connect(toneOut);
   var reverbSend = ECAudio.Engine.browseWetSend(padGain, spec.space);
   osc1.start(t);
   unisonOsc.start(t);
@@ -467,7 +474,7 @@ function createHoldVoice(secId, normX, normY, forArp, zone, rowIndex) {
     osc1: osc1, unisonOsc: unisonOsc, harm2: harm2, harm3: harm3, harm4: harm4,
     unisonGain: unisonGain, h2Gain: h2Gain, h3Gain: h3Gain, h4Gain: h4Gain,
     subOsc: subOsc, subGain: subGain, toneMix: toneMix, drive: drive,
-    filter: filter, filterBase: filterBase, padGain: padGain, envGain: envGain,
+    filter: filter, filterBase: filterBase, padGain: padGain, panner: panner, envGain: envGain,
     reverbSend: reverbSend,
     secId: secId, zone: zone, freq: freq, targetMidi: targetMidi,
     normX: normX, normY: normY, rowIndex: rowIndex, sizeNorm: null,
@@ -495,8 +502,42 @@ function loopTickMs() {
   return ECAudio.Theory.loopStepMs ? ECAudio.Theory.loopStepMs() : ECAudio.Theory.beatMs() / 4;
 }
 
+function scheduleHitFilter(voice, spec, t, atk, dur) {
+  if (!voice || !spec || !ECAudio.State.ctx) return;
+  var f0 = spec.filterStartHz != null ? spec.filterStartHz : spec.filterHz;
+  var f1 = spec.filterHz != null ? spec.filterHz : f0;
+  var f2 = spec.filterEndHz != null ? spec.filterEndHz : Math.max(80, f1 * 0.62);
+  var a = Math.max(0.004, atk != null ? atk : 0.02);
+  var d = Math.max(a + 0.04, dur != null ? dur : 0.2);
+  if (voice.filterBase) {
+    voice.filterBase.offset.cancelScheduledValues(t);
+    voice.filterBase.offset.setValueAtTime(f0, t);
+    voice.filterBase.offset.linearRampToValueAtTime(f1, t + Math.min(a * 2.2, d * 0.18));
+    voice.filterBase.offset.exponentialRampToValueAtTime(Math.max(40, f2), t + d * 0.92);
+  } else if (voice.filter) {
+    voice.filter.frequency.cancelScheduledValues(t);
+    voice.filter.frequency.setValueAtTime(f0, t);
+    voice.filter.frequency.linearRampToValueAtTime(f1, t + Math.min(a * 2.2, d * 0.18));
+    voice.filter.frequency.exponentialRampToValueAtTime(Math.max(40, f2), t + d * 0.92);
+  }
+  if (voice.filter && spec.filterQ != null) {
+    voice.filter.Q.cancelScheduledValues(t);
+    voice.filter.Q.setValueAtTime(spec.filterQ, t);
+  }
+  if (voice.drive && ECAudio.BrowseSound.driveCurve && spec.drive != null) {
+    voice.drive.curve = ECAudio.BrowseSound.driveCurve(spec.drive);
+  }
+  if (voice.subGain && spec.subMix != null) {
+    voice.subGain.gain.setTargetAtTime(spec.subMix, t, 0.02);
+  }
+  if (voice.reverbSend && spec.space != null) {
+    voice.reverbSend.gain.setTargetAtTime(spec.space, t, 0.03);
+  }
+}
+
 function playArpStep(voice, secId, stepData, normX, normY, peakMul, spec) {
-  var t = ECAudio.State.ctx.currentTime;
+  var t = ECAudio.State.ctx.currentTime + (stepData && stepData._timingOff != null
+    ? stepData._timingOff : 0);
   var tickMs = loopTickMs();
   var stepSec = tickMs / 1000;
   var dur = stepSec;
@@ -505,10 +546,11 @@ function playArpStep(voice, secId, stepData, normX, normY, peakMul, spec) {
   var punch = spec && spec.beatPunch != null ? spec.beatPunch : 1;
   dur *= decayMul;
   if (spec && spec.synthLayer) {
-    dur = Math.min(spec.decay != null ? spec.decay : 1.4, stepSec * decayMul);
-    dur = Math.max(stepSec * 1.6, dur);
+    var envDecay = spec.decay != null ? spec.decay : 1.2;
+    dur = Math.max(stepSec * 1.15, Math.min(envDecay, stepSec * decayMul * 1.35));
   }
-  var peak = arpPeak(normX, normY) * (peakMul != null ? peakMul : 1) * peakMulRole * punch;
+  var basePeak = spec && spec.peakGain != null ? spec.peakGain : arpPeak(normX, normY);
+  var peak = basePeak * (peakMul != null ? peakMul : 1) * peakMulRole * punch;
   var atk = spec && spec.beatAttack != null ? spec.beatAttack : Math.min(0.07, dur * 0.32);
   if (spec && spec.attack != null && !spec.synthLayer) atk = Math.min(atk, spec.attack);
   var g = spec && spec.synthLayer ? Math.min(0.14, FREQ_GLIDE * 1.4) : Math.min(FREQ_GLIDE, dur * 0.4);
@@ -517,7 +559,13 @@ function playArpStep(voice, secId, stepData, normX, normY, peakMul, spec) {
 
   voice.stepBase = stepData.base;
   voice.freq = freq;
+  if (voice.panner && spec && spec._stereoPan != null) {
+    voice.panner.pan.cancelScheduledValues(t);
+    voice.panner.pan.setValueAtTime(spec._stereoPan, t);
+  }
   setVoicePitch(voice, freq, t, g);
+  scheduleHitFilter(voice, spec, t, atk, dur);
+  applyHarmonicLevels(voice, spec, t);
   voice.padGain.gain.cancelScheduledValues(t);
   var cur = spec && spec.synthLayer
     ? Math.max(voice.padGain.gain.value * 0.55, 0)
@@ -840,17 +888,22 @@ function reconcileBeatHover(clientX, clientY) {
 
   var hit = findZoneAt(clientX, clientY);
   if (hit) {
-    var lane = hit.laneIndex != null ? hit.laneIndex : hit.rowIndex;
-    if (ECAudio.MarkerDrums && ECAudio.MarkerDrums.isActiveBeatLane &&
-        !ECAudio.MarkerDrums.isActiveBeatLane(lane)) {
-      ECAudio.State.lastZone = null;
-      clearKaossVisual();
-      scheduleZoneLeave();
-      return;
-    }
     zoneEnter();
     var norm = zoneNorm(hit.zone, clientX, clientY, hit);
-    if (ECAudio.Theory.padSnapRowNormY) norm.y = ECAudio.Theory.padSnapRowNormY(norm.y);
+    if (hit.secId === ECAudio.BEAT_STUDIO_SEC_ID && ECAudio.BeatKaoss && ECAudio.BeatKaoss.mapPlacement) {
+      var env = ECAudio.Environments && ECAudio.Environments.getActive
+        ? ECAudio.Environments.getActive() : null;
+      if (env) {
+        var hoverMap = ECAudio.BeatKaoss.mapPlacement(norm.x, norm.y, env.id, null);
+        norm.x = hoverMap.normX;
+        norm.y = hoverMap.normY;
+      }
+    } else if (ECAudio.Theory.padSnapRowNormY) {
+      norm.y = ECAudio.Theory.padSnapRowNormY(norm.y);
+      if (ECAudio.Theory.stepFromNormX && ECAudio.Theory.normXFromStep) {
+        norm.x = ECAudio.Theory.normXFromStep(ECAudio.Theory.stepFromNormX(norm.x));
+      }
+    }
     ECAudio.State.kaossX = norm.x;
     ECAudio.State.kaossY = norm.y;
     ECAudio.State.hoverZone = hit.zone;
@@ -965,7 +1018,9 @@ function applyMarkerTone(voice, marker) {
   voice.sizeNorm = marker.sizeNorm;
   var spec = ECAudio.Theory.composeMarkerVoice(marker);
   applyVoiceSpec(voice, spec, false);
-  voice.markerLevel = spec.mixLevel;
+  var zg = ECAudio.BeatPresence && ECAudio.BeatPresence.presenceGain
+    ? ECAudio.BeatPresence.presenceGain(ECAudio.BeatPresence.normZ(marker)) : 1;
+  voice.markerLevel = (spec.mixLevel != null ? spec.mixLevel : 1) * zg;
   return spec;
 }
 
@@ -979,12 +1034,22 @@ function applyPinnedMarkerLevel(voice, marker) {
   }
 }
 
+function markerUsesDrumVoice(marker) {
+  if (!marker || !marker.presetId || !ECAudio.MarkerDrums) return false;
+  if (!ECAudio.MarkerDrums.isPercussion(marker.presetId)) return false;
+  if (ECAudio.Theory && ECAudio.Theory.markerUsesSynthVoice) {
+    return !ECAudio.Theory.markerUsesSynthVoice(marker);
+  }
+  return true;
+}
+
 function createPinnedVoice(marker) {
-  if (ECAudio.MarkerDrums && ECAudio.MarkerDrums.isPercussion &&
-      ECAudio.MarkerDrums.isPercussion(marker.presetId)) {
+  if (markerUsesDrumVoice(marker)) {
     return ECAudio.MarkerDrums.stubVoice(marker);
   }
-  var voice = createHoldVoice(marker.secId, marker.normX, marker.normY, true, null, marker.rowIndex);
+  var rowIndex = ECAudio.Theory.markerPitchRow
+    ? ECAudio.Theory.markerPitchRow(marker) : marker.rowIndex;
+  var voice = createHoldVoice(marker.secId, marker.normX, marker.normY, true, null, rowIndex);
   var spec = ECAudio.Theory.composeMarkerVoice(marker);
   var t = ECAudio.State.ctx.currentTime;
   var atk = Math.max(MIN_ATTACK, spec.attack);
@@ -993,9 +1058,11 @@ function createPinnedVoice(marker) {
   voice.padGain.gain.setValueAtTime(0, t);
   voice.envGain.gain.setValueAtTime(1, t);
   applyMarkerTone(voice, marker);
-  if (marker.params && marker.params.wave && voice.osc1) {
-    voice.osc1.type = marker.params.wave;
-    if (voice.unisonOsc) voice.unisonOsc.type = marker.params.wave;
+  var waveType = ECAudio.Markers && ECAudio.Markers.getMarkerParam
+    ? ECAudio.Markers.getMarkerParam(marker, 'wave') : (marker.params && marker.params.wave);
+  if (waveType && voice.osc1) {
+    voice.osc1.type = waveType;
+    if (voice.unisonOsc) voice.unisonOsc.type = waveType;
   }
   voice.pinned = true;
   voice.synthLayer = ECAudio.Theory && ECAudio.Theory.markerUsesSynthVoice
@@ -1026,7 +1093,8 @@ function previewMarkerSound(marker) {
 function runPinnedArpTick(marker, globalStep) {
   var voice = marker && marker.voice;
   if (!voice || !voice.pinned || !voice.arpeggio || !ECAudio.State.ctx) return;
-  if ((ECAudio.State.markers || []).indexOf(marker) < 0) return;
+  if (!marker.seqSlot && !marker._envPreview &&
+      (ECAudio.State.markers || []).indexOf(marker) < 0) return;
   if (ECAudio.Markers && ECAudio.Markers.shouldPlayInMix && !ECAudio.Markers.shouldPlayInMix(marker)) {
     if (!voice.isDrum) softArpDuck(voice);
     return;
@@ -1042,21 +1110,34 @@ function runPinnedArpTick(marker, globalStep) {
     return;
   }
 
-  if (voice.isDrum && ECAudio.MarkerDrums && ECAudio.MarkerDrums.isPercussion &&
-      marker.presetId && ECAudio.MarkerDrums.isPercussion(marker.presetId) &&
-      ECAudio.MarkerDrums.play) {
+  if (markerUsesDrumVoice(marker) && ECAudio.MarkerDrums && ECAudio.MarkerDrums.play) {
     ECAudio.MarkerDrums.play(marker, stepData);
+    if (ECAudio.BeatMix && ECAudio.BeatMix.triggerSpatialSidechain) {
+      ECAudio.BeatMix.triggerSpatialSidechain(marker, ECAudio.State.ctx.currentTime);
+    }
     pulseMarkerBeat(marker);
     if (globalStep == null) voice.arpStep += 1;
     return;
   }
 
   var spec = ECAudio.Theory.composeMarkerVoice(marker);
+  if (ECAudio.BeatMix && ECAudio.BeatMix.applyToSpec) {
+    spec = ECAudio.BeatMix.applyToSpec(marker, step, spec, stepData);
+  }
   var toneX = marker.toneNorm != null ? marker.toneNorm : marker.normX;
   applyMarkerTone(voice, marker);
+  var ghost = stepData.vel === 2;
+  var peakMul = (voice.markerLevel || 1) * (ghost ? 0.52 : 1);
+  if (ghost && spec && spec.synthLayer) {
+    spec = Object.assign({}, spec, {
+      beatDecay: (spec.beatDecay != null ? spec.beatDecay : 1) * 0.68,
+      beatPeak: (spec.beatPeak != null ? spec.beatPeak : 1) * 0.88
+    });
+    if (spec.filterEndHz != null) spec.filterEndHz = Math.max(80, spec.filterEndHz * 0.72);
+  }
   playArpStep(
     voice, marker.secId, stepData, toneX, marker.normY,
-    voice.markerLevel || 1, spec
+    peakMul, spec
   );
   pulseMarkerBeat(marker);
   if (globalStep == null) voice.arpStep += 1;
@@ -1077,24 +1158,48 @@ function collectBeatHitRoles(globalStep) {
   return roles;
 }
 
+function hasLoopContent() {
+  return !!(ECAudio.State.markers || []).length;
+}
+
+function playBeatHit(marker, globalStep) {
+  runPinnedArpTick(marker, globalStep);
+}
+
 function tickLoopTransport() {
-  var markers = ECAudio.State.markers || [];
-  if (!markers.length) {
+  try {
+    if (!hasLoopContent()) {
+      stopLoopTransport();
+      return;
+    }
+    var hitRoles = collectBeatHitRoles(_loopBeatStep);
+    (ECAudio.State.markers || []).forEach(function(m) {
+      runPinnedArpTick(m, _loopBeatStep);
+    });
+    if (ECAudio.Markers && ECAudio.Markers.updateBeatRuler) {
+      ECAudio.Markers.updateBeatRuler(_loopBeatStep, hitRoles);
+    }
+    if (ECAudio.BeatSeq && ECAudio.BeatSeq.updatePlayhead) {
+      ECAudio.BeatSeq.updatePlayhead(_loopBeatStep);
+    }
+    if (ECAudio.BeatSeq && ECAudio.BeatSeq.onTransportStep) {
+      ECAudio.BeatSeq.onTransportStep(_loopBeatStep);
+    }
+    if (ECAudio.BeatView3d && ECAudio.BeatView3d.onBeatStep) {
+      ECAudio.BeatView3d.onBeatStep(_loopBeatStep, hitRoles);
+    }
+    if (ECAudio.BeatMix && ECAudio.BeatMix.invalidate) {
+      ECAudio.BeatMix.invalidate();
+    }
+    if (hitRoles.length && ECAudio.BeatGuide) {
+      ECAudio.BeatGuide.fire('ruler_hit');
+    }
+    var steps = ECAudio.LOOP_BEAT_STEPS || 16;
+    _loopBeatStep = (_loopBeatStep + 1) % steps;
+  } catch (err) {
+    if (ECAudio.debugError) ECAudio.debugError('tickLoopTransport failed', err);
     stopLoopTransport();
-    return;
   }
-  var hitRoles = collectBeatHitRoles(_loopBeatStep);
-  markers.forEach(function(m) {
-    runPinnedArpTick(m, _loopBeatStep);
-  });
-  if (ECAudio.Markers && ECAudio.Markers.updateBeatRuler) {
-    ECAudio.Markers.updateBeatRuler(_loopBeatStep, hitRoles);
-  }
-  if (hitRoles.length && ECAudio.BeatGuide) {
-    ECAudio.BeatGuide.fire('ruler_hit');
-  }
-  var steps = ECAudio.LOOP_BEAT_STEPS || 16;
-  _loopBeatStep = (_loopBeatStep + 1) % steps;
 }
 
 function ensureLoopTransport() {
@@ -1111,11 +1216,12 @@ function stopLoopTransport() {
   }
   _loopBeatStep = 0;
   if (ECAudio.Markers && ECAudio.Markers.updateBeatRuler) ECAudio.Markers.updateBeatRuler(-1);
+  if (ECAudio.BeatSeq && ECAudio.BeatSeq.updatePlayhead) ECAudio.BeatSeq.updatePlayhead(-1);
 }
 
 function restartLoopTransport() {
   stopLoopTransport();
-  if ((ECAudio.State.markers || []).length) ensureLoopTransport();
+  if (hasLoopContent()) ensureLoopTransport();
 }
 
 function armPinnedArp(marker) {
@@ -1181,14 +1287,17 @@ ECAudio.Browse = {
   applyPinnedMarkerLevel: applyPinnedMarkerLevel, rebalancePinnedVoices: rebalancePinnedVoices,
   refreshLiveBrowseAudio: refreshLiveBrowseAudio, applyVoiceSpec: applyVoiceSpec,
   setVoicePitch: setVoicePitch,
-  armPinnedArp: armPinnedArp, stopLoopTransport: stopLoopTransport,
-  restartLoopTransport: restartLoopTransport, stopPreview: stopPreview,
+  armPinnedArp: armPinnedArp, ensureLoopTransport: ensureLoopTransport,
+  stopLoopTransport: stopLoopTransport, restartLoopTransport: restartLoopTransport,
+  stopPreview: stopPreview,
   isBeatMode: isBeatMode, enterBeatMode: enterBeatMode, leaveBeatMode: leaveBeatMode,
   getLoopBeatStep: function() { return _loopBeatStep; },
   pitchRowIndex: pitchRowIndex,
   markerPolyLevel: markerPolyLevel,
   restartHoldVoice: restartHoldVoice,
   previewMarkerSound: previewMarkerSound,
+  playBeatHit: playBeatHit,
+  hasLoopContent: hasLoopContent,
   test: test,
   play: function() { /* legacy */ },
   stop: function() { stopAll(); },
