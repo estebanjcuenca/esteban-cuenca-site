@@ -1140,7 +1140,11 @@ function runPinnedArpTick(marker, globalStep) {
     peakMul, spec
   );
   pulseMarkerBeat(marker);
-  if (globalStep == null) voice.arpStep += 1;
+  if (ECAudio.Theory && ECAudio.Theory.markerUsesArpeggio && ECAudio.Theory.markerUsesArpeggio(marker)) {
+    voice.arpStep = (voice.arpStep || 0) + 1;
+  } else if (globalStep == null) {
+    voice.arpStep += 1;
+  }
 }
 
 function collectBeatHitRoles(globalStep) {

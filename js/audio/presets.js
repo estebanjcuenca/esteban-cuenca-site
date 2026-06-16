@@ -90,6 +90,24 @@ ECAudio.SoundPresets = {
     wave: 'triangle', browseHarmonics: 0.42, gain: 0.09, attack: 0.18, decay: 2.4,
     browseTone: 0.38, browseSpace: 0.1, browseFilterMin: 280, browseFilterMax: 2200,
     browseFilterQ: 0.58, browseLfoRate: 0.12, browseLfoDepth: 0.18, browseLfoTarget: 'filter'
+  },
+  'synth': {
+    label: 'Synth',
+    hint: 'Classic synth — saw stack · filter sweep · ↕ melody.',
+    pitchMul: 1,
+    wave: 'sawtooth', browseHarmonics: 0.48, gain: 0.11, attack: 0.035, decay: 1.35,
+    browseTone: 0.55, browseSpace: 0.07, browseFilterMin: 180, browseFilterMax: 6400,
+    browseFilterQ: 0.72, browseLfoRate: 0.08, browseLfoDepth: 0.12, browseLfoTarget: 'filter',
+    detune: 0
+  },
+  'arpeggio': {
+    label: 'Arp',
+    hint: 'Scale arpeggio — cycles chord tones · fast plucks.',
+    pitchMul: 1.02,
+    wave: 'square', browseHarmonics: 0.4, gain: 0.09, attack: 0.004, decay: 0.42,
+    browseTone: 0.58, browseSpace: 0.09, browseFilterMin: 320, browseFilterMax: 4800,
+    browseFilterQ: 0.68, browseLfoRate: 0.14, browseLfoDepth: 0.16, browseLfoTarget: 'filter',
+    detune: 2
   }
 };
 

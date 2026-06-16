@@ -53,6 +53,8 @@
   </div>
   <div id="toolbar-export" class="toolbar-actions" hidden>
     <button class="tb-btn" id="btn-nav-back" type="button">Back</button>
+    <button class="tb-btn tb-btn-toggle" id="btn-one-page" type="button" title="Switch to one-page layout">1 pg</button>
+    <button class="tb-btn tb-btn-toggle" id="btn-eave" type="button" title="EAVE motivation statement (temp)">EAVE</button>
   </div>
 </header>
 
@@ -239,6 +241,8 @@
             <button class="sl-preset-btn" type="button" data-action="env-pick" data-env="bass">Bass</button>
             <button class="sl-preset-btn" type="button" data-action="env-pick" data-env="bright">Lead</button>
             <button class="sl-preset-btn" type="button" data-action="env-pick" data-env="minimal">Soft</button>
+            <button class="sl-preset-btn" type="button" data-action="env-pick" data-env="synth">Synth</button>
+            <button class="sl-preset-btn" type="button" data-action="env-pick" data-env="arpeggio">Arp</button>
           </div>
 
           <h4 class="sl-subtitle">2 · Layer sound</h4>
@@ -472,6 +476,22 @@
   <div id="a4-pages">
     <div class="a4-page" id="a4-page-1"></div>
     <div class="a4-page" id="a4-page-2"></div>
+    <div class="a4-page" id="a4-eave-page" hidden>
+      <div class="eave-letterhead">
+        <span class="eave-lh-name"></span>
+        <span class="eave-lh-subtitle"></span>
+      </div>
+      <hr class="eave-lh-rule">
+      <div class="eave-body">
+        <h1 class="eave-doc-title"></h1>
+        <div class="eave-paras"></div>
+        <div class="eave-about"></div>
+      </div>
+      <footer class="eave-footer">
+        <span class="eave-footer-email"></span>
+        <span class="eave-footer-location"></span>
+      </footer>
+    </div>
   </div>
 </div>
 
@@ -756,7 +776,16 @@ function buildTable(headers, rows) {
         out += `<td${c}${labelAttr}>${content}</td>`;
       } else {
         const val = raw[col.key] || '';
-        out += `<td${c}${labelAttr}>${val ? parseInline(val) : ''}</td>`;
+        if (col.key === 'awards' && val.includes('{wip}')) {
+          const sepIdx = val.indexOf('{wip}');
+          const main = val.slice(0, sepIdx).trim();
+          const wip  = val.slice(sepIdx + 5).trim();
+          const mainHtml = main ? parseInline(main) : '';
+          const wipHtml  = wip  ? `<span class="award-wip">${main ? ' · ' : ''}${parseInline(wip)}</span>` : '';
+          out += `<td${c}${labelAttr}>${mainHtml}${wipHtml}</td>`;
+        } else {
+          out += `<td${c}${labelAttr}>${val ? parseInline(val) : ''}</td>`;
+        }
       }
     });
     out += '</tr>';
@@ -863,15 +892,47 @@ async function render() {
   flushTable();
   if (cur) sections.push(cur);
 
+  // ── Separate {eave} sections from CV sections ──
+  const eaveSec = sections.find(s => s.title.includes('{eave}'));
+  sections = sections.filter(s => !s.title.includes('{eave}'));
+  if (eaveSec) {
+    const paras = eaveSec.paras;
+    // Split at "**About HANA FILMS**" — a paragraph that is entirely bold
+    const aboutIdx = paras.findIndex(p => /^\*\*[^*]+\*\*$/.test(p.trim()));
+    const bodyParas = aboutIdx >= 0 ? paras.slice(0, aboutIdx) : paras;
+    const aboutLabel = aboutIdx >= 0 ? paras[aboutIdx].replace(/\*\*/g, '') : null;
+    const aboutParas = aboutIdx >= 0 ? paras.slice(aboutIdx + 1) : [];
+
+    const cleanTitle = eaveSec.title.replace('{eave}', '').trim();
+    const setEl = (sel, html, asText) => {
+      const el = document.querySelector(sel);
+      if (!el) return;
+      if (asText) el.textContent = html; else el.innerHTML = html;
+    };
+    setEl('#a4-eave-page .eave-doc-title', cleanTitle, true);
+    setEl('#a4-eave-page .eave-paras',
+      bodyParas.map(p => `<p>${parseInline(p)}</p>`).join(''));
+    if (aboutLabel) {
+      setEl('#a4-eave-page .eave-about',
+        `<p class="eave-about-label">${aboutLabel}</p>` +
+        aboutParas.map(p => `<p>${parseInline(p)}</p>`).join(''));
+    }
+    // Populate letterhead and footer from parsed meta / DOM
+    setEl('#a4-eave-page .eave-lh-name', name, true);
+    setEl('#a4-eave-page .eave-lh-subtitle', meta.subtitle || '', true);
+    setEl('#a4-eave-page .eave-footer-email', meta.email || '', true);
+    setEl('#a4-eave-page .eave-footer-location', meta.location || '', true);
+  }
+
   // ── Set name ──
   document.getElementById('cv-name').textContent = name;
   document.title = name + (meta.subtitle ? ' — ' + meta.subtitle : '');
 
   const footerRight = [];
-  if (meta.privacy) footerRight.push(`<a href="${meta.privacy}">Privacy Policy</a>`);
-  if (meta.location) footerRight.push(`<span class="footer-plain">${meta.location}</span>`);
-  footerRight.push(`<span class="footer-plain">© ${new Date().getFullYear()} ${name}. All rights reserved.</span>`);
-  footerRight.push(`<span class="footer-actions screen-only" id="footer-actions">
+  if (meta.privacy) footerRight.push(`<a class="footer-privacy" href="${meta.privacy}">Privacy Policy</a>`);
+  if (meta.location) footerRight.push(`<span class="footer-location footer-plain">${meta.location}</span>`);
+  footerRight.push(`<span class="footer-copyright footer-plain">© ${new Date().getFullYear()} ${name}. All rights reserved.</span>`);
+  footerRight.push(`<span class="footer-actions" id="footer-actions">
     <button class="footer-btn footer-icon-btn" id="btn-export" type="button" title="Export PDF" aria-label="Export PDF">
       <svg class="footer-icon" viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
         <rect x="2.5" y="3.5" width="6.5" height="9" rx="0.5" stroke="currentColor" stroke-width="1.15" fill="none"/>
@@ -952,6 +1013,55 @@ function isA4Mode() {
   return document.documentElement.classList.contains('a4-mode');
 }
 
+function isOnePageMode() {
+  return document.documentElement.classList.contains('a4-one-page');
+}
+
+function isEaveMode() {
+  return document.documentElement.classList.contains('a4-eave');
+}
+
+function setOnePageMode(on) {
+  var html = document.documentElement;
+  var btn = document.getElementById('btn-one-page');
+  if (on) {
+    html.classList.add('a4-one-page');
+    if (btn) { btn.textContent = '2 pg'; btn.title = 'Switch to two-page layout'; }
+  } else {
+    html.classList.remove('a4-one-page');
+    if (btn) { btn.textContent = '1 pg'; btn.title = 'Switch to one-page layout'; }
+  }
+  if (isA4Mode()) {
+    unmountA4Content();
+    mountA4Content();
+    preparePrintLayout();
+  }
+}
+
+function setEaveMode(on) {
+  var html = document.documentElement;
+  var btn = document.getElementById('btn-eave');
+  var eavePage = document.getElementById('a4-eave-page');
+  if (on) {
+    html.classList.add('a4-eave');
+    if (btn) btn.classList.add('active');
+    if (eavePage) eavePage.hidden = false;
+    // EAVE always uses the one-page layout for page 1
+    html.classList.add('a4-one-page');
+    var onePgBtn = document.getElementById('btn-one-page');
+    if (onePgBtn) { onePgBtn.textContent = '2 pg'; onePgBtn.title = 'Switch to two-page layout'; }
+  } else {
+    html.classList.remove('a4-eave');
+    if (btn) btn.classList.remove('active');
+    if (eavePage) eavePage.hidden = true;
+  }
+  if (isA4Mode()) {
+    unmountA4Content();
+    mountA4Content();
+    preparePrintLayout();
+  }
+}
+
 function activeNavBar() {
   return document.getElementById('toolbar');
 }
@@ -959,17 +1069,25 @@ function activeNavBar() {
 function applyWorkScale(pct) {
   var scale = Math.max(0.5, Math.min(1, (pct || 100) / 100));
   document.documentElement.style.setProperty('--a4-work-scale', String(scale));
+  var page1 = document.getElementById('a4-page-1');
   var page2 = document.getElementById('a4-page-2');
-  if (page2) page2.style.setProperty('--a4-work-scale', String(scale));
+  var eavePg = document.getElementById('a4-eave-page');
+  if (isOnePageMode()) {
+    if (page1)  page1.style.setProperty('--a4-work-scale', String(scale));
+  } else {
+    if (page1)  page1.style.setProperty('--a4-work-scale', String(scale));
+    if (page2)  page2.style.setProperty('--a4-work-scale', String(scale));
+  }
+  if (eavePg) eavePg.style.setProperty('--a4-work-scale', String(scale));
 }
 
 function autoFitWorkScale() {
-  var page2 = document.getElementById('a4-page-2');
-  if (!page2) return;
+  var target = document.getElementById(isOnePageMode() ? 'a4-page-1' : 'a4-page-2');
+  if (!target) return;
   applyWorkScale(100);
-  void page2.offsetHeight;
-  if (page2.scrollHeight > PRINT_PAGE_H_PX) {
-    applyWorkScale(Math.min(100, Math.round((PRINT_PAGE_H_PX / page2.scrollHeight) * 100)));
+  void target.offsetHeight;
+  if (target.scrollHeight > PRINT_PAGE_H_PX) {
+    applyWorkScale(Math.min(100, Math.round((PRINT_PAGE_H_PX / target.scrollHeight) * 100)));
   }
 }
 
@@ -995,29 +1113,46 @@ function updateA4ViewportScale() {
 }
 
 function mountA4Content() {
-  var hero = document.getElementById('hero');
-  var work = document.getElementById('print-work');
-  var page1 = document.getElementById('a4-page-1');
-  var page2 = document.getElementById('a4-page-2');
+  var hero   = document.getElementById('hero');
+  var work   = document.getElementById('print-work');
+  var footer = document.getElementById('cv-footer');
+  var page1  = document.getElementById('a4-page-1');
+  var page2  = document.getElementById('a4-page-2');
   if (!hero || !work || !page1 || !page2) return;
   if (!a4Anchors.hero) {
-    a4Anchors.hero = { parent: hero.parentNode, next: hero.nextSibling };
-    a4Anchors.work = { parent: work.parentNode, next: work.nextSibling };
+    a4Anchors.hero   = { parent: hero.parentNode,   next: hero.nextSibling };
+    a4Anchors.work   = { parent: work.parentNode,   next: work.nextSibling };
+    a4Anchors.footer = footer ? { parent: footer.parentNode, next: footer.nextSibling } : null;
   }
-  page1.appendChild(hero);
-  page2.appendChild(work);
+  if (isOnePageMode()) {
+    page1.appendChild(hero);
+    page1.appendChild(work);
+    if (footer) page1.appendChild(footer); // footer pinned as last child of page
+    page2.hidden = true;
+  } else {
+    page1.appendChild(hero);
+    page2.appendChild(work);
+    if (footer) page2.appendChild(footer); // footer pinned as last child of page
+    page2.hidden = false;
+  }
 }
 
 function unmountA4Content() {
-  var hero = document.getElementById('hero');
-  var work = document.getElementById('print-work');
+  var hero   = document.getElementById('hero');
+  var work   = document.getElementById('print-work');
+  var footer = document.getElementById('cv-footer');
   if (!hero || !work || !a4Anchors.hero || !a4Anchors.work) return;
   var hA = a4Anchors.hero;
   var wA = a4Anchors.work;
+  var fA = a4Anchors.footer;
   if (hA.next) hA.parent.insertBefore(hero, hA.next);
   else hA.parent.appendChild(hero);
   if (wA.next) wA.parent.insertBefore(work, wA.next);
   else wA.parent.appendChild(work);
+  if (footer && fA) {
+    if (fA.next) fA.parent.insertBefore(footer, fA.next);
+    else fA.parent.appendChild(footer);
+  }
 }
 
 function syncExportNav(on) {
@@ -1046,6 +1181,20 @@ function setA4Mode(on) {
     window.scrollTo(0, 0);
   } else {
     html.classList.remove('a4-mode');
+    html.classList.remove('a4-one-page');
+    html.classList.remove('a4-eave');
+    var onePgBtn = document.getElementById('btn-one-page');
+    if (onePgBtn) { onePgBtn.textContent = '1 pg'; onePgBtn.title = 'Switch to one-page layout'; }
+    var eaveBtn = document.getElementById('btn-eave');
+    if (eaveBtn) eaveBtn.classList.remove('active');
+    var eavePage = document.getElementById('a4-eave-page');
+    if (eavePage) eavePage.hidden = true;
+    var page1off  = document.getElementById('a4-page-1');
+    var page2off  = document.getElementById('a4-page-2');
+    var eaveOff   = document.getElementById('a4-eave-page');
+    if (page1off) page1off.style.removeProperty('--a4-work-scale');
+    if (eaveOff)  eaveOff.style.removeProperty('--a4-work-scale');
+    if (page2off) page2off.hidden = false;
     syncExportNav(false);
     if (stage) {
       stage.setAttribute('hidden', '');
@@ -1053,8 +1202,7 @@ function setA4Mode(on) {
     }
     var pages = document.getElementById('a4-pages');
     if (pages) pages.style.zoom = '';
-    var page2 = document.getElementById('a4-page-2');
-    if (page2) page2.style.removeProperty('--a4-work-scale');
+    if (page2off) page2off.style.removeProperty('--a4-work-scale');
     document.documentElement.style.removeProperty('--a4-work-scale');
     if (footerExport) footerExport.hidden = false;
     if (footerExportActions) footerExportActions.hidden = true;
@@ -1081,6 +1229,8 @@ function initA4Controls() {
     if (e.target.closest('#btn-export')) { enterExportMode(); return; }
     if (e.target.closest('#btn-print')) { exportA4(); return; }
     if (e.target.closest('#btn-nav-back')) { setA4Mode(false); return; }
+    if (e.target.closest('#btn-one-page')) { setOnePageMode(!isOnePageMode()); return; }
+    if (e.target.closest('#btn-eave')) { setEaveMode(!isEaveMode()); return; }
   });
   window.addEventListener('resize', function() {
     if (!isA4Mode()) return;

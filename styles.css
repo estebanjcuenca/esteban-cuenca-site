@@ -128,8 +128,17 @@ a:hover { text-decoration: underline; }
   position: relative;
   z-index: 2;
 }
-#toolbar-export { margin-left: auto; }
+#toolbar-export { margin-left: auto; gap: 8px; }
 #btn-nav-back { color: var(--ink); }
+#btn-one-page { opacity: 0.7; }
+#btn-one-page:hover { opacity: 1; text-decoration: underline; }
+html.a4-one-page #btn-one-page { opacity: 1; background: var(--ink); color: var(--bg); border-color: var(--ink); }
+#btn-eave { opacity: 0.7; }
+#btn-eave:hover { opacity: 1; text-decoration: underline; }
+#btn-eave.active { opacity: 1; background: var(--ink); color: var(--bg); border-color: var(--ink); }
+/* EAVE page is invisible unless EAVE print mode is active */
+#a4-eave-page { display: none !important; }
+html.a4-eave.a4-mode #a4-eave-page { display: flex !important; }
 .toolbar-sound {
   display: flex;
   align-items: center;
@@ -1076,6 +1085,11 @@ html.sound-loop .track-grid {
 }
 .dot-done { background: var(--ink); }
 .dot-wip  { border: 1px solid var(--mid); }
+
+/* Awards marked {wip}: visible on site, hidden in any print/export view */
+.award-wip { color: var(--mid); }
+html.a4-mode .award-wip { display: none !important; }
+@media print { .award-wip { display: none !important; } }
 
 /* Entity title + sub */
 .ent-title {

@@ -1,19 +1,21 @@
 /* eslint-disable no-var */
 window.ECAudio = window.ECAudio || {};
 
-var BEAT_LAYER_COUNT = 6;
+var BEAT_LAYER_COUNT = 8;
 var DRUM_PRESET_IDS = ['kick', 'hat', 'clap'];
-var SYNTH_LAYER_PRESETS = ['bass', 'bright', 'minimal'];
-var LANE_DEFAULT_PRESETS = ['kick', 'hat', 'bass', 'clap', 'bright', 'minimal'];
+var SYNTH_LAYER_PRESETS = ['bass', 'bright', 'minimal', 'synth', 'arpeggio'];
+var LANE_DEFAULT_PRESETS = ['kick', 'hat', 'bass', 'clap', 'bright', 'minimal', 'synth', 'arpeggio'];
 var LANE_DESCRIPTIONS = [
   'Kick machine — punch drum',
   '909 hat — closed/open by velocity',
   'Synth bass — ↕ pitch · mono sub',
   'Layered clap — snap & room',
   'Dry stab lead — ↕ melody · ↔ tone',
-  'Soft texture — ↕ melody · warm tail'
+  'Soft texture — ↕ melody · warm tail',
+  'Analog synth — ↕ melody · filter sweep',
+  'Step arpeggio — ↕ root · cycles scale tones'
 ];
-var PRESET_CYCLE = ['kick', 'hat', 'bass', 'clap', 'bright', 'minimal'];
+var PRESET_CYCLE = ['kick', 'hat', 'bass', 'clap', 'bright', 'minimal', 'synth', 'arpeggio'];
 
 function isDrumPreset(id) {
   return DRUM_PRESET_IDS.indexOf(id) >= 0;
@@ -39,7 +41,9 @@ function defaultPresetForLane(rowIndex) {
 
 function presetsForLane(rowIndex) {
   var def = defaultPresetForLane(rowIndex);
-  if (def === 'bright' || def === 'minimal') return ['bright', 'minimal'];
+  if (def === 'bright' || def === 'minimal' || def === 'synth' || def === 'arpeggio') {
+    return ['bright', 'minimal', 'synth', 'arpeggio'];
+  }
   return [def];
 }
 
@@ -57,7 +61,7 @@ function nextPresetInCycle(presetId, rowIndex) {
 }
 
 function laneLabel(rowIndex) {
-  var labels = ['Kick', 'Hat', 'Bass', 'Clap', 'Lead', 'Soft'];
+  var labels = ['Kick', 'Hat', 'Bass', 'Clap', 'Lead', 'Soft', 'Synth', 'Arp'];
   var i = rowIndex != null ? (rowIndex | 0) : 0;
   if (i < 0 || i >= BEAT_LAYER_COUNT) return '';
   return labels[i];
@@ -71,7 +75,7 @@ function laneDescription(rowIndex) {
 
 function isMelodicLane(rowIndex) {
   var p = defaultPresetForLane(rowIndex);
-  return p === 'bass' || p === 'bright' || p === 'minimal';
+  return p === 'bass' || p === 'bright' || p === 'minimal' || p === 'synth' || p === 'arpeggio';
 }
 
 function isActiveBeatLane(rowIndex) {

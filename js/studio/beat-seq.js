@@ -30,7 +30,7 @@ function peerMin(marker) {
     ? ECAudio.BeatInfluence.peerMinCoupling(marker) : 0.1;
 }
 
-var MELODIC_TYPES = { bass: 1, bright: 1, minimal: 1 };
+var MELODIC_TYPES = { bass: 1, bright: 1, minimal: 1, synth: 1, arpeggio: 1 };
 var PERC_TYPES = { kick: 1, hat: 1, clap: 1 };
 
 function isMelodicType(type) {
@@ -116,7 +116,9 @@ var ROLE_CORE = {
   clap: [4, 12],
   bass: [0, 8],
   bright: [0, 8],
-  minimal: [0, 8]
+  minimal: [0, 8],
+  synth: [0, 8],
+  arpeggio: [0, 4, 8, 12]
 };
 
 var ROLE_GROOVE = {
@@ -125,7 +127,9 @@ var ROLE_GROOVE = {
   clap: [8, 0],
   bass: [4, 12, 6, 14, 2],
   bright: [4, 12, 2, 6, 10, 14],
-  minimal: [3, 11, 6, 14]
+  minimal: [3, 11, 6, 14],
+  synth: [4, 12, 2, 10, 6, 14],
+  arpeggio: [1, 3, 5, 7, 9, 11, 13, 15, 2, 6, 10, 14]
 };
 
 function applyRoleTemplate(pat, type, anchor, strength, densityBias, modeOverride) {

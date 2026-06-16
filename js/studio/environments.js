@@ -3,12 +3,13 @@
 window.ECAudio = window.ECAudio || {};
 
 var ENV_STORE_KEY = 'ec-beat-envs';
-var ELEMENT_TYPES = ['kick', 'hat', 'clap', 'bass', 'bright', 'minimal'];
+var ELEMENT_TYPES = ['kick', 'hat', 'clap', 'bass', 'bright', 'minimal', 'synth', 'arpeggio'];
 var ELEMENT_LABELS = {
-  kick: 'Kick', hat: 'Hat', clap: 'Clap', bass: 'Bass', bright: 'Lead', minimal: 'Soft'
+  kick: 'Kick', hat: 'Hat', clap: 'Clap', bass: 'Bass', bright: 'Lead', minimal: 'Soft',
+  synth: 'Synth', arpeggio: 'Arp'
 };
 var ENV_PITCH_ROW = {
-  kick: 0, clap: 0, bass: 1, hat: 3, bright: 2, minimal: 2
+  kick: 0, clap: 0, bass: 1, hat: 3, bright: 2, minimal: 2, synth: 2, arpeggio: 2
 };
 var ENV_Y_HINT = {
   kick: { min: 0.04, max: 0.42, label: 'low' },
@@ -16,7 +17,9 @@ var ENV_Y_HINT = {
   bass: { min: 0.08, max: 0.62, label: 'low-mid' },
   hat: { min: 0.55, max: 0.96, label: 'high' },
   bright: { min: 0.25, max: 0.92, label: 'mid-high' },
-  minimal: { min: 0.18, max: 0.78, label: 'warm' }
+  minimal: { min: 0.18, max: 0.78, label: 'warm' },
+  synth: { min: 0.2, max: 0.85, label: 'mid' },
+  arpeggio: { min: 0.3, max: 0.9, label: 'high' }
 };
 
 var ENV_INFLUENCE_DEFAULTS = {
@@ -350,7 +353,7 @@ function previewEnvSound(envId) {
     presetId: env.type,
     secId: ECAudio.BEAT_STUDIO_SEC_ID || 'beat-studio',
     normX: 0.5,
-    normY: env.type === 'bass' ? 0.32 : (env.type === 'bright' ? 0.62 : 0.5),
+    normY: env.type === 'bass' ? 0.32 : (env.type === 'bright' ? 0.62 : (env.type === 'arpeggio' ? 0.58 : 0.5)),
     normZ: 0.55,
     step: 0,
     rowIndex: row,

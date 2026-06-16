@@ -34,7 +34,7 @@ function isMelodicMarker(m) {
     return ECAudio.MarkerDrums.isSynthLayer(m.presetId);
   }
   var t = m.presetId || (m.envId ? m.envId.replace(/^env-/, '') : '');
-  return t === 'bass' || t === 'bright' || t === 'minimal';
+  return t === 'bass' || t === 'bright' || t === 'minimal' || t === 'synth' || t === 'arpeggio';
 }
 
 function consonantMidi(a, b) {

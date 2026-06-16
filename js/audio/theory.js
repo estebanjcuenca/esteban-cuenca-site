@@ -162,7 +162,21 @@ function markerUsesSynthVoice(marker) {
   if (!marker || !marker.presetId) return true;
   return ECAudio.MarkerDrums && ECAudio.MarkerDrums.isSynthLayer
     ? ECAudio.MarkerDrums.isSynthLayer(marker.presetId)
-    : (marker.presetId === 'bass' || marker.presetId === 'bright' || marker.presetId === 'minimal');
+    : (marker.presetId === 'bass' || marker.presetId === 'bright' || marker.presetId === 'minimal'
+      || marker.presetId === 'synth' || marker.presetId === 'arpeggio');
+}
+
+function markerMachineType(marker) {
+  if (ECAudio.Machines && ECAudio.Machines.machineType) {
+    return ECAudio.Machines.machineType(marker);
+  }
+  if (marker && marker.presetId) return marker.presetId;
+  if (marker && marker.envId) return marker.envId.replace(/^env-/, '');
+  return null;
+}
+
+function markerUsesArpeggio(marker) {
+  return markerMachineType(marker) === 'arpeggio';
 }
 
 function markerPitchRow(marker) {
@@ -256,12 +270,20 @@ function markerBeatStepCore(marker, globalStep) {
     base = browsePadPitch(rowIndex, normY);
   }
 
-  if (marker.envId && ECAudio.Markers && ECAudio.Markers.getMarkerParam) {
-    var det = ECAudio.Markers.getMarkerParam(marker, 'detune');
-    if (det) freq = Math.max(40, freq * Math.pow(2, det / 1200));
+  if (markerUsesArpeggio(marker)) {
+    var arpIdx = marker.voice && marker.voice.arpStep != null ? marker.voice.arpStep : g;
+    var secId = marker.secId || ECAudio.BEAT_STUDIO_SEC_ID || 'beat-studio';
+    var arpData = zoneArpStep(secId, arpIdx, toneX, normY, rowIndex, { pattern: BEAT_ARP_PATTERN });
+    freq = Math.max(40, arpData.freq * pitchMul);
+    base = arpData.base;
   } else if (markerUsesSynthVoice(marker)) {
     var tone = kaossTone(toneX, normY);
     freq = Math.max(40, freq * (0.9 + tone.filterHz / 14000));
+  }
+
+  if (marker.envId && ECAudio.Markers && ECAudio.Markers.getMarkerParam) {
+    var det = ECAudio.Markers.getMarkerParam(marker, 'detune');
+    if (det) freq = Math.max(40, freq * Math.pow(2, det / 1200));
   }
 
   var seqVel = 1;
@@ -336,6 +358,8 @@ var ARP_PATTERNS = {
   minor: [0, 2, 3, 2, 0, 3, 2, 0],
   pent:  [0, 1, 2, 1, 0, 2, 1, 0]
 };
+
+var BEAT_ARP_PATTERN = [0, 2, 4, 3, 2, 1, 3, 4, 2, 0, 1, 2, 4, 3, 1, 0];
 
 function zoneRegisterShift(normY) {
   if (normY <= 0.22) return -12;
@@ -482,10 +506,11 @@ function zonePitch(secId, normX, normY, rowIndex) {
 }
 
 
-function zoneArpStep(secId, step, normX, normY, rowIndex) {
+function zoneArpStep(secId, step, normX, normY, rowIndex, opts) {
+  opts = opts || {};
   var scale = ECAudio.Theory.getScale(secId);
   var type = ECAudio.Theory.getScaleType(secId);
-  var pattern = ARP_PATTERNS[type] || ARP_PATTERNS.major;
+  var pattern = opts.pattern || ARP_PATTERNS[type] || ARP_PATTERNS.major;
   var jump = pattern[step % pattern.length];
   var anchor = rowIndex != null && isSoundBrowseMode()
     ? padDegreeIndex(keyNormFromRowNorm(normY))
@@ -637,5 +662,9 @@ ECAudio.Theory = {
   kaossPitch: kaossPitch, kaossRatio: kaossRatio, kaossTone: kaossTone,
   markerPolyLevel: markerPolyLevel, composeMarkerVoice: composeMarkerVoice,
   markerPitchRow: markerPitchRow, harmonizeBeatNormY: harmonizeBeatNormY,
-  normYForMidi: normYForMidi
+  normYForMidi: normYForMidi,
+  markerMachineType: markerMachineType,
+  markerUsesArpeggio: markerUsesArpeggio,
+  markerUsesSynthVoice: markerUsesSynthVoice,
+  beatArpPattern: function() { return BEAT_ARP_PATTERN; }
 };

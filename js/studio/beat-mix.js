@@ -8,10 +8,12 @@ var ROLE_BAND = {
   hat: { lo: 3200, hi: 18000, mask: 'air' },
   clap: { lo: 700, hi: 7000, mask: 'mid' },
   bright: { lo: 260, hi: 10000, mask: 'lead' },
-  minimal: { lo: 160, hi: 4800, mask: 'warm' }
+  minimal: { lo: 160, hi: 4800, mask: 'warm' },
+  synth: { lo: 200, hi: 9000, mask: 'synth' },
+  arpeggio: { lo: 280, hi: 7200, mask: 'arp' }
 };
 
-var ROLE_PRIO = { kick: 6, clap: 5, hat: 4, bass: 3, bright: 2, minimal: 2 };
+var ROLE_PRIO = { kick: 6, clap: 5, hat: 4, bass: 3, bright: 2, minimal: 2, synth: 2, arpeggio: 2 };
 var MUTE_GROUPS = [['hat', 'clap']];
 
 var _stepCache = { step: -1, hits: [], pairs: [] };
@@ -32,7 +34,7 @@ function markerType(marker) {
 
 function isMelodic(marker) {
   var t = markerType(marker);
-  return t === 'bass' || t === 'bright' || t === 'minimal';
+  return t === 'bass' || t === 'bright' || t === 'minimal' || t === 'synth' || t === 'arpeggio';
 }
 
 function isPerc(marker) {
@@ -509,7 +511,8 @@ function applyToStep(marker, globalStep, stepData) {
     var p = pairs[i];
     var wType = markerType(p.winner);
     var lType = markerType(marker);
-    if (wType === 'kick' && (lType === 'bass' || lType === 'bright' || lType === 'minimal')) {
+    if (wType === 'kick' && (lType === 'bass' || lType === 'bright' || lType === 'minimal'
+        || lType === 'synth' || lType === 'arpeggio')) {
       duck = Math.min(duck, 0.58 - p.coupling * 0.12);
       freq = nudgeFreq(marker, freq, 1);
     } else if (wType === 'bass' && lType === 'bright') {

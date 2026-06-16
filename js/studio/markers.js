@@ -113,7 +113,7 @@ function markerIsSynth(marker) {
 
 var VIZ_DENSITIES = ['2', '4', '8'];
 
-var PRESET_CLASS_IDS = ['kick', 'hat', 'bass', 'clap', 'bright', 'minimal'];
+var PRESET_CLASS_IDS = ['kick', 'hat', 'bass', 'clap', 'bright', 'minimal', 'synth', 'arpeggio'];
 
 function markerPresetId(marker) {
   if (ECAudio.BeatColors && ECAudio.BeatColors.markerPresetId) {

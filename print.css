@@ -7,7 +7,7 @@ html.a4-mode {
   --print-nav: 7pt;
   --print-bio: 9pt;
   --print-body: 6.5pt;
-  --print-footer: 7.5pt;
+  --print-footer: 6.5pt;
   --print-footer-gap: 4mm;
   --print-gap-sm: 4mm;
   --print-gap-md: 6mm;
@@ -115,12 +115,22 @@ html.a4-mode #cv-bio p {
 }
 html.a4-mode #cv-bio p:last-child { margin-bottom: 0; }
 
-/* Page 2: tables scale via slider */
-html.a4-mode #a4-page-2 {
+/* Page 2: tables scale via slider (page 1 in one-page mode) */
+html.a4-mode:not(.a4-one-page) #a4-page-1,
+html.a4-mode:not(.a4-one-page) #a4-page-2 {
+  zoom: var(--a4-work-scale, 1);
+}
+/* 2-page: page-2 is a flex column so its footer sits at the physical bottom */
+html.a4-mode:not(.a4-one-page) #a4-page-2 {
+  display: flex;
+  flex-direction: column;
+}
+html.a4-one-page.a4-mode #a4-page-1 {
   zoom: var(--a4-work-scale, 1);
 }
 html.a4-mode #print-work {
   display: block !important;
+  flex: 1; /* grows to fill page when parent is a flex column */
 }
 html.a4-mode #cv-sections {
   display: block !important;
@@ -184,7 +194,8 @@ html.a4-mode .cv-table th {
   color: var(--mid);
   font-weight: 400;
   text-align: left;
-  padding: 0 var(--print-cell-x) 2mm 0 !important;
+  vertical-align: middle !important;
+  padding: 1.8mm var(--print-cell-x) 1.8mm 0 !important;
   border-bottom: .25pt solid var(--line);
 }
 html.a4-mode .cv-table th:last-child { padding-right: 0 !important; }
@@ -219,28 +230,261 @@ html.a4-mode #cv-footer {
   justify-content: space-between !important;
   align-items: baseline !important;
   flex-wrap: nowrap !important;
-  gap: var(--print-footer-gap) !important;
+  gap: 0 !important;
   width: 100% !important;
   margin: var(--print-gap-lg) 0 0 !important;
-  padding: var(--print-gap-md) 0 0 !important;
-  border-top: .25pt solid var(--line) !important;
-  font-size: var(--print-footer);
-  letter-spacing: .02em;
-  color: var(--ink);
+  padding: var(--print-gap-sm) 0 0 !important;
+  border-top: .3pt solid var(--line) !important;
+  font-size: var(--print-footer) !important;
+  letter-spacing: .025em !important;
+  color: var(--mid) !important;
 }
-html.a4-mode .footer-left { flex-shrink: 0 !important; white-space: nowrap !important; }
+html.a4-mode .footer-left {
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+}
+html.a4-mode .footer-left a {
+  text-decoration: none !important;
+  color: inherit !important;
+}
 html.a4-mode .footer-right {
   display: flex !important;
   flex-shrink: 0 !important;
   flex-wrap: nowrap !important;
   align-items: baseline !important;
   justify-content: flex-end !important;
-  gap: var(--print-footer-gap) !important;
+  gap: 0 !important;
   margin-left: auto !important;
   white-space: nowrap !important;
 }
 html.a4-mode .footer-right > * { flex-shrink: 0 !important; }
+/* Print footer: show only email (left) and location (right) */
+html.a4-mode .footer-privacy,
+html.a4-mode .footer-copyright,
+html.a4-mode .footer-actions { display: none !important; }
 html.a4-mode #hero-scroll { display: none !important; }
+
+/* ── ONE-PAGE MODE ─────────────────────────────────────────────── */
+html.a4-one-page.a4-mode {
+  --print-name: 15pt;
+  --print-bio: 7pt;
+  --print-body: 5.2pt;
+  --print-cell-y: 1mm;
+  --print-cell-x: 2mm;
+  --print-gap-sm: 2mm;
+  --print-gap-md: 3mm;
+  --print-gap-lg: 3.5mm;
+  --print-gap-xl: 3mm;
+  --print-footer: 6.5pt;
+  --print-footer-gap: 3mm;
+}
+
+/* Single page — page is a flex column so footer sits at the very bottom */
+html.a4-one-page.a4-mode #a4-page-1 {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Single page — hero becomes a compact two-column strip (text + photo) */
+html.a4-one-page.a4-mode #hero {
+  display: grid !important;
+  grid-template-columns: 1fr 32% !important;
+  grid-template-rows: 1fr !important;
+  gap: var(--print-gap-md) !important;
+  align-items: start !important;
+  min-height: 0 !important;
+  height: auto !important;
+  padding: 0 0 6mm !important;
+  margin: 0 0 5mm !important;
+  border-bottom: .25pt solid var(--line) !important;
+}
+
+html.a4-one-page.a4-mode #hero-text {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  align-self: stretch !important;
+  width: auto !important;
+  height: auto !important;
+  padding: 0 !important;
+}
+/* Bio floats to bottom of text column, aligning with base of photo */
+html.a4-one-page.a4-mode #cv-subtitle {
+  margin-bottom: 0 !important;
+}
+html.a4-one-page.a4-mode #cv-bio {
+  margin-top: auto !important;
+}
+
+/* Photo: smaller column, portrait crop */
+html.a4-one-page.a4-mode #hero-photo {
+  display: flex !important;
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  align-items: flex-start !important;
+  justify-content: flex-end !important;
+  position: static !important;
+  top: auto !important;
+  order: unset !important;
+  width: 100% !important;
+  height: 72mm !important;
+  max-height: 72mm !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+}
+
+html.a4-one-page.a4-mode #cv-photo {
+  display: block !important;
+  width: auto !important;
+  max-width: 100% !important;
+  height: 100% !important;
+  max-height: 72mm !important;
+  margin: 0 0 0 auto !important;
+  object-fit: cover !important;
+  object-position: top center !important;
+  filter: grayscale(100%) !important;
+}
+
+/* Full bio — all paragraphs, no clamp */
+html.a4-one-page.a4-mode #cv-bio p {
+  display: block !important;
+  overflow: visible !important;
+  -webkit-line-clamp: unset !important;
+  margin-bottom: .75em !important;
+}
+
+html.a4-one-page.a4-mode #cv-bio p:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* Work section: zero margin in one-page (flex: 1 is inherited from the global rule) */
+html.a4-one-page.a4-mode #print-work {
+  margin: 0 !important;
+}
+
+html.a4-one-page.a4-mode .cv-section {
+  margin-bottom: var(--print-gap-md) !important;
+}
+
+/* Drop Support column only — keep Festivals */
+html.a4-one-page.a4-mode .col-support {
+  display: none !important;
+}
+
+/* Redistribute freed Support width across the remaining columns */
+html.a4-one-page.a4-mode .col-entity    { width: 20% !important; }
+html.a4-one-page.a4-mode .col-role      { width: 11% !important; }
+html.a4-one-page.a4-mode .col-premiere  { width: 12% !important; }
+html.a4-one-page.a4-mode .col-festivals { width: 28% !important; }
+html.a4-one-page.a4-mode .col-awards    { width: 26% !important; }
+
+/* Tighter table rows */
+html.a4-one-page.a4-mode .cv-table {
+  line-height: 1.35;
+}
+
+/* Footer tighter */
+html.a4-one-page.a4-mode #cv-footer {
+  margin: var(--print-gap-md) 0 0 !important;
+  padding: var(--print-gap-sm) 0 0 !important;
+}
+
+/* ── END ONE-PAGE MODE ──────────────────────────────────────────── */
+
+/* ── EAVE MODE ──────────────────────────────────────────────────── */
+/* EAVE reuses the one-page layout for page-1; adds a second page   */
+/* with the motivation statement. Purely temporary.                  */
+
+html.a4-eave.a4-mode #a4-eave-page {
+  display: flex !important;
+  flex-direction: column !important;
+  zoom: var(--a4-work-scale, 1); /* matches page-1 scale exactly */
+}
+
+/* ── Letterhead: mirrors page-1 name + subtitle ── */
+html.a4-eave.a4-mode #a4-eave-page .eave-letterhead {
+  display: flex;
+  flex-direction: column;
+  gap: 2mm;
+  margin-bottom: 5mm;
+}
+html.a4-eave.a4-mode #a4-eave-page .eave-lh-name {
+  font-size: var(--print-name, 15pt);
+  font-weight: 400;
+  line-height: .93;
+  letter-spacing: -.03em;
+  color: var(--ink);
+}
+html.a4-eave.a4-mode #a4-eave-page .eave-lh-subtitle {
+  font-size: var(--print-nav, 7pt);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--mid);
+}
+
+html.a4-eave.a4-mode #a4-eave-page .eave-lh-rule {
+  border: none;
+  border-top: .3pt solid var(--line);
+  margin: 0 0 6mm;
+}
+
+/* ── Body: centered column, document title + paragraphs ── */
+html.a4-eave.a4-mode #a4-eave-page .eave-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  max-width: 165mm;
+  margin: 0 auto;
+  width: 100%;
+}
+html.a4-eave.a4-mode #a4-eave-page .eave-doc-title {
+  font-size: 11pt;
+  font-weight: 400;
+  letter-spacing: -.01em;
+  line-height: 1.25;
+  color: var(--ink);
+  margin: 0 0 5mm;
+}
+html.a4-eave.a4-mode #a4-eave-page .eave-paras p,
+html.a4-eave.a4-mode #a4-eave-page .eave-about p {
+  font-size: 8.5pt;
+  line-height: 1.52;
+  margin: 0 0 3.5mm;
+  color: var(--ink);
+}
+html.a4-eave.a4-mode #a4-eave-page .eave-paras p:last-child,
+html.a4-eave.a4-mode #a4-eave-page .eave-about p:last-child {
+  margin-bottom: 0;
+}
+html.a4-eave.a4-mode #a4-eave-page .eave-about {
+  margin-top: auto;
+  padding-top: 5mm;
+  border-top: .3pt solid var(--line);
+}
+html.a4-eave.a4-mode #a4-eave-page .eave-about-label {
+  font-size: 6.5pt !important;
+  letter-spacing: .1em !important;
+  text-transform: uppercase !important;
+  color: var(--mid) !important;
+  margin-bottom: 2.5mm !important;
+}
+
+/* ── Footer: same as page-1 ── */
+html.a4-eave.a4-mode #a4-eave-page .eave-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: 5mm;
+  padding-top: 3mm;
+  border-top: .3pt solid var(--line);
+  font-size: 6.5pt;
+  letter-spacing: .025em;
+  color: var(--mid);
+}
+
+/* ── END EAVE MODE ──────────────────────────────────────────────── */
 
 @page { size: A4 portrait; margin: 10mm; }
 
@@ -257,7 +501,9 @@ html.a4-mode #hero-scroll { display: none !important; }
   html.a4-mode #hover-panel,
   html.a4-mode #studio-panel,
   html.a4-mode #hero-scroll,
-  html.a4-mode .footer-actions {
+  html.a4-mode .footer-actions,
+  html.a4-mode .footer-privacy,
+  html.a4-mode .footer-copyright {
     display: none !important;
   }
 
@@ -268,8 +514,20 @@ html.a4-mode #hero-scroll { display: none !important; }
     padding: 0 !important;
     margin: 0 !important;
   }
-  html.a4-mode #a4-page-2 {
+  html.a4-mode:not(.a4-one-page) #a4-page-1,
+  html.a4-mode:not(.a4-one-page) #a4-page-2 {
     zoom: var(--a4-work-scale, 1) !important;
+  }
+  html.a4-mode:not(.a4-one-page) #a4-page-2 {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 277mm !important;
+  }
+  html.a4-one-page.a4-mode #a4-page-1 {
+    zoom: var(--a4-work-scale, 1) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 277mm !important;
   }
   html.a4-mode .a4-page {
     width: auto !important;
@@ -280,17 +538,40 @@ html.a4-mode #hero-scroll { display: none !important; }
     background: transparent !important;
   }
 
-  html.a4-mode #hero {
+  html.a4-mode:not(.a4-one-page) #hero {
     page-break-after: always !important;
     break-after: page !important;
     break-inside: avoid !important;
   }
-  html.a4-mode #print-work {
+  html.a4-mode:not(.a4-one-page) #print-work {
     page-break-before: always !important;
     break-before: page !important;
+  }
+  html.a4-one-page.a4-mode #hero {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+  html.a4-one-page.a4-mode #print-work {
+    page-break-before: avoid !important;
+    break-before: avoid !important;
   }
   html.a4-mode #cv-footer {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
+  }
+
+  /* EAVE: motivation page starts on a new sheet, scaled the same as page-1 */
+  html.a4-eave.a4-mode #a4-eave-page {
+    display: flex !important;
+    flex-direction: column !important;
+    zoom: var(--a4-work-scale, 1) !important;
+    page-break-before: always !important;
+    break-before: page !important;
+    width: auto !important;
+    min-height: 277mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
   }
 }

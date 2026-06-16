@@ -8,10 +8,12 @@ var PRESET_COLORS = {
   bass: { h: 268, s: 52, l: 42 },
   clap: { h: 38, s: 68, l: 54 },
   bright: { h: 88, s: 70, l: 52 },
-  minimal: { h: 215, s: 24, l: 56 }
+  minimal: { h: 215, s: 24, l: 56 },
+  synth: { h: 300, s: 58, l: 50 },
+  arpeggio: { h: 172, s: 62, l: 48 }
 };
 
-var PRESET_CLASS_IDS = ['kick', 'hat', 'bass', 'clap', 'bright', 'minimal'];
+var PRESET_CLASS_IDS = ['kick', 'hat', 'bass', 'clap', 'bright', 'minimal', 'synth', 'arpeggio'];
 var PERC_TYPES = { kick: 1, hat: 1, clap: 1 };
 
 var GOLD = { h: 42, s: 76, l: 56 };

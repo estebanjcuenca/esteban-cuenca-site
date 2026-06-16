@@ -236,6 +236,10 @@ html.dot-solo .sound-marker.is-soloed {
 .sl-preset-btn[data-preset="hat"].active { background: hsl(192 48% 38%); border-color: hsl(192 48% 38%); color: #fff; }
 .sl-preset-btn[data-preset="bass"].active { background: hsl(268 52% 42%); border-color: hsl(268 52% 42%); color: #fff; }
 .sl-preset-btn[data-preset="clap"].active { background: hsl(38 68% 44%); border-color: hsl(38 68% 44%); color: #fff; }
+.sl-preset-btn[data-env="synth"].active,
+.sl-preset-btn[data-preset="synth"].active { background: hsl(300 58% 44%); border-color: hsl(300 58% 44%); color: #fff; }
+.sl-preset-btn[data-env="arpeggio"].active,
+.sl-preset-btn[data-preset="arpeggio"].active { background: hsl(172 62% 38%); border-color: hsl(172 62% 38%); color: #fff; }
 
 #studio-panel.sl-dot-no-preset .sl-dot-synth-only { opacity: 0.45; pointer-events: none; }
 .sl-env-sound-panel { margin-bottom: 4px; }
@@ -442,6 +446,8 @@ html.beat-studio:not(.a4-mode) #beat-transport {
 .beat-env-btn[data-env="bass"].active { background: hsl(268 52% 42%); border-color: hsl(268 52% 42%); color: #fff; }
 .beat-env-btn[data-env="bright"].active { background: hsl(88 62% 40%); border-color: hsl(88 62% 40%); color: #fff; }
 .beat-env-btn[data-env="minimal"].active { background: hsl(215 28% 48%); border-color: hsl(215 28% 48%); color: #fff; }
+.beat-env-btn[data-env="synth"].active { background: hsl(300 58% 44%); border-color: hsl(300 58% 44%); color: #fff; }
+.beat-env-btn[data-env="arpeggio"].active { background: hsl(172 62% 38%); border-color: hsl(172 62% 38%); color: #fff; }
 .beat-env-btn-all.active {
   background: color-mix(in srgb, var(--ink) 88%, var(--bg));
   border-color: var(--ink);
@@ -514,6 +520,8 @@ html.beat-studio #btn-sound-mode {
 .sl-gravity-bass .sl-gravity-cell.on { background: color-mix(in srgb, hsl(268 52% 42%) 62%, var(--bg)); }
 .sl-gravity-bright .sl-gravity-cell.on { background: color-mix(in srgb, hsl(88 62% 40%) 62%, var(--bg)); }
 .sl-gravity-minimal .sl-gravity-cell.on { background: color-mix(in srgb, hsl(215 28% 48%) 62%, var(--bg)); }
+.sl-gravity-synth .sl-gravity-cell.on { background: color-mix(in srgb, hsl(300 58% 44%) 62%, var(--bg)); }
+.sl-gravity-arpeggio .sl-gravity-cell.on { background: color-mix(in srgb, hsl(172 62% 38%) 62%, var(--bg)); }
 .sl-env-sound-grid { margin-bottom: 4px; }
 .sl-env-actions { margin-bottom: var(--space-sm); }
 #studio-panel.sl-no-dot-selected .sl-gravity-controls,
@@ -699,6 +707,8 @@ html.beat-studio:not(.a4-mode) .sound-marker.is-env-active.is-selected {
 .beat-pad.beat-pad-env-bass { box-shadow: inset 0 0 0 1px color-mix(in srgb, hsl(268 52% 42%) 35%, transparent); }
 .beat-pad.beat-pad-env-bright { box-shadow: inset 0 0 0 1px color-mix(in srgb, hsl(88 62% 40%) 35%, transparent); }
 .beat-pad.beat-pad-env-minimal { box-shadow: inset 0 0 0 1px color-mix(in srgb, hsl(215 28% 48%) 35%, transparent); }
+.beat-pad.beat-pad-env-synth { box-shadow: inset 0 0 0 1px color-mix(in srgb, hsl(300 58% 44%) 35%, transparent); }
+.beat-pad.beat-pad-env-arpeggio { box-shadow: inset 0 0 0 1px color-mix(in srgb, hsl(172 62% 38%) 35%, transparent); }
 
 .sl-dot-subtitle {
   margin: -4px 0 8px;

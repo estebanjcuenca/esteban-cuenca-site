@@ -48,7 +48,8 @@ function markerPhaseFromMarker(m) {
 function envIsMelodic(envId) {
   if (!envId) return false;
   var type = envId.replace(/^env-/, '');
-  return type === 'bass' || type === 'bright' || type === 'minimal';
+  return type === 'bass' || type === 'bright' || type === 'minimal'
+    || type === 'synth' || type === 'arpeggio';
 }
 
 function envIsPercussion(envId) {

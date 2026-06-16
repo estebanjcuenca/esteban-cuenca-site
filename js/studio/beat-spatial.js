@@ -5,7 +5,7 @@ window.ECAudio = window.ECAudio || {};
 var POS_SCALE = { x: 9.2, y: 6.4, z: 9.8 };
 var HARM_INTERVALS = [0, 3, 4, 5, 7, -7, 12, -12, -5, -4, -3];
 var PHASE_NEAR = 0.85;
-var MELODIC_TYPES = { bass: 1, bright: 1, minimal: 1 };
+var MELODIC_TYPES = { bass: 1, bright: 1, minimal: 1, synth: 1, arpeggio: 1 };
 
 function beatMarkers() {
   var beatSec = ECAudio.BEAT_STUDIO_SEC_ID || 'beat-studio';

@@ -1,8 +1,8 @@
 /* eslint-disable no-var */
-// Beat studio — one environment = one machine (kick, hat, clap, bass, bright, minimal).
+// Beat studio — one environment = one machine (kick, hat, clap, bass, bright, minimal, synth, arpeggio).
 window.ECAudio = window.ECAudio || {};
 
-var MACHINE_TYPES = ['kick', 'hat', 'clap', 'bass', 'bright', 'minimal'];
+var MACHINE_TYPES = ['kick', 'hat', 'clap', 'bass', 'bright', 'minimal', 'synth', 'arpeggio'];
 
 var MACHINE_META = {
   kick: {
@@ -52,6 +52,22 @@ var MACHINE_META = {
     hint: 'Warm pad texture — slow attack · gentle space.',
     paramKeys: ['gain', 'attack', 'decay', 'wave', 'browseTone', 'browseHarmonics', 'browseFilterMin', 'browseFilterMax', 'browseFilterQ', 'browseSpace', 'browseLfoRate', 'browseLfoDepth'],
     labels: { browseTone: 'Warmth', decay: 'Tail' }
+  },
+  synth: {
+    label: 'Synth',
+    machine: 'Analog stack',
+    drum: false,
+    hint: 'Classic synth — saw stack · filter sweep · ↕ melody.',
+    paramKeys: ['gain', 'attack', 'decay', 'wave', 'browseTone', 'browseHarmonics', 'browseFilterMin', 'browseFilterMax', 'browseFilterQ', 'browseSubMix', 'browseSpace', 'browseLfoRate', 'browseLfoDepth', 'detune'],
+    labels: { browseHarmonics: 'Richness', browseTone: 'Cutoff', decay: 'Release', browseLfoRate: 'LFO rate' }
+  },
+  arpeggio: {
+    label: 'Arp',
+    machine: 'Step arpeggio',
+    drum: false,
+    hint: 'Scale arpeggio — cycles chord tones · fast plucks.',
+    paramKeys: ['gain', 'attack', 'decay', 'wave', 'browseTone', 'browseHarmonics', 'browseFilterMin', 'browseFilterMax', 'browseFilterQ', 'browseSpace', 'browseLfoRate', 'browseLfoDepth', 'detune'],
+    labels: { browseHarmonics: 'Brightness', browseTone: 'Register', decay: 'Pluck length', browseLfoRate: 'Sweep' }
   }
 };
 
@@ -103,6 +119,22 @@ var MACHINE_DEFAULTS = {
     browseFilterMin: 280, browseFilterMax: 2200, browseFilterQ: 0.58,
     browseSubMix: 0.008, browseSpace: 0.1,
     browseLfoRate: 0.12, browseLfoDepth: 0.18, browseLfoTarget: 'filter', detune: 0
+  },
+  synth: {
+    pitchMul: 1,
+    wave: 'sawtooth', gain: 0.11, attack: 0.035, decay: 1.35,
+    browseTone: 0.55, browseHarmonics: 0.48, browseDrive: 0.28,
+    browseFilterMin: 180, browseFilterMax: 6400, browseFilterQ: 0.72,
+    browseSubMix: 0.04, browseSpace: 0.07,
+    browseLfoRate: 0.08, browseLfoDepth: 0.12, browseLfoTarget: 'filter', detune: 0
+  },
+  arpeggio: {
+    pitchMul: 1.02,
+    wave: 'square', gain: 0.09, attack: 0.004, decay: 0.42,
+    browseTone: 0.58, browseHarmonics: 0.4, browseDrive: 0.2,
+    browseFilterMin: 320, browseFilterMax: 4800, browseFilterQ: 0.68,
+    browseSubMix: 0, browseSpace: 0.09,
+    browseLfoRate: 0.14, browseLfoDepth: 0.16, browseLfoTarget: 'filter', detune: 2
   }
 };
 
@@ -185,6 +217,24 @@ function applySynthMachineMods(type, spec, mp, marker) {
     spec.space = Math.min(0.18, spec.space != null ? spec.space : 0.1);
     spec.beatPeak *= 0.88;
     spec.beatPunch *= 0.82;
+  } else if (type === 'synth') {
+    spec.beatAttack = Math.max(0.012, Math.min(0.08, atk));
+    spec.beatDecay = Math.max(0.65, Math.min(3.5, dec / Math.max(stepSec, 0.05)));
+    spec.beatPeak *= 1.02;
+    spec.beatPunch *= 0.95;
+    spec.space = Math.min(0.14, spec.space != null ? spec.space : 0.07);
+    if (spec.filterStartHz != null && spec.filterHz != null) {
+      spec.filterStartHz = Math.min(spec.filterHz * 1.2, spec.filterStartHz * 1.08);
+      spec.filterEndHz = Math.max(140, spec.filterHz * 0.68);
+    }
+  } else if (type === 'arpeggio') {
+    spec.lfoRate = mp.browseLfoRate != null ? mp.browseLfoRate : 0.14;
+    spec.lfoDepth = mp.browseLfoDepth != null ? mp.browseLfoDepth : 0.16;
+    spec.beatAttack = Math.max(0.002, Math.min(0.012, atk));
+    spec.beatDecay = Math.max(0.28, Math.min(1.4, dec / Math.max(stepSec * 0.85, 0.03)));
+    spec.beatPeak *= 0.95;
+    spec.beatPunch *= 0.9;
+    spec.space = Math.min(0.12, spec.space != null ? spec.space : 0.09);
   }
   return spec;
 }
@@ -214,6 +264,12 @@ function composeSpec(marker) {
     }
     if (type === 'minimal' && spec.beatDecay != null) {
       spec.beatDecay = Math.min(8, spec.beatDecay * (0.95 + zInf * 0.1));
+    }
+    if (type === 'synth' && spec.beatDecay != null) {
+      spec.beatDecay = Math.min(6, spec.beatDecay * (0.94 + zInf * 0.08));
+    }
+    if (type === 'arpeggio' && spec.beatDecay != null) {
+      spec.beatDecay = Math.max(0.22, Math.min(1.6, spec.beatDecay * (0.9 + zInf * 0.06)));
     }
   }
   if (ECAudio.BeatSpatial && ECAudio.BeatSpatial.modulateSpec) {
@@ -267,7 +323,7 @@ function preview(type, envParams) {
     return;
   }
   stub.normX = 0.5;
-  stub.normY = type === 'bright' ? 0.62 : 0.5;
+  stub.normY = type === 'bright' ? 0.62 : (type === 'arpeggio' ? 0.58 : 0.5);
   stub.rowIndex = row;
   stub.laneIndex = row;
   if (ECAudio.Browse && ECAudio.Browse.previewMarkerSound) {
@@ -352,6 +408,9 @@ ECAudio.Machines = {
   },
   isSynth: function(type) {
     return !!(MACHINE_META[type] && !MACHINE_META[type].drum);
+  },
+  isArpeggio: function(type) {
+    return type === 'arpeggio';
   }
 };
 
