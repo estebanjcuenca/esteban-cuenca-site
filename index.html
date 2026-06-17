@@ -46,7 +46,7 @@
   }
 }
 </script>
-<script>if(localStorage.getItem('ec-dark')==='1')document.documentElement.classList.add('dark')</script>
+<script>if(localStorage.getItem('ec-dark')!=='0')document.documentElement.classList.add('dark')</script>
 <script>document.documentElement.classList.add('browse-mode')</script>
 <link rel="stylesheet" href="fonts.css" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="fonts.css"></noscript>
@@ -587,7 +587,7 @@
 // Site script (CV render, A4 export, dark mode). Audio: js/audio/
 
 // ── Preferences (run before DOMContentLoaded to avoid flash) ──
-if (localStorage.getItem('ec-dark') === '1')
+if (localStorage.getItem('ec-dark') !== '0')
   document.documentElement.classList.add('dark');
 
 const _hiddenOnLoad = new Set(
