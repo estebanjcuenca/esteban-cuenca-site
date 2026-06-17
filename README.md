@@ -77,6 +77,8 @@ python3 -m http.server      # http://localhost:8000
 
 ## Road map — Ableton / Max for Live
 
+> Full detail in [`BEATSTUDIO.md`](BEATSTUDIO.md) — development log, architecture decisions, stage-by-stage roadmap, controller plan, and commercial strategy.
+
 The spatial beat model is designed to be host-independent. The plan below describes how to move from web-only to a Max for Live device — either as a MIDI sequencer that drives Live's instruments, or eventually as a self-contained audio device.
 
 ### What transfers vs. what must be rebuilt
