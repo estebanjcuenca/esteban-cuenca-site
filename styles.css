@@ -1330,6 +1330,30 @@ html.nav-simple-page .legal {
     margin-bottom: clamp(24px, 5vw, 40px);
   }
   .hide-mobile { display: none; }
+
+  /* Footer — stack vertically, left-aligned */
+  #cv-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .footer-right {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    margin-left: 0;
+    gap: 6px;
+    text-align: left;
+  }
+  .footer-actions {
+    margin-top: 2px;
+  }
+}
+
+/* Table — horizontal scroll in landscape */
+@media screen and (max-width: 900px) and (orientation: landscape) {
+  .cv-table { min-width: 700px; }
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 }
 
 /* Print page-2 wrapper — block on screen so CV sections layout reliably */
