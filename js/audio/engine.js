@@ -203,11 +203,25 @@ function triggerBrowseSidechain(t, amount, sourceType, coupling) {
   }
 }
 
+function _playSilentBuffer(ctx) {
+  var buf = ctx.createBuffer(1, 1, 22050);
+  var src = ctx.createBufferSource();
+  src.buffer = buf;
+  src.connect(ctx.destination);
+  src.start(0);
+}
+
+var _audioUnlocked = false;
 function bootAudio() {
   ECAudio.Engine.boot();
-  if (!ECAudio.State.ctx) return Promise.resolve();
-  if (ECAudio.State.ctx.state === 'suspended') return ECAudio.State.ctx.resume();
-  return Promise.resolve();
+  var ctx = ECAudio.State.ctx;
+  if (!ctx) return Promise.resolve();
+  var p = ctx.state === 'suspended' ? ctx.resume() : Promise.resolve();
+  if (!_audioUnlocked) {
+    _audioUnlocked = true;
+    p = p.then(function() { _playSilentBuffer(ctx); });
+  }
+  return p;
 }
 
 ECAudio.Engine = {

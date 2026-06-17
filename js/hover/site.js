@@ -104,6 +104,10 @@ function initHoverTracking() {
     }
   }, { passive: true, capture: true });
 
+  document.addEventListener('touchstart', function() {
+    unlockBrowseAudio();
+  }, { passive: true, once: false, capture: true });
+
   document.addEventListener('pointermove', function(e) {
     unlockBrowseAudio();
     trackPointer(e);
