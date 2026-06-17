@@ -230,6 +230,12 @@ html.beat-studio-loading .beat-studio-inner::after {
 body.hover-panel-open {
   overflow-x: hidden;
 }
+@media (min-width: 900px) {
+  body.hover-panel-open #print-work {
+    margin-right: min(400px, 38vw);
+    transition: margin-right .42s cubic-bezier(.22, 1, .32, 1);
+  }
+}
 #hero-text {
   padding: var(--space-xl) var(--pad-x) var(--space-lg);
   display: flex; flex-direction: column; justify-content: flex-end;
@@ -1381,29 +1387,49 @@ html.a4-mode #hover-panel { display: none !important; }
   position: fixed;
   top: var(--bar-h);
   right: 0;
-  left: 0;
-  max-height: calc(100vh - var(--bar-h));
+  bottom: 0;
+  width: min(400px, 92vw);
   z-index: 110;
   background: var(--bg);
-  border-bottom: .5px solid var(--line);
-  box-shadow: 0 8px 32px color-mix(in srgb, var(--ink) 8%, transparent);
+  border-left: .5px solid var(--line);
+  box-shadow: -8px 0 32px color-mix(in srgb, var(--ink) 8%, transparent);
   display: flex;
   flex-direction: column;
   font-family: var(--font);
-  transform: translateY(-8px);
-  opacity: 0;
+  transform: translateX(100%);
   visibility: hidden;
   pointer-events: none;
   transition:
-    transform .32s cubic-bezier(.22, 1, .32, 1),
-    opacity .32s cubic-bezier(.22, 1, .32, 1),
-    visibility .32s;
+    transform .44s cubic-bezier(.22, 1, .32, 1),
+    visibility .44s;
 }
 #hover-panel.open {
-  transform: translateY(0);
-  opacity: 1;
+  transform: translateX(0);
   visibility: visible;
   pointer-events: auto;
+}
+@media (max-width: 768px) {
+  #hover-panel {
+    top: var(--bar-h);
+    right: 0;
+    bottom: unset;
+    left: 0;
+    width: auto;
+    max-height: calc(100vh - var(--bar-h));
+    border-left: none;
+    border-bottom: .5px solid var(--line);
+    box-shadow: 0 8px 32px color-mix(in srgb, var(--ink) 8%, transparent);
+    transform: translateY(-8px);
+    opacity: 0;
+    transition:
+      transform .32s cubic-bezier(.22, 1, .32, 1),
+      opacity .32s cubic-bezier(.22, 1, .32, 1),
+      visibility .32s;
+  }
+  #hover-panel.open {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 .sl-panel-body {
   flex: 1;
