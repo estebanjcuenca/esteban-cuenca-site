@@ -51,6 +51,12 @@
 <link rel="stylesheet" href="fonts.css" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="fonts.css"></noscript>
 <link rel="stylesheet" href="styles.css">
+<script src="components/statusDot.js"></script>
+<script src="components/entityBlock.js"></script>
+<script src="components/paragraphBlock.js"></script>
+<script src="components/footerLink.js"></script>
+<script src="components/recordRow.js"></script>
+<script src="components/section.js"></script>
 </head>
 <body>
 
@@ -155,8 +161,7 @@ function formatCell(text) {
   if (m) {
     const title = m[1].trim();
     const sub   = m[2].trim();
-    return `<span class="ent-title">${parseInline(title)}</span>` +
-           (sub ? `<span class="ent-sub">${parseInline(sub)}</span>` : '');
+    return window.Components.entityBlock(title, sub);
   }
   return parseInline(text);
 }
@@ -186,7 +191,7 @@ function splitEntityCell(text, kind) {
   if (!m) return { entityHtml: formatCell(text), role: '', premiere: '' };
   const title = m[1].trim();
   const rest  = m[2].trim();
-  const titleHtml = `<span class="ent-title">${parseInline(title)}</span>`;
+  const titleHtml = window.Components.entityBlock(title);
 
   if (kind === 'company') {
     const parts = rest.split(/\s*·\s*/).filter(Boolean);
@@ -305,43 +310,7 @@ function buildTable(headers, rows) {
   out += '</tr></thead><tbody>';
 
   data.forEach(({ raw, html }) => {
-    out += '<tr>';
-    canon.forEach(col => {
-      const c = ` class="${col.cls}"`;
-      const label = col.label ? parseInline(col.label) : col.key;
-      const labelAttr = col.key === 'status' ? '' :
-        ` data-label="${label.replace(/"/g, '&quot;')}"`;
-
-      if (col.key === 'status') {
-        if (!raw.status) {
-          out += `<td class="${col.cls} col-status-empty"${labelAttr}></td>`;
-        } else {
-          const done = raw.status.toLowerCase() === 'done';
-          out += `<td${c}><span class="dot ${done ? 'dot-done' : 'dot-wip'}"></span></td>`;
-        }
-      } else if (col.key === 'entity') {
-        const content = html.entity || '';
-        out += `<td${c}${labelAttr}>${content}</td>`;
-      } else {
-        const val = raw[col.key] || '';
-        // "—"/"-" are used in content.md as an explicit placeholder for
-        // "nothing here" — treat them the same as a truly empty cell so
-        // the record layout collapses the block instead of showing a
-        // labeled row with just a dash in it.
-        const isPlaceholder = /^[-—]$/.test(val.trim());
-        if (col.key === 'awards' && val.includes('{wip}')) {
-          const sepIdx = val.indexOf('{wip}');
-          const main = val.slice(0, sepIdx).trim();
-          const wip  = val.slice(sepIdx + 5).trim();
-          const mainHtml = main ? parseInline(main) : '';
-          const wipHtml  = wip  ? `<span class="award-wip">${main ? ' · ' : ''}${parseInline(wip)}</span>` : '';
-          out += `<td${c}${labelAttr}>${mainHtml}${wipHtml}</td>`;
-        } else {
-          out += `<td${c}${labelAttr}>${val && !isPlaceholder ? parseInline(val) : ''}</td>`;
-        }
-      }
-    });
-    out += '</tr>';
+    out += window.Components.recordRow({ raw, html, canon });
   });
 
   out += '</tbody></table></div>';
@@ -468,11 +437,11 @@ async function render() {
   document.title = name + (meta.subtitle ? ' — ' + meta.subtitle : '');
 
   const footerRight = [];
-  if (meta.privacy) footerRight.push(`<a class="footer-privacy" href="${meta.privacy}">Privacy Policy</a>`);
-  if (meta.location) footerRight.push(`<span class="footer-location footer-plain">${meta.location}</span>`);
-  footerRight.push(`<span class="footer-copyright footer-plain">© ${new Date().getFullYear()} ${name}. All rights reserved.</span>`);
+  if (meta.privacy) footerRight.push(window.Components.footerLink({ anchorCls: 'footer-privacy', href: meta.privacy, text: 'Privacy Policy' }));
+  if (meta.location) footerRight.push(window.Components.footerLink({ wrapCls: 'footer-location footer-plain', text: meta.location }));
+  footerRight.push(window.Components.footerLink({ wrapCls: 'footer-copyright footer-plain', text: `© ${new Date().getFullYear()} ${name}. All rights reserved.` }));
   const footerLeft = meta.email
-    ? `<span class="footer-left"><a href="mailto:${meta.email}">${meta.email}</a></span>` : '';
+    ? window.Components.footerLink({ wrapCls: 'footer-left', href: `mailto:${meta.email}`, text: meta.email }) : '';
   const footerRightHtml = footerRight.length
     ? `<span class="footer-right">${footerRight.join('')}</span>` : '';
   document.getElementById('cv-footer').innerHTML = footerLeft + footerRightHtml;
@@ -489,21 +458,15 @@ async function render() {
   });
   if (para.length) bioParas.push(para.join(' '));
   document.getElementById('cv-bio').innerHTML =
-    bioParas.map(p => `<p>${parseInline(p)}</p>`).join('');
+    bioParas.map(p => window.Components.paragraphBlock(p)).join('');
 
   // ── Render sections ──
   document.getElementById('cv-sections').innerHTML = sections.map(sec => {
     const slug  = slugify(sec.title);
     const id    = `sec-${slug}`;
     const tbls  = sec.tables.map(t => buildTable(t.headers, t.rows)).join('');
-    const paras = sec.paras.map(p => `<p>${parseInline(p)}</p>`).join('');
-    return `<section class="cv-section visible" id="${id}">
-      <div class="sec-head">
-        <span class="sec-label">${parseInline(sec.title)}</span>
-        <button class="sec-toggle" onclick="toggleSection('${id}')">Hide</button>
-      </div>
-      <div class="sec-body"><div class="sec-body-inner">${tbls}${paras}</div></div>
-    </section>`;
+    const paras = sec.paras.map(p => window.Components.paragraphBlock(p)).join('');
+    return window.Components.section({ id, title: sec.title, bodyHtml: tbls + paras });
   }).join('');
 
   // ── Restore hidden sections ──

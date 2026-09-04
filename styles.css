@@ -19,6 +19,17 @@
   --space-lg: clamp(40px, 5vw, 80px);
   --space-md: clamp(20px, 3vw, 36px);
   --space-sm: clamp(16px, 2vw, 24px);
+
+  /* A4 preview palette — forced light/print look, independent of dark mode:
+     a printed page always renders on white paper with dark ink regardless
+     of the site's current theme. */
+  --a4-surround: #d5d1ca;
+  --a4-paper:    #fff;
+  --a4-ink:      #1A1714;
+  --a4-mid:      #8C8880;
+  --a4-line:     var(--a4-mid);
+  --a4-page-w:   210mm;
+  --a4-page-h:   297mm;
 }
 html.dark {
   --ink:  #DEDAD4;
@@ -101,8 +112,10 @@ html.a4-one-page #btn-one-page { opacity: 1; background: var(--ink); color: var(
 html.a4-eave.a4-mode #a4-eave-page { display: flex !important; }
 #a4-eave-ipp-page { display: none !important; }
 html.a4-eave.a4-mode #a4-eave-ipp-page { display: flex !important; }
-/* Toolbar buttons as plain text links */
-.tb-btn {
+/* Plain-text button pattern — shared by the toolbar and the footer
+   (.tb-btn/.tb-icon-btn and .footer-btn/.footer-icon-btn were previously
+   two near-identical rule sets; unified here into one). */
+.tb-btn, .footer-btn {
   font-family: var(--font);
   font-size: var(--nav-size);
   font-weight: 400;
@@ -117,16 +130,16 @@ html.a4-eave.a4-mode #a4-eave-ipp-page { display: flex !important; }
   text-decoration-thickness: .5px;
   transition: color .15s;
 }
-.tb-btn:hover { text-decoration: underline; }
-.tb-btn.active {
+.tb-btn:hover, .footer-btn:hover { text-decoration: underline; }
+.tb-btn.active, .footer-btn.active {
   background: var(--ink);
   color: var(--bg);
   border-color: var(--ink);
   text-decoration: none;
 }
-.tb-icon-btn:hover { text-decoration: none; }
-.tb-icon-btn:hover .tb-icon { opacity: .55; }
-.tb-icon {
+.tb-icon-btn:hover, .footer-icon-btn:hover { text-decoration: none; }
+.tb-icon-btn:hover .tb-icon, .footer-icon-btn:hover .footer-icon { opacity: .55; }
+.tb-icon, .footer-icon {
   display: block;
   fill: none;
 }
@@ -524,27 +537,8 @@ html.a4-mode .award-wip { display: none !important; }
   align-items: center;
   gap: clamp(12px, 2vw, 20px);
 }
-.footer-btn {
-  font-family: var(--font);
-  font-size: var(--nav-size);
-  font-weight: 400;
-  letter-spacing: .02em;
-  color: var(--ink);
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  text-underline-offset: 3px;
-  text-decoration-thickness: .5px;
-  transition: color .15s;
-}
-.footer-btn:hover { text-decoration: underline; }
-.footer-icon-btn:hover { text-decoration: none; }
-.footer-icon-btn:hover .footer-icon { opacity: .55; }
-.footer-icon {
-  display: block;
-  fill: none;
-}
+/* .footer-btn / .footer-icon-btn now share the toolbar's button pattern —
+   see the unified `.tb-btn, .footer-btn` rules above. */
 
 /* ── LEGAL (privacy.html) ── */
 .legal {
@@ -639,11 +633,11 @@ html.nav-simple-page .legal {
 /* ── A4 MODE (inline preview, screen only) ── */
 #a4-stage { display: none; }
 html.a4-mode {
-  background: #d5d1ca;
+  background: var(--a4-surround);
   scroll-behavior: auto;
 }
 html.a4-mode body {
-  background: #d5d1ca !important;
+  background: var(--a4-surround) !important;
 }
 html.a4-mode #toolbar {
   z-index: 500;
@@ -654,23 +648,23 @@ html.a4-mode #a4-stage {
   box-sizing: border-box;
 }
 html.a4-mode #a4-pages {
-  width: 210mm;
+  width: var(--a4-page-w);
   margin: 0 auto;
   transform-origin: top center;
 }
 html.a4-mode .a4-page {
-  width: 210mm;
-  min-height: 297mm;
+  width: var(--a4-page-w);
+  min-height: var(--a4-page-h);
   margin: 0 auto 20px;
   padding: 10mm;
   box-sizing: border-box;
-  background: #fff;
-  color: #1A1714;
-  --ink: #1A1714;
-  --mid: #8C8880;
-  --line: #8C8880;
-  --bg: #fff;
-  box-shadow: 0 1px 3px rgba(26, 23, 20, .06), 0 10px 32px rgba(26, 23, 20, .1);
+  background: var(--a4-paper);
+  color: var(--a4-ink);
+  --ink: var(--a4-ink);
+  --mid: var(--a4-mid);
+  --line: var(--a4-line);
+  --bg: var(--a4-paper);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--a4-ink) 6%, transparent), 0 10px 32px color-mix(in srgb, var(--a4-ink) 10%, transparent);
 }
 /* ── SCROLL REVEAL — CV must stay visible (opacity 0 broke table + dots) ── */
 .cv-section {

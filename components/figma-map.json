@@ -1,0 +1,137 @@
+{
+  "$schema": "informal — see components/README.md § Figma mapping (Phase 5+)",
+  "team": {
+    "name": "EstebanCuenca",
+    "id": "team::1677721160377991729"
+  },
+  "components": {
+    "statusDot.js": {
+      "status": "active",
+      "fileKey": "Z5ovK9oyPY12Y4cMkexbHq",
+      "frameId": "19:6",
+      "nodeId": "19:6",
+      "variantNodeIds": { "Done": "19:2", "WIP": "19:4" },
+      "lastSynced": null,
+      "note": "Nested sub-component of recordRow.js's statusDot(done) call. On Core page."
+    },
+    "entityBlock.js": {
+      "status": "active",
+      "fileKey": "Z5ovK9oyPY12Y4cMkexbHq",
+      "frameId": "19:12",
+      "nodeId": "19:12",
+      "variantNodeIds": { "WithSub": "19:7", "NoSub": "19:10" },
+      "lastSynced": null,
+      "note": "Nested sub-component of recordRow.js's entityBlock() call. On Core page. Own title/sub component properties are NOT exposed at the recordRow parent level (confirmed live: componentPropertyReferences pass-through for a nested instance's TEXT property is unsupported) — select the nested instance directly to override."
+    },
+    "paragraphBlock.js": {
+      "status": "active",
+      "fileKey": "Z5ovK9oyPY12Y4cMkexbHq",
+      "frameId": "33:88",
+      "nodeId": "33:88",
+      "lastSynced": null,
+      "note": "On Core page. TEXT component property 'text'."
+    },
+    "footerLink.js": {
+      "status": "active",
+      "fileKey": "Z5ovK9oyPY12Y4cMkexbHq",
+      "frameId": "33:87",
+      "nodeId": "33:87",
+      "variantNodeIds": { "Privacy": null, "Location": null, "Copyright": null, "Email": null },
+      "lastSynced": null,
+      "note": "On Core page. 4 kind variants covering the real 4 use shapes (privacy link/location/copyright/email)."
+    },
+    "recordRow.js": {
+      "status": "active",
+      "fileKey": "Z5ovK9oyPY12Y4cMkexbHq",
+      "frameId": "30:16",
+      "nodeId": "30:16",
+      "variantNodeIds": {
+        "state=Default,breakpoint=Desktop": "21:2",
+        "state=Hover,breakpoint=Desktop": "21:22",
+        "state=Default,breakpoint=Mobile": "21:42",
+        "state=Hover,breakpoint=Mobile": "21:61"
+      },
+      "componentProperties": ["role", "premiere", "festivals", "awards", "hasFestivals", "hasAwards"],
+      "lastSynced": "2026-09-04",
+      "lastSyncResult": "Pulled via get_design_context + get_variable_defs on node 21:2 (Desktop-Default). Compared every returned value against the real code/CSS: colors, nav-size/body-size, ent-title-size/ent-sub-size (verified as the exact 1.05em/.92em of body-size the real CSS specifies), row padding/gaps, and default content all matched exactly. The detail-row label-width(110)+gap(16)=126 exactly reproduces the real CSS's padding-left:126px via a different (flex vs. absolute-position) technique. Zero undocumented drift found — the one known simplification (fixed 800px row width vs. the real 100%-relative width) was already documented pre-pull. No code change made, since none was warranted.",
+      "propertyReferenceCoverage": "All 4 variants now bound (fixed 2026-09-04 during Phase 5): the original Phase 3 build only wired componentPropertyReferences on the Desktop-Default variant's text nodes — Desktop-Hover/Mobile-Default/Mobile-Hover had their own separate, unbound text nodes, so setting a property's VALUE had no visible effect except on Desktop-Default. Found via the Mobile whole-page assembly showing stale default content despite correct property values on the instance. Fixed by binding the same property IDs on all 3 remaining variants' equivalent nodes.",
+      "contentInstances": {
+        "IT WAS RAINING (default master content)": "21:2",
+        "VYOLA CYANA (short)": "30:57",
+        "MAILIN (long)": "30:77",
+        "[STRESS] synthetic heavy": "30:97"
+      },
+      "note": "Supersedes the archived change's proof-of-loop flat frame (was node 2:6, 'Record Row — IT WAS RAINING') — deleted 2026-09-04 with owner confirmation, per design.md's risk note requiring explicit approval before removing it. entityTitle/entitySub are NOT exposed as recordRow-level properties (see entityBlock.js note) — override the nested entityBlock instance directly. On Theme page."
+    },
+    "section.js": {
+      "status": "active",
+      "fileKey": "Z5ovK9oyPY12Y4cMkexbHq",
+      "frameId": "33:73",
+      "nodeId": "33:73",
+      "lastSynced": null,
+      "note": "On Theme page. Composed from the new Section Header molecule (Core page, node 33:69), which nests the Hide/Show Toggle atom. Body is a placeholder frame — real body content (tables/paragraphs) assembles at the whole-page-assembly stage (Phase 5), not hardcoded into this component."
+    }
+  },
+  "organisms": {
+    "toolbar": {
+      "status": "active",
+      "fileKey": "Z5ovK9oyPY12Y4cMkexbHq",
+      "nodeId": "43:75",
+      "page": "Theme — EstebanCuenca CV",
+      "note": "No components/*.js counterpart — static, singular markup in index.html, per design.md's scope. Composed from the Dark Mode Toggle atom. Height/padding bound to bar-h/pad-x, background to bg, border to line."
+    },
+    "hero": {
+      "status": "active",
+      "fileKey": "Z5ovK9oyPY12Y4cMkexbHq",
+      "nodeId": "43:105",
+      "variantNodeIds": { "breakpoint=Desktop": "43:80", "breakpoint=Mobile": "43:93" },
+      "page": "Theme — EstebanCuenca CV",
+      "note": "No components/*.js counterpart. Composed from paragraphBlock (bio), Scroll CTA, and Hero Photo instances. Mobile variant reorders photo above text, matching the real @media max-width:768px order:-1 rule."
+    },
+    "footer": {
+      "status": "active",
+      "fileKey": "Z5ovK9oyPY12Y4cMkexbHq",
+      "nodeId": "55:100",
+      "variantNodeIds": { "breakpoint=Desktop": "43:106", "breakpoint=Mobile": "55:91" },
+      "page": "Theme — EstebanCuenca CV",
+      "note": "No components/*.js counterpart. Composed from footerLink instances (Privacy/Location/Copyright/Email). KNOWN TRADE-OFF: fixing Copyright's mobile-width wrapping (footerLink text set to FILL) made Location/Copyright wrap to 2 lines on Desktop too, even where there's room — the real CSS lets each item hug its own width via flex-wrap, which this FILL-based approach doesn't fully replicate. Documented, not further chased given diminishing returns."
+    }
+  },
+  "libraryPublishing": {
+    "status": "TO BE REVIEWED — owner attempted to publish via the Figma UI, but getPublishStatusAsync() checked live afterward still returned UNPUBLISHED on 2 sample Core components and no variable collection showed remote:true. Possible causes: publish dialog opened but nothing was confirmed, published from a different file, or a propagation delay. Owner was tired and deferred re-checking — re-run the verification in this entry's 'howToVerify' field next session before assuming it's done.",
+    "howToVerify": "use_figma: await (await figma.getNodeByIdAsync('14:8')).getPublishStatusAsync() should return 'CURRENT' not 'UNPUBLISHED' once actually published.",
+    "readiness": "verified live: all 3 variable collections (Colors/Sizes/Typography) have hiddenFromPublishing:false, and 27 Components exist on the Core page ready to publish — nothing is blocking a manual publish",
+    "howTo": "In the Figma desktop/web app, open this file -> Assets panel (left sidebar) -> Publish. EstebanCuenca is now on a Professional plan (upgraded mid-change) so this is actually available, unlike when this change started.",
+    "note": "Owner chose to document this rather than walk through it interactively — do it whenever convenient."
+  },
+  "referenceViewports": {
+    "note": "Added post-Phase-5, prompted by the owner's request that the assembly respect real max sizes/boundaries/padding. See design.md § Post-Phase-5 hardening.",
+    "desktop": { "width": 1600, "reason": "smallest viewport at which every desktop-scale clamp() token is simultaneously saturated to its max — verified by computation, not assumed" },
+    "mobile": { "width": 390, "reason": "standard modern phone width inside the real ≤768px breakpoint; token values corrected to their true clamp() value at exactly this width (some were previously each mobile clamp's max, which overstated real mobile sizes)" }
+  },
+  "interactionSketches": {
+    "note": "Prototype reactions (Figma's own interaction model) sketching 3 real site behaviors. See design.md and the archived change's figma-interaction-sketch spec: these are structured intent for translation into real code on a future resync, not codegen — reading them back does not itself implement the behavior.",
+    "darkLightToggle": { "nodeId": "43:77", "trigger": "ON_CLICK", "action": "SET_VARIABLE_MODE -> Colors/Dark <-> Light, two-way", "note": "Upgraded from one-directional to a real toggle at owner's request: Dark Mode Toggle atom (15:8) gained an 'Active' variant (131:513); Default's click sets Dark mode + CHANGE_TO Active, Active's click sets Light mode + CHANGE_TO Default. Verified by reading both reactions' data back off the nodes (correct collection/mode/destination IDs both directions) — NOT yet verified by actually clicking through it in Figma's Present mode, which requires a live UI session this connection can't drive; owner should confirm it feels right there." },
+    "sectionHideShow": { "nodeId": "33:71", "trigger": "ON_CLICK", "action": "NODE/CHANGE_TO -> Hide/Show Toggle's Toggled-Show variant, SMART_ANIMATE" },
+    "rowHover": { "nodeId": "21:2", "trigger": "ON_HOVER", "action": "NODE/CHANGE_TO -> recordRow Desktop-Hover variant, SMART_ANIMATE" },
+    "spacingStepper": { "nodeIds": { "plus": "140:513", "minus": "140:515" }, "trigger": "ON_CLICK", "action": "SET_VARIABLE on space-sm (12:17) with an EXPRESSION (ADDITION/SUBTRACTION, +/-4) referencing the variable's own current value — real interactive math on a token, not a static demo. Researched first: standard Figma design files have no native slider/NUMBER component property (that's exclusive to Figma Sites, a different product) — this click+math stepper is the closest real native mechanism. A third-party 'VariableSlider' community plugin exists but isn't runnable through this connection." }
+  },
+  "ideas": {
+    "Project Detail (speculative)": {
+      "status": "speculative",
+      "fileKey": "Z5ovK9oyPY12Y4cMkexbHq",
+      "nodeId": "119:519",
+      "page": "Ideas / Unused",
+      "note": "Anticipates the undecided per-project detail-page / content-surface-differentiation question (design.md Open Questions) — NOT a decision, NOT part of any real Site assembly, NOT a resync target. Includes a named 'project-image-fill' slot (node 119:520) with the same grayscale-via-blend-mode technique as Hero Photo, for when/if a per-project media schema is decided."
+    }
+  },
+  "atoms": {
+    "Hide/Show Toggle": { "status": "active", "fileKey": "Z5ovK9oyPY12Y4cMkexbHq", "nodeId": "14:8", "page": "Core" },
+    "Dark Mode Toggle": { "status": "active", "fileKey": "Z5ovK9oyPY12Y4cMkexbHq", "nodeId": "15:8", "page": "Core" },
+    "Scroll CTA": { "status": "active", "fileKey": "Z5ovK9oyPY12Y4cMkexbHq", "nodeId": "15:15", "page": "Core" },
+    "Underline Mark (Link demo)": { "status": "active", "fileKey": "Z5ovK9oyPY12Y4cMkexbHq", "nodeId": "15:20", "page": "Core" },
+    "Hero Photo": { "status": "active", "fileKey": "Z5ovK9oyPY12Y4cMkexbHq", "nodeId": "16:2", "page": "Theme — EstebanCuenca CV", "note": "Master's children now have STRETCH/STRETCH constraints, fixed after the Mobile hero variant revealed the image didn't scale with instance resizing." },
+    "Favicon": { "status": "active", "fileKey": "Z5ovK9oyPY12Y4cMkexbHq", "nodeId": "16:5", "page": "Theme — EstebanCuenca CV" },
+    "Section Header": { "status": "active", "fileKey": "Z5ovK9oyPY12Y4cMkexbHq", "nodeId": "33:69", "page": "Core" }
+  }
+}

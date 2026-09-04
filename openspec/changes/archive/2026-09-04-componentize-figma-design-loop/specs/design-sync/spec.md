@@ -1,0 +1,63 @@
+## Purpose
+
+Defines the repeatable loop connecting the site's component files to Figma: how a component is mapped to a Figma node, pushed as editable layers backed by design tokens, and pulled back into its source file on explicit request.
+
+## ADDED Requirements
+
+### Requirement: Figma MCP connection is verified before any push/pull
+The system SHALL verify that a Figma MCP server is connected and enumerate its available tools before any push or pull operation is attempted, and SHALL report connection failure rather than silently skipping the operation.
+
+#### Scenario: MCP server not connected
+- **WHEN** a push or pull is requested and no Figma MCP server is registered or reachable
+- **THEN** the system reports that no connection is available and does not attempt the operation
+
+#### Scenario: MCP server connected
+- **WHEN** a push or pull is requested and the Figma MCP server responds
+- **THEN** the system lists which read and write tools are available before proceeding
+
+### Requirement: Component-to-node mapping is explicit and repo-tracked
+The system SHALL maintain a mapping between each `components/*.js` file and its corresponding Figma node ID in a single repo-tracked file, and SHALL treat a component with no mapping entry as not yet connected to Figma.
+
+#### Scenario: Pushing an unmapped component
+- **WHEN** a component with no existing mapping entry is pushed to Figma for the first time
+- **THEN** the system creates a new mapping entry recording the resulting Figma node ID
+
+#### Scenario: Resyncing a mapped component
+- **WHEN** a resync is requested for a component that has a mapping entry
+- **THEN** the system uses the mapped node ID to locate the Figma frame to pull from
+
+### Requirement: Pushed components use design tokens, not hardcoded values
+When a component is pushed to Figma as editable layers, the system SHALL express its colors, spacing, and typography as references to the token file's values (as Figma Variables where the connected MCP server's write tools support creating or referencing variables), rather than as hardcoded values baked into the pushed layers.
+
+#### Scenario: Token has a corresponding Figma Variable
+- **WHEN** a pushed component uses a value defined in the token file
+- **THEN** the pushed Figma layer references a Figma Variable for that value instead of a literal
+
+#### Scenario: MCP write tools cannot create/bind a variable for a value
+- **WHEN** the connected MCP server's write tools do not support creating or binding a Figma Variable for a given token
+- **THEN** the system pushes the literal value and reports which values could not be bound to a variable
+
+### Requirement: Resync regenerates only the targeted component
+On an explicit resync instruction naming a component, the system SHALL pull that component's current design context and variable definitions from its mapped Figma frame and SHALL regenerate only that component's source file, leaving all other component files untouched.
+
+#### Scenario: Resync affects only the named component
+- **WHEN** a resync is requested for one component
+- **THEN** only that component's file is regenerated and no other file in `components/` is modified
+
+### Requirement: Resync reports drift and guesswork
+When a resync pulls values from Figma that do not map cleanly onto an existing token or that require an inferred rather than directly-read value, the system SHALL report each such case rather than silently guessing.
+
+#### Scenario: Pulled value matches an existing token
+- **WHEN** a value read from Figma via `get_variable_defs` matches an existing token
+- **THEN** the regenerated component references that token, with no drift reported
+
+#### Scenario: Pulled value has no matching token
+- **WHEN** a value read from Figma does not match any existing token
+- **THEN** the system reports the unmatched value as drift and does not silently invent a new token without flagging it
+
+### Requirement: No visual change to the live site without explicit approval
+The system SHALL NOT apply any Figma-originated visual change to the live site's rendered output until the change owner explicitly approves it; a resync SHALL update the component's source file, not the deployed site, until that approval is given.
+
+#### Scenario: Resync completes without approval
+- **WHEN** a resync regenerates a component file
+- **THEN** the live site's rendered output is unchanged until the owner explicitly approves deploying the update
