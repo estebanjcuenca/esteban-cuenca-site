@@ -11,7 +11,7 @@ privacy: privacy.html
 
 Esteban Cuenca is an Argentine producer based in Amsterdam. He develops and produces fiction, documentary, and immersive work at the intersection of image, sound, and memory.
 
-He was Executive Producer of the feature documentary *MAILIN*, directed by Maria Silvia Esteve, premiered in the International Competition at IDFA 2025 and has screened at over twelve festivals. He also co-produced the animated short *It Was Raining*, directed by Ignacio Lillini, 1st Prize at the Florida Animation Festival 2022. He is currently developing several imemrsive projects in collaboration with Hana Films, following its participation at the Cannes Immersive Market 2026. 
+He was Executive Producer of the feature documentary *MAILIN*, directed by Maria Silvia Esteve, premiered in the International Competition at IDFA 2025 and has screened at over twelve festivals. He also co-produced the animated short *It Was Raining*, directed by Ignacio Lillini, 1st Prize at the Florida Animation Festival 2022. He is currently developing several immersive projects in collaboration with Hana Films, following its participation at the Cannes Immersive Market 2026. 
 
 Alongside his independent work, he operates as an integrated producer for global brands including Nike, Apple, Google, Adidas, Spotify, Heineken, and Philips, managing campaign production across EMEA, the US, and JAPAC.
 
