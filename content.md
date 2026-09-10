@@ -11,7 +11,7 @@ privacy: privacy.html
 
 Esteban Cuenca is an Argentine producer based in Amsterdam. He develops and produces fiction, documentary, and immersive work at the intersection of image, sound, and memory.
 
-He is Executive Producer of the feature documentary *MAILIN* (dir. Maria Silvia Esteve), supported by the Bertha Fund and CNC, premiered in the International Competition at IDFA 2025 and has screened at over twelve festivals. He is producing *Phantom Data* (Cannes Immersive Market 2026) and developing the fiction feature *Fauces* (dir. Maria Silvia Esteve), previously supported by TorinoFilmLab and CNC. He also co-produced the animated short *It Was Raining* (dir. Chaky Lillini), 1st Prize at the Florida Animation Festival 2022.
+He was Executive Producer of the feature documentary *MAILIN*, directed by Maria Silvia Esteve, premiered in the International Competition at IDFA 2025 and has screened at over twelve festivals. He also co-produced the animated short *It Was Raining*, directed by Ignacio Lillini, 1st Prize at the Florida Animation Festival 2022. He is currently developing several imemrsive projects in collaboration with Hana Films, following its participation at the Cannes Immersive Market 2026. 
 
 Alongside his independent work, he operates as an integrated producer for global brands including Nike, Apple, Google, Adidas, Spotify, Heineken, and Philips, managing campaign production across EMEA, the US, and JAPAC.
 
@@ -21,7 +21,7 @@ Alongside his independent work, he operates as an integrated producer for global
 |--------|---------|------|----------|-----------|--------|---------|
 | done | **MAILIN** · 2025 · Documentary · AR/FR/RO · 89' · Dir. Maria Silvia Esteve | Executive Producer | IDFA 2025 Int. Competition | IDFA · Göteborg Film Festival · Oslo Dokumentarkino · LuxFilmFest · FIFDH Geneva · Thessaloniki IFF · One World Prague · É Tudo Verdade · ZagrebDox · FICG Guadalajara · Festival Int. de Cine en Puerto Vallarta · UnArchive Found Footage Fest · Cinélatino Toulouse · DocsBarcelona · DocAviv · Watch Docs · Docudays UA · FILMAR · La Mujer y el Cine | Mention spéciale – Cinélatino Toulouse · Best Editing Award – AMMAC (DocsBarcelona 2026) · Best Feature Film Award – Student Jury (UnArchive Found Footage Fest) · Special Mention – International Jury (UnArchive Found Footage Fest) · Special Mention – International Jury (Docudays UA) {wip} IDFA Bertha Fund Classic · GLAFF · 2\|35 Award (Thessaloniki) · Best Film Special Mention (FIDOCS) · First Cut Award, The Party Film Sales · Highest Intl. Potential & TËNK Post-Production Award (Visions du Réel) | CNC France · CNC Romania · Brouillon d'un rêve La Scam · Metropolitan Fund of Arts · Ciclic · Aide Cinéma du Monde · Women Make Movies · INMAAT Foundation |
 | done | **IT WAS RAINING** · 2021 · Animated Short · AR · 7'38'' · Dir. Chaky Lillini | Producer | Animafest Zagreb 2021 Int. Competition | BIAF · El Ojo Iluso · LALIFF · Festival Mix México · Florida Animation Festival · Rio LGBTQIA+ | 1st Prize – 2D Animation/Independent, Florida Animation Festival 2022 | — |
-| wip | **FAUCES** · In development · Fiction Feature · 90' · Dir. Maria Silvia Esteve | Producer | — | — | Winner Focus Copro' 2022, Marché du Film · TorinoFilmLab Extended – Veneto Writing Lab 2022 | CNC L'Atelier Cannes 2024 · TRAME Residency 2023 · TorinoFilmLab 2022 |
+| wip {dev} | **FAUCES** · In development · Fiction Feature · 90' · Dir. Maria Silvia Esteve | Producer | — | — | Winner Focus Copro' 2022, Marché du Film · TorinoFilmLab Extended – Veneto Writing Lab 2022 | CNC L'Atelier Cannes 2024 · TRAME Residency 2023 · TorinoFilmLab 2022 |
 | wip {dev} | **PHANTOM DATA** · In development · Immersive VR/XR | Producer | — | Cannes Immersive Market 2026 · Curators Network Track 3 | — | CONICET |
 | wip {dev} | **VYOLA CYANA** · In development · Immersive XR | Producer | — | Cannes Immersive Market 2026 · Curators Network Track 3 | — |  |
 
@@ -54,7 +54,7 @@ FILM, IMMERSIVE & TECHNICAL PRODUCTION MANAGER
 
 Esteban Cuenca is an Argentine producer and project manager based in Amsterdam, working at the intersection of image, sound, technology, and physical production. He leads multidisciplinary teams of artists, developers, engineers, and external partners from concept through delivery, on projects ranging from feature documentary and immersive VR/XR to global brand campaigns.
 
-His feature documentary *MAILIN* (dir. Maria Silvia Esteve), supported by the Bertha Fund and CNC, premiered in the International Competition at IDFA 2025 and has screened at over twelve festivals. He is producing *Phantom Data*, an immersive VR/XR project developed with technical and spatial-design partners (Cannes Immersive Market 2026), and developing the fiction feature *Fauces* (dir. Maria Silvia Esteve), previously supported by TorinoFilmLab and CNC. He also co-produced the animated short *It Was Raining* (dir. Chaky Lillini), 1st Prize at the Florida Animation Festival 2022.
+His feature documentary *MAILIN* (dir. Maria Silvia Esteve), supported by the Bertha Fund and CNC, premiered in the International Competition at IDFA 2025 and has screened at over twelve festivals. He is currently developing several immersive projects in collaboration with Hana Films, following its participation at the Cannes Immersive Market 2026. He also co-produced the animated short *It Was Raining* (dir. Chaky Lillini), 1st Prize at the Florida Animation Festival 2022.
 
 Alongside his independent work, he operates as an integrated producer and project manager for global brands including Nike, Apple, Google, Adidas, Spotify, Heineken, and Philips — owning planning, budgets, risk, and delivery for complex, multi-stakeholder productions across EMEA, the US, and JAPAC, including experiential and physical activation formats built with technical and fabrication partners.
 
@@ -63,7 +63,7 @@ Alongside his independent work, he operates as an integrated producer and projec
 - Lead multidisciplinary productions from planning through delivery, coordinating artists, directors, technical/XR developers, and external engineering or fabrication partners.
 - Own project planning, risk anticipation, and financial oversight across concurrent productions, maintaining clear documentation for stakeholders from kick-off to close-out.
 - Act as central point of contact between creative vision and technical/production execution — translating ambitious creative ideas into scoped, budgeted, executable plans.
-- Producer on *Phantom Data* (immersive VR/XR, Cannes Immersive Market 2026), coordinating spatial design, technical/XR development, and production partners toward a technically complex interactive deliverable.
+- Producing several immersive VR/XR projects in collaboration with Hana Films (Cannes Immersive Market 2026), coordinating spatial design, technical/XR development, and production partners toward technically complex interactive deliverables.
 - Experience managing experiential and physical activation formats for global brands, working with fabrication, AV, and technical production vendors alongside creative and legal stakeholders.
 - Design and implement production workflows and governance models (DAM systems, automation tooling — n8n, metadata pipelines) to keep technically complex, multi-partner productions organized at scale.
 - Comfortable creating structure without limiting creativity — calm, pragmatic decision-making under budget, timeline, and technical constraints.
@@ -74,7 +74,7 @@ ASSISTANT TO PRODUCER
 
 Esteban Cuenca is an Argentine producer based in Amsterdam. He develops and produces fiction, documentary, and immersive work at the intersection of image, sound, and memory.
 
-His feature documentary *MAILIN* (dir. Maria Silvia Esteve), supported by the Bertha Fund and CNC, premiered in the International Competition at IDFA 2025 and has screened at over twelve festivals. He is producing *Phantom Data* (Cannes Immersive Market 2026) and developing the fiction feature *Fauces* (dir. Maria Silvia Esteve), previously supported by TorinoFilmLab and CNC. He also co-produced the animated short *It Was Raining* (dir. Chaky Lillini), 1st Prize at the Florida Animation Festival 2022.
+His feature documentary *MAILIN* (dir. Maria Silvia Esteve), supported by the Bertha Fund and CNC, premiered in the International Competition at IDFA 2025 and has screened at over twelve festivals. He is currently developing several immersive projects in collaboration with Hana Films, following its participation at the Cannes Immersive Market 2026. He also co-produced the animated short *It Was Raining* (dir. Chaky Lillini), 1st Prize at the Florida Animation Festival 2022.
 
 Alongside his independent work, he operates as an integrated producer for global brands including Nike, Apple, Google, Adidas, Spotify, Heineken, and Philips, managing campaign production across EMEA, the US, and JAPAC.
 
